@@ -178,6 +178,12 @@ local success, err = pcall(function()
                 end
             end})
 
+            BTab:AddButton({Title = "Reset Character (Suicide)", Callback = function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    LocalPlayer.Character.Humanoid.Health = 0
+                end
+            end})
+
             BTab:AddButton({Title = "Fling Target (Kill)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
