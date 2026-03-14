@@ -114,6 +114,35 @@ local success, err = pcall(function()
                 end
             end})
 
+            BTab:AddSection("Troll & Utilities")
+            BTab:AddButton({Title = "Fling Target (Kill)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    local thrust = Instance.new("BodyAngularVelocity")
+                    thrust.AngularVelocity = Vector3.new(9000, 9000, 9000)
+                    thrust.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                    thrust.Parent = hrp
+                    
+                    local startTime = tick()
+                    local c; c = RunService.Heartbeat:Connect(function()
+                        if hrp and t.Character:FindFirstChild("HumanoidRootPart") and tick() - startTime < 3.5 then
+                            hrp.CFrame = t.Character.HumanoidRootPart.CFrame
+                        else
+                            if thrust then thrust:Destroy() end
+                            c:Disconnect()
+                        end
+                    end)
+                end
+            end})
+            BTab:AddButton({Title = "Delete Bank/Vault Doors (Local)", Callback = function()
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") and (obj.Name:lower():match("door") or obj.Name:lower():match("glass") or obj.Name:lower():match("window")) then
+                        obj:Destroy()
+                    end
+                end
+            end})
+
             BTab:AddSection("Local Spoof")
             BTab:AddButton({Title = "Get Infinite Money (Visual)", Callback = function()
                 pcall(function()
@@ -291,7 +320,7 @@ local success, err = pcall(function()
                     local head = char:FindFirstChild("Head")
                     local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
                     
-                    if onScreen then
+                    if onScreen and pos.Z > 0 then
                         -- Boxes & Text
                         local rootTop = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
                         local rootBottom = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
@@ -316,13 +345,17 @@ local success, err = pcall(function()
                         if _G.SynthState.SkeletonESP and head then
                             local neckP, nV = Camera:WorldToViewportPoint(head.Position - Vector3.new(0, 0.5, 0))
                             local pelvisP, pV = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 1, 0))
-                            Bones.Spine.From = Vector2.new(pos.X, rootTop.Y); Bones.Spine.To = Vector2.new(pelvisP.X, pelvisP.Y); Bones.Spine.Visible = _G.SynthState.SkeletonESP; Bones.Spine.Color = _G.SynthState.SkeletonColor
-                            Bones.Head.From = Vector2.new(neckP.X, neckP.Y); Bones.Head.To = Vector2.new(pos.X, rootTop.Y); Bones.Head.Visible = _G.SynthState.SkeletonESP; Bones.Head.Color = _G.SynthState.SkeletonColor
+                            if nV and pV then
+                                Bones.Spine.From = Vector2.new(pos.X, rootTop.Y); Bones.Spine.To = Vector2.new(pelvisP.X, pelvisP.Y); Bones.Spine.Visible = _G.SynthState.SkeletonESP; Bones.Spine.Color = _G.SynthState.SkeletonColor
+                                Bones.Head.From = Vector2.new(neckP.X, neckP.Y); Bones.Head.To = Vector2.new(pos.X, rootTop.Y); Bones.Head.Visible = _G.SynthState.SkeletonESP; Bones.Head.Color = _G.SynthState.SkeletonColor
+                            else
+                                Bones.Spine.Visible = false; Bones.Head.Visible = false
+                            end
                             -- Arms/Legs conceptual (simplified R6 for speed)
                             local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightHand")
                             local lArm = char:FindFirstChild("Left Arm") or char:FindFirstChild("LeftHand")
-                            if rArm then local rap, rv = Camera:WorldToViewportPoint(rArm.Position); Bones.RArm.From = Vector2.new(pos.X, rootTop.Y); Bones.RArm.To = Vector2.new(rap.X, rap.Y); Bones.RArm.Visible = _G.SynthState.SkeletonESP; Bones.RArm.Color = _G.SynthState.SkeletonColor else Bones.RArm.Visible = false end
-                            if lArm then local lap, lv = Camera:WorldToViewportPoint(lArm.Position); Bones.LArm.From = Vector2.new(pos.X, rootTop.Y); Bones.LArm.To = Vector2.new(lap.X, lap.Y); Bones.LArm.Visible = _G.SynthState.SkeletonESP; Bones.LArm.Color = _G.SynthState.SkeletonColor else Bones.LArm.Visible = false end
+                            if rArm then local rap, rv = Camera:WorldToViewportPoint(rArm.Position); if rv then Bones.RArm.From = Vector2.new(pos.X, rootTop.Y); Bones.RArm.To = Vector2.new(rap.X, rap.Y); Bones.RArm.Visible = _G.SynthState.SkeletonESP; Bones.RArm.Color = _G.SynthState.SkeletonColor else Bones.RArm.Visible = false end else Bones.RArm.Visible = false end
+                            if lArm then local lap, lv = Camera:WorldToViewportPoint(lArm.Position); if lv then Bones.LArm.From = Vector2.new(pos.X, rootTop.Y); Bones.LArm.To = Vector2.new(lap.X, lap.Y); Bones.LArm.Visible = _G.SynthState.SkeletonESP; Bones.LArm.Color = _G.SynthState.SkeletonColor else Bones.LArm.Visible = false end else Bones.LArm.Visible = false end
                         else
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
