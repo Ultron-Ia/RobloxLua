@@ -70,6 +70,21 @@ local function SetupGameTab(gameName)
         end end })
     elseif gameName == "Dandy's World" then
         GameTab = Window:AddTab({ Title = "Dandy's World", Icon = "skull" })
+        local pd = GameTab:AddDropdown("DandyPlayerSelect", { Title = "Target Player", Values = {}, Default = nil })
+        RunService.Heartbeat:Connect(function() 
+            local plys = {} 
+            for _,p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(plys, p.Name) end end
+            pd:SetValues(plys)
+        end)
+        pd:OnChanged(function(v) _G.GameFeatures.SelectedPlayer = v end)
+        GameTab:AddButton({ Title = "Copy Skin (Clone)", Callback = function() 
+            if _G.GameFeatures.SelectedPlayer then
+                local target = Players[_G.GameFeatures.SelectedPlayer]
+                for _, v in pairs(LocalPlayer.Character:GetChildren()) do if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") then v:Destroy() end end
+                for _, v in pairs(target.Character:GetChildren()) do if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") then v:Clone().Parent = LocalPlayer.Character end end
+            end
+        end })
+        GameTab:AddSection("Exploits")
         GameTab:AddToggle("MonstESP", {Title = "Monster ESP", Default = false}):OnChanged(function(v) _G.GameFeatures.MonsterESP = v end)
         GameTab:AddToggle("ItmESP", {Title = "Item ESP", Default = false}):OnChanged(function(v) _G.GameFeatures.ItemESP = v end)
         GameTab:AddButton({Title = "Restore Stamina", Callback = function() if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Stamina = 100 end end})
