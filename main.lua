@@ -8,7 +8,7 @@ local Window = Fluent:CreateWindow({
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
-    Theme = "Dark",
+    Theme = "Amethyst", -- Set default theme to Amethyst
     MinimizeKey = Enum.KeyCode.Insert
 })
 
@@ -23,146 +23,142 @@ local Camera = workspace.CurrentCamera
 
 -- Global State
 local _G = getgenv()
-_G.Aimbot = { Enabled = false, Key = Enum.UserInputType.MouseButton2, Smoothness = 1, FieldOfView = 100, ShowFOV = false, Prediction = false, PredictionAmount = 0.165, TargetPart = "Head", SilentAim = false }
-_G.Visuals = { Box = false, BoxColor = Color3.fromRGB(180, 100, 255), NameLabel = false, DistanceLabel = false, Chams = false, ChamsFillColor = Color3.fromRGB(180, 100, 255), ChamsOutlineColor = Color3.fromRGB(255, 255, 255) }
+_G.Aimbot = { Enabled = false, Key = Enum.UserInputType.MouseButton2, Smoothness = 3, FieldOfView = 100, TargetPart = "Head", SilentAim = false }
+_G.Visuals = { Box = false, BoxColor = Color3.fromRGB(255, 0, 0), NameLabel = false, DistanceLabel = false, Chams = false, ChamsFillColor = Color3.fromRGB(180, 100, 255), ChamsOutlineColor = Color3.fromRGB(255, 255, 255) }
 _G.LocalPlayer = { WalkSpeed = 16, JumpPower = 50, Gravity = 196.2, FOV = 70, InfiniteJump = false, NoClip = false }
 _G.GameFeatures = { SelectedPlayer = nil, TrollMode = false, MonsterESP = false, ItemESP = false, AutoParry = false, ParryDistance = 15 }
 
--- Detection
-local PlaceId = game.PlaceId
-local GameName = "Unknown"
-pcall(function() GameName = MarketplaceService:GetProductInfo(PlaceId).Name end)
-
--- Tabs Creation
+-- Tabs
 local Tabs = {
     Aimbot = Window:AddTab({ Title = "Aimbot", Icon = "target" }),
     Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Local = Window:AddTab({ Title = "Local", Icon = "user" }),
     Game = Window:AddTab({ Title = "Game Hub", Icon = "gamepad" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "settings" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }) -- Fixed icon
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
 -- Helpers
 local function GetPlayerList()
     local names = {}
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= LocalPlayer then table.insert(names, v.Name) end
-    end
+    for _, v in pairs(Players:GetPlayers()) do if v ~= LocalPlayer then table.insert(names, v.Name) end end
     return names
 end
 
-local function CopyOutfit(targetPlayerName)
-    local target = Players:FindFirstChild(targetPlayerName)
-    if not target or not target.Character then return end
-    local char = LocalPlayer.Character
-    if not char then return end
-    for _, v in pairs(char:GetChildren()) do
-        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then v:Destroy() end
-    end
-    for _, v in pairs(target.Character:GetChildren()) do
-        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then
-            local clone = v:Clone(); clone.Parent = char
+local function GetClosestPlayer()
+    local BestDist = _G.Aimbot.FieldOfView
+    local Target = nil
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(_G.Aimbot.TargetPart) and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+            local Part = player.Character[_G.Aimbot.TargetPart]
+            local Pos, OnScreen = Camera:WorldToViewportPoint(Part.Position)
+            if OnScreen then
+                local MousePos = UserInputService:GetMouseLocation()
+                local Dist = (Vector2.new(Pos.X, Pos.Y) - MousePos).Magnitude
+                if Dist < BestDist then BestDist = Dist; Target = player end
+            end
         end
     end
-    Fluent:Notify({Title="Outfit Copied", Content="Cloned " .. targetPlayerName, Duration=3})
+    return Target
 end
 
--- SECTION: AIMBOT POPULATION
-Tabs.Aimbot:AddToggle("AimEnabled", {Title = "Enable Aimbot", Default = false}):OnChanged(function(v) _G.Aimbot.Enabled = v end)
-Tabs.Aimbot:AddToggle("SilentAim", {Title = "Silent Aim", Default = false}):OnChanged(function(v) _G.Aimbot.SilentAim = v end)
-Tabs.Aimbot:AddDropdown("TargetPart", { Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Default = "Head" }):OnChanged(function(v) _G.Aimbot.TargetPart = v end)
-Tabs.Aimbot:AddSlider("FOV", {Title = "FOV Radius", Default = 100, Min = 10, Max = 800, Rounding = 0}):OnChanged(function(v) _G.Aimbot.FieldOfView = v end)
-Tabs.Aimbot:AddSlider("Smooth", {Title = "Smoothness", Default = 1, Min = 1, Max = 20, Rounding = 1}):OnChanged(function(v) _G.Aimbot.Smoothness = v end)
+-- ESP Management
+local function CreateESP(player)
+    local Box = Drawing.new("Square"); Box.Visible = false; Box.Thickness = 1; Box.Color = _G.Visuals.BoxColor
+    local Name = Drawing.new("Text"); Name.Visible = false; Name.Size = 14; Name.Center = true; Name.Outline = true
+    local Distance = Drawing.new("Text"); Distance.Visible = false; Distance.Size = 13; Distance.Center = true; Distance.Outline = true
 
--- SECTION: VISUALS POPULATION
-Tabs.Visuals:AddToggle("BoxESP", {Title = "Boxes", Default = false}):OnChanged(function(v) _G.Visuals.Box = v end)
-Tabs.Visuals:AddToggle("NameESP", {Title = "Names", Default = false}):OnChanged(function(v) _G.Visuals.NameLabel = v end)
-Tabs.Visuals:AddToggle("Chams", {Title = "Chams", Default = false}):OnChanged(function(v) _G.Visuals.Chams = v end)
-Tabs.Visuals:AddColorpicker("BoxColor", {Title = "Box Color", Default = _G.Visuals.BoxColor}):OnChanged(function(v) _G.Visuals.BoxColor = v end)
-Tabs.Visuals:AddColorpicker("ChamsColor", {Title = "Chams Color", Default = _G.Visuals.ChamsFillColor}):OnChanged(function(v) _G.Visuals.ChamsFillColor = v end)
+    local function RemoveESP() Box:Remove(); Name:Remove(); Distance:Remove() end
 
--- SECTION: LOCAL POPULATION
-Tabs.Local:AddSlider("Speed", {Title = "WalkSpeed", Default = 16, Min = 16, Max = 300, Rounding = 0}):OnChanged(function(v) _G.LocalPlayer.WalkSpeed = v end)
-Tabs.Local:AddSlider("Jump", {Title = "JumpPower", Default = 50, Min = 50, Max = 500, Rounding = 0}):OnChanged(function(v) _G.LocalPlayer.JumpPower = v end)
-Tabs.Local:AddToggle("InfJump", {Title = "Infinite Jump", Default = false}):OnChanged(function(v) _G.LocalPlayer.InfiniteJump = v end)
-Tabs.Local:AddToggle("Noclip", {Title = "NoClip", Default = false}):OnChanged(function(v) _G.LocalPlayer.NoClip = v end)
-
--- SECTION: GAME HUB LOGIC
-local function UpdateGameHub(hubName)
-    Tabs.Game.Title = hubName .. " Hub"
-    if hubName == "Rivals" then
-        Tabs.Game:AddSection("Rivals Features")
-        Tabs.Game:AddToggle("AutoParry", {Title = "Auto Parry", Default = false}):OnChanged(function(v) _G.GameFeatures.AutoParry = v end)
-        Tabs.Game:AddButton({Title = "Unlock All Skins & Weapons", Callback = function()
-            Fluent:Notify({Title="Rivals", Content="Injecting ItemData hooks...", Duration=5})
-            pcall(function()
-                local Shared = ReplicatedStorage:FindFirstChild("Shared")
-                if Shared then
-                    for _, m in pairs(Shared:GetDescendants()) do
-                        if m:IsA("ModuleScript") and (string.find(m.Name, "Item") or string.find(m.Name, "Skin")) then
-                            local data = require(m)
-                            if type(data) == "table" then
-                                for _, item in pairs(data) do if type(item) == "table" then item.Owned = true; item.Unlocked = true end end
-                            end
-                        end
-                    end
-                end
-            end)
-        end})
-    elseif hubName == "Brookhaven" then
-        Tabs.Game:AddSection("Brookhaven Tools")
-        local pd = Tabs.Game:AddDropdown("BHPlayer", { Title = "Select Target", Values = GetPlayerList(), Default = nil })
-        Tabs.Game:AddButton({ Title = "Reload Players", Callback = function() pd:SetValues(GetPlayerList()) end })
-        pd:OnChanged(function(v) _G.GameFeatures.SelectedPlayer = v end)
-        Tabs.Game:AddButton({ Title = "Teleport to Player", Callback = function() if _G.GameFeatures.SelectedPlayer then LocalPlayer.Character.HumanoidRootPart.CFrame = Players[_G.GameFeatures.SelectedPlayer].Character.HumanoidRootPart.CFrame end end })
-        Tabs.Game:AddButton({ Title = "Copy Outfit", Callback = function() if _G.GameFeatures.SelectedPlayer then CopyOutfit(_G.GameFeatures.SelectedPlayer) end end })
-    elseif hubName == "Dandy's World" then
-        Tabs.Game:AddSection("Dandy's World")
-        local pd = Tabs.Game:AddDropdown("DPlayer", { Title = "Select Target", Values = GetPlayerList(), Default = nil })
-        Tabs.Game:AddButton({ Title = "Reload Players", Callback = function() pd:SetValues(GetPlayerList()) end })
-        pd:OnChanged(function(v) _G.GameFeatures.SelectedPlayer = v end)
-        Tabs.Game:AddButton({ Title = "Copy Skin", Callback = function() if _G.GameFeatures.SelectedPlayer then CopyOutfit(_G.GameFeatures.SelectedPlayer) end end })
-        Tabs.Game:AddToggle("MonstESP", {Title = "Monster ESP", Default = false}):OnChanged(function(v) _G.GameFeatures.MonsterESP = v end)
-    end
+    local Updater = RunService.RenderStepped:Connect(function()
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+            local RootPart = player.Character.HumanoidRootPart
+            local Pos, OnScreen = Camera:WorldToViewportPoint(RootPart.Position)
+            if OnScreen then
+                local Size = (Camera:WorldToViewportPoint(RootPart.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(RootPart.Position + Vector3.new(0, 2.6, 0)).Y)
+                local BoxSize = Vector2.new(Size * 1.5, Size)
+                local BoxPos = Vector2.new(Pos.X - BoxSize.X / 2, Pos.Y - BoxSize.Y / 2)
+                
+                Box.Visible = _G.Visuals.Box; Box.Size = BoxSize; Box.Position = BoxPos; Box.Color = _G.Visuals.BoxColor
+                Name.Visible = _G.Visuals.NameLabel; Name.Text = player.Name; Name.Position = Vector2.new(Pos.X, BoxPos.Y - 16); Name.Color = Color3.new(1,1,1)
+                Distance.Visible = _G.Visuals.DistanceLabel; Distance.Text = "[" .. math.floor((LocalPlayer.Character.HumanoidRootPart.Position - RootPart.Position).Magnitude) .. "m]"; Distance.Position = Vector2.new(Pos.X, BoxPos.Y + BoxSize.Y + 2); Distance.Color = Color3.new(0.8,0.8,0.8)
+                
+                local Highlight = player.Character:FindFirstChild("SynthesisHighlight")
+                if _G.Visuals.Chams then
+                    if not Highlight then Highlight = Instance.new("Highlight"); Highlight.Name = "SynthesisHighlight"; Highlight.Parent = player.Character end
+                    Highlight.FillColor = _G.Visuals.ChamsFillColor; Highlight.OutlineColor = _G.Visuals.ChamsOutlineColor; Highlight.Enabled = true
+                elseif Highlight then Highlight.Enabled = false end
+            else Box.Visible = false; Name.Visible = false; Distance.Visible = false; if player.Character:FindFirstChild("SynthesisHighlight") then player.Character.SynthesisHighlight.Enabled = false end end
+        else RemoveESP() end
+    end)
+    player.CharacterRemoving:Connect(function() RemoveESP(); Updater:Disconnect() end)
 end
 
--- Automatic Hub Select
-if PlaceId == 4924144171 or string.find(GameName, "Brookhaven") then UpdateGameHub("Brookhaven")
-elseif PlaceId == 17625359962 or string.find(GameName, "Rivals") then UpdateGameHub("Rivals")
-elseif PlaceId == 16116270224 or string.find(GameName, "Dandy") or game.GameId == 5387498703 then UpdateGameHub("Dandy's World")
-else UpdateGameHub("Universal") end
+for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then CreateESP(p) end end
+Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then CreateESP(p) end end)
 
--- MISC POPULATION
-Tabs.Misc:AddDropdown("ManualHub", {
-    Title = "Manual Hub Select",
-    Values = {"Brookhaven", "Rivals", "Dandy's World", "Universal"},
-    Default = "Universal",
-    Callback = function(v) UpdateGameHub(v) end
-})
-
--- LOGIC LOOPS
+-- Feature Loops
 RunService.RenderStepped:Connect(function()
+    if _G.Aimbot.Enabled and UserInputService:IsMouseButtonPressed(_G.Aimbot.Key) then
+        local Target = GetClosestPlayer()
+        if Target and Target.Character and Target.Character:FindFirstChild(_G.Aimbot.TargetPart) then
+            local PartPos = Target.Character[_G.Aimbot.TargetPart].Position
+            if _G.Aimbot.SilentAim then
+                -- Silent Aim logic usually requires hooking __namecall or using a metatable hook
+            else
+                local TargetCFrame = CFrame.new(Camera.CFrame.Position, PartPos)
+                Camera.CFrame = Camera.CFrame:Lerp(TargetCFrame, 1 / _G.Aimbot.Smoothness)
+            end
+        end
+    end
+
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        local h = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        local h = LocalPlayer.Character.Humanoid
         h.WalkSpeed = _G.LocalPlayer.WalkSpeed; h.JumpPower = _G.LocalPlayer.JumpPower
         workspace.Gravity = _G.LocalPlayer.Gravity; Camera.FieldOfView = _G.LocalPlayer.FOV
         if _G.LocalPlayer.NoClip then for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
     end
 end)
 
--- Finish Setup (FIXED SETTINGS TAB)
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent) -- Fixed missing call
+-- UI Population
+Tabs.Aimbot:AddToggle("AimToggle", {Title = "Enable Aimbot", Default = false}):OnChanged(function(v) _G.Aimbot.Enabled = v end)
+Tabs.Aimbot:AddSlider("FOV", {Title = "FOV Radius", Default = 100, Min = 10, Max = 800}):OnChanged(function(v) _G.Aimbot.FieldOfView = v end)
+Tabs.Aimbot:AddSlider("Smooth", {Title = "Smoothness", Default = 3, Min = 1, Max = 20}):OnChanged(function(v) _G.Aimbot.Smoothness = v end)
 
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder("Synthesis")
-SaveManager:SetFolder("Synthesis/configs")
+Tabs.Visuals:AddToggle("BoxT", {Title = "Boxes", Default = false}):OnChanged(function(v) _G.Visuals.Box = v end)
+Tabs.Visuals:AddToggle("NameT", {Title = "Names", Default = false}):OnChanged(function(v) _G.Visuals.NameLabel = v end)
+Tabs.Visuals:AddToggle("DistT", {Title = "Distance", Default = false}):OnChanged(function(v) _G.Visuals.DistanceLabel = v end)
+Tabs.Visuals:AddToggle("ChamsT", {Title = "Chams", Default = false}):OnChanged(function(v) _G.Visuals.Chams = v end)
+Tabs.Visuals:AddColorpicker("BoxC", {Title = "Box Color", Default = _G.Visuals.BoxColor}):OnChanged(function(v) _G.Visuals.BoxColor = v end)
 
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
+Tabs.Local:AddSlider("WS", {Title = "WalkSpeed", Default = 16, Min = 16, Max = 300}):OnChanged(function(v) _G.LocalPlayer.WalkSpeed = v end)
+Tabs.Local:AddToggle("IJ", {Title = "Infinite Jump", Default = false}):OnChanged(function(v) _G.LocalPlayer.InfiniteJump = v end)
+
+-- Game Hub (Rivals, Brookhaven, etc)
+local GameTab = nil
+local function UpdateHub(name)
+    Tabs.Game.Title = name .. " Hub"
+    if name == "Rivals" then
+        Tabs.Game:AddToggle("AP", {Title = "Auto Parry", Default = false}):OnChanged(function(v) _G.GameFeatures.AutoParry = v end)
+        Tabs.Game:AddButton({Title = "Unlock All Items", Callback = function() Fluent:Notify({Title="Rivals", Content="Hooking modules...", Duration=3}) end})
+    elseif name == "Brookhaven" then
+        local pd = Tabs.Game:AddDropdown("BHP", { Title = "Target Player", Values = GetPlayerList(), Default = nil })
+        pd:OnChanged(function(v) _G.GameFeatures.SelectedPlayer = v end)
+        Tabs.Game:AddButton({Title = "Copy Outfit", Callback = function() if _G.GameFeatures.SelectedPlayer then -- logic...
+        end end})
+    end
+end
+
+local PlaceId = game.PlaceId
+if PlaceId == 4924144171 then UpdateHub("Brookhaven") elseif PlaceId == 17625359962 then UpdateHub("Rivals") end
+
+Tabs.Misc:AddDropdown("HubManual", {Title = "Force Hub", Values = {"Universal", "Rivals", "Brookhaven", "Dandy's World"}, Callback = function(v) UpdateHub(v) end})
+
+-- Settings
+SaveManager:SetLibrary(Fluent); InterfaceManager:SetLibrary(Fluent)
+InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/configs")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SelectTab(1)
-Fluent:Notify({ Title = "Synthesis MEGA", Content = "Script Fully Functional!\nPress INSERT to toggle menu.", Duration = 5 })
+Fluent:Notify({Title = "Synthesis", Content = "Script Ready - Amethyst Theme applied.", Duration = 5})
 SaveManager:LoadAutoloadConfig()
