@@ -1,32 +1,42 @@
-# SYNTHESIS INTERNAL - Multi-Game Premium Script
+# SYNTHESIS MEGA - The Ultimate Multi-Game Script
 
-O **Synthesis Internal** agora é um script multijogos de alta performance com interface **Fluent UI**. O script detecta automaticamente o jogo em que você está e libera abas exclusivas com funções avançadas.
+O **Synthesis Mega** é o script definitivo para exploradores e jogadores competitivos no Roblox. Integrando uma interface premium com detecção inteligente de jogos, ele oferece funções exclusivas para os títulos mais populares.
 
 ## 🚀 Como Usar (Xeno & Outros Executores)
 
-Copie e cole o comando abaixo no seu executor:
+Copie e cole o comando abaixo no seu executor favorito:
 
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Ultron-Ia/RobloxLua/main/main.lua"))()
 ```
 
-## ✨ Funcionalidades Universais (Para Todos os Jogos)
-- **Aimbot Avançado**: Silent Aim, Predição de Movimento, Suavização (Smoothness) e Círculo de FOV.
-- **Visuals (ESP)**: Boxes, Chams (transparência colorida), Nomes e Distância.
-- **Local Player**: WalkSpeed, JumpPower, NoClip, Infinite Jump, Gravidade e FOV.
-- **Configurações**: Sistema de salvamento e carregamento automático de configurações.
+## ✨ Funcionalidades Universais (Base)
+- **Aimbot de Elite**: Silent Aim, Predição, Suavização e FOV configurável.
+- **Visuals Avançados**: ESP Boxes, Chams (transparência), Nomes e Distância de precisão.
+- **Dynamic Local Player**: WalkSpeed, JumpPower, NoClip, Fly, Infinite Jump, Gravidade e FOV.
+- **Auto-Config**: Salve suas configurações favoritas e carregue-as instantaneamente.
 
-## 🎮 Funcionalidades por Jogo (Exclusivo)
+## 🎮 Game Hubs Exclusivos (Detecção Automática)
+
+### 💀 Mundo do Dandy (Dandy's World)
+- **Monster ESP**: Veja todos os monstros através das paredes.
+- **Item ESP**: Encontre itens valiosos instantaneamente.
+- **Stamina Boost**: Recupere ou mantenha sua estamina sempre no máximo.
+
+### 🏡 Brookhaven (Avançado)
+- **Painel de Jogadores**: Escolha qualquer jogador do servidor em um menu dinâmico.
+- **Teleporte p/ Jogador**: Vá até qualquer um instantaneamente.
+- **Modo Troll/Seguir**: Siga e trolle jogadores selecionados automaticamente.
+- **Acesso Rápido**: Teleportes para Banco, Hospital e simulação de compras/dinheiro.
+
 ### ⚔️ Rivals
-- **Auto Parry**: Bloqueia ataques automaticamente com detecção de distância configurável.
-- **Rivals Hub**: Interface dedicada para as mecânicas do jogo.
+- **Auto Parry Hub**: Bloqueio automático com ajuste de sensibilidade e distância.
 
-### 🏡 Brookhaven
-- **Teleports Rápidos**: Vá instantaneamente para o Banco, Hospital e outros locais.
-- **Gamepass Unlocks**: Desbloqueio visual e de funções de gamepasses.
+### 🐶 Adopt Me!
+- **Auto Farm**: Ganhe dinheiro e upe seus pets automaticamente (em expansão).
 
-### 🧠 Brainrot Games
-- **Auto Farm**: Automatiza cliques e farming em diversos jogos do tipo simulator/tycoon.
+### 🌲 Survival & Others (99 Noites, Forsaken, Tsunami)
+- **Abas de Sobrevivência**: Funções específicas para coleta e proteção de acordo com o mapa.
 
 ---
 *Desenvolvido por Antigravity*
