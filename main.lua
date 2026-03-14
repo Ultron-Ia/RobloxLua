@@ -24,16 +24,28 @@ local success, err = pcall(function()
     -- Global State
     _G.SynthState = {
         AimEnabled = false,
+        SilentAim = false,
         AimPart = "Head",
         AimFOV = 100,
         AimSmooth = 3,
+        
         BoxESP = false,
         NameESP = false,
         DistESP = false,
+        SkeletonESP = false,
+        SkeletonColor = Color3.fromRGB(255, 255, 255),
+        ProjESP = false,
+        
         Chams = false,
+        ChamsMat = "Neon",
+        ChamsColor = Color3.fromRGB(180, 100, 255),
+        
         WalkSpeed = 16,
         JumpPower = 50,
         NoClip = false,
+        Spinbot = false,
+        SpinSpeed = 50,
+        
         TargetPlayer = "None"
     }
 
@@ -59,16 +71,9 @@ local success, err = pcall(function()
 
     -- POPULATE LOADER (Game Selection)
     Tabs.Main:AddSection("Game Selection")
-    Tabs.Main:AddParagraph({
-        Title = "Manual Loading",
-        Content = "Selecione o jogo abaixo para carregar as funções específicas. Uma nova aba será criada para ele."
-    })
+    Tabs.Main:AddParagraph({ Title = "Manual Loading", Content = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = Tabs.Main:AddDropdown("GameSelect", {
-        Title = "Select Game Module",
-        Values = {"...", "Rivals", "Brookhaven", "Dandy's World"},
-        Default = 1
-    })
+    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World"}, Default = 1 })
 
     GameSelector:OnChanged(function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -76,7 +81,7 @@ local success, err = pcall(function()
             local RTab = Window:AddTab({ Title = "Rivals Hub", Icon = "swords" })
             RTab:AddToggle("RParry", {Title = "Auto Parry", Default = false})
             RTab:AddButton({Title = "Unlock All Skins & Weapons", Callback = function()
-                Fluent:Notify({Title="Rivals", Content="Liberando inventário (Local)...", Duration=3})
+                Fluent:Notify({Title="Rivals", Content="Liberando inventário...", Duration=3})
                 pcall(function()
                     for _, m in pairs(ReplicatedStorage:GetDescendants()) do
                         if m:IsA("ModuleScript") and (m.Name:find("Item") or m.Name:find("Skin")) then
@@ -86,7 +91,6 @@ local success, err = pcall(function()
                     end
                 end)
             end})
-            -- Window:SelectTab(5) -- Optional jump
 
         elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
             BuiltHubs["Brookhaven"] = true
@@ -116,9 +120,7 @@ local success, err = pcall(function()
                     for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
                         if gui.Name:find("Main") or gui.Name:find("Gui") then
                             for _, txt in pairs(gui:GetDescendants()) do
-                                if txt:IsA("TextLabel") and txt.Text:find("%$") then
-                                    txt.Text = "$999,999,999"
-                                end
+                                if txt:IsA("TextLabel") and txt.Text:find("%$") then txt.Text = "$999,999,999" end
                             end
                         end
                     end
@@ -147,117 +149,228 @@ local success, err = pcall(function()
 
 
     -- POPULATE AIMBOT
-    Tabs.Aimbot:AddToggle("AimToggle", {Title = "Enable Aimbot", Default = false}):OnChanged(function(v) _G.SynthState.AimEnabled = v end)
+    Tabs.Aimbot:AddSection("Aimbot Core")
+    Tabs.Aimbot:AddToggle("AimToggle", {Title = "Enable Camera Aimbot", Default = false}):OnChanged(function(v) _G.SynthState.AimEnabled = v end)
+    Tabs.Aimbot:AddToggle("SilentToggle", {Title = "Silent Aim (Magic Bullet)", Default = false}):OnChanged(function(v) _G.SynthState.SilentAim = v end)
     Tabs.Aimbot:AddDropdown("AimPart", {Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1}):OnChanged(function(v) _G.SynthState.AimPart = v end)
+    Tabs.Aimbot:AddSection("Aimbot Settings")
     Tabs.Aimbot:AddSlider("AimFOV", {Title = "FOV Size", Default = 100, Min = 10, Max = 800, Rounding = 0}):OnChanged(function(v) _G.SynthState.AimFOV = v end)
-    Tabs.Aimbot:AddSlider("AimSmooth", {Title = "Smoothness", Default = 3, Min = 1, Max = 20, Rounding = 1}):OnChanged(function(v) _G.SynthState.AimSmooth = v end)
+    Tabs.Aimbot:AddSlider("AimSmooth", {Title = "Smoothness (Cam)", Default = 3, Min = 1, Max = 20, Rounding = 1}):OnChanged(function(v) _G.SynthState.AimSmooth = v end)
 
     -- POPULATE VISUALS
+    Tabs.Visuals:AddSection("2D ESP")
     Tabs.Visuals:AddToggle("BoxToggle", {Title = "Boxes", Default = false}):OnChanged(function(v) _G.SynthState.BoxESP = v end)
     Tabs.Visuals:AddToggle("NameToggle", {Title = "Names", Default = false}):OnChanged(function(v) _G.SynthState.NameESP = v end)
     Tabs.Visuals:AddToggle("DistToggle", {Title = "Distance", Default = false}):OnChanged(function(v) _G.SynthState.DistESP = v end)
-    Tabs.Visuals:AddToggle("ChamsToggle", {Title = "Chams", Default = false}):OnChanged(function(v) _G.SynthState.Chams = v end)
+    Tabs.Visuals:AddToggle("SkelToggle", {Title = "Skeleton Esp", Default = false}):OnChanged(function(v) _G.SynthState.SkeletonESP = v end)
+    Tabs.Visuals:AddColorpicker("SkelColor", {Title = "Skeleton Color", Default = Color3.new(1,1,1)}):OnChanged(function(v) _G.SynthState.SkeletonColor = v end)
+    
+    Tabs.Visuals:AddSection("3D ESP & World")
+    Tabs.Visuals:AddToggle("ChamsToggle", {Title = "Enable Chams", Default = false}):OnChanged(function(v) _G.SynthState.Chams = v end)
+    Tabs.Visuals:AddDropdown("ChamsMat", {Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Default = 1}):OnChanged(function(v) _G.SynthState.ChamsMat = v end)
+    Tabs.Visuals:AddColorpicker("ChamsColor", {Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255)}):OnChanged(function(v) _G.SynthState.ChamsColor = v end)
+    Tabs.Visuals:AddToggle("ProjToggle", {Title = "Projectile ESP (Grenades)", Default = false}):OnChanged(function(v) _G.SynthState.ProjESP = v end)
 
     -- POPULATE LOCAL
+    Tabs.Local:AddSection("Movement")
     Tabs.Local:AddSlider("WSSlider", {Title = "WalkSpeed", Default = 16, Min = 16, Max = 300, Rounding = 0}):OnChanged(function(v) _G.SynthState.WalkSpeed = v end)
     Tabs.Local:AddSlider("JPSlider", {Title = "JumpPower", Default = 50, Min = 50, Max = 500, Rounding = 0}):OnChanged(function(v) _G.SynthState.JumpPower = v end)
     Tabs.Local:AddToggle("NCToggle", {Title = "NoClip", Default = false}):OnChanged(function(v) _G.SynthState.NoClip = v end)
+    
+    Tabs.Local:AddSection("Anti-Hit (CS:GO Style)")
+    Tabs.Local:AddToggle("SpinToggle", {Title = "Spinbot (360)", Default = false}):OnChanged(function(v) _G.SynthState.Spinbot = v end)
+    Tabs.Local:AddSlider("SpinSpeed", {Title = "Spin Speed", Default = 50, Min = 10, Max = 200, Rounding = 0}):OnChanged(function(v) _G.SynthState.SpinSpeed = v end)
 
     -- SETTINGS
-    SaveManager:SetLibrary(Fluent)
-    InterfaceManager:SetLibrary(Fluent)
-    SaveManager:IgnoreThemeSettings()
-    SaveManager:SetIgnoreIndexes({})
-    InterfaceManager:SetFolder("Synthesis")
-    SaveManager:SetFolder("Synthesis/configs")
-    InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-    SaveManager:BuildConfigSection(Tabs.Settings)
+    SaveManager:SetLibrary(Fluent); InterfaceManager:SetLibrary(Fluent)
+    SaveManager:IgnoreThemeSettings(); SaveManager:SetIgnoreIndexes({})
+    InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/configs")
+    InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
 
-    -- LOOPS (Aimbot & Visuals)
-    task.spawn(function()
-        RunService.RenderStepped:Connect(function()
-            -- Aimbot
-            if _G.SynthState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                local best = _G.SynthState.AimFOV
-                local target = nil
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(_G.SynthState.AimPart) then
-                        local pos, vis = Camera:WorldToViewportPoint(p.Character[_G.SynthState.AimPart].Position)
-                        if vis then
-                            local mag = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
-                            if mag < best then best = mag; target = p end
-                        end
+    -- CHEAT CORE ==========================================
+
+    local function GetClosestTarget()
+        local best = _G.SynthState.AimFOV
+        local target = nil
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(_G.SynthState.AimPart) and p.Character:FindFirstChildOfClass("Humanoid") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+                local pos, vis = Camera:WorldToViewportPoint(p.Character[_G.SynthState.AimPart].Position)
+                if vis then
+                    local mag = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                    if mag < best then best = mag; target = p end
+                end
+            end
+        end
+        return target
+    end
+
+    -- SILENT AIM HOOK (Namecall intercept for Raycasting/Bullets)
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        if _G.SynthState.SilentAim and not checkcaller() then
+            if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
+                local t = GetClosestTarget()
+                if t and t.Character and t.Character:FindFirstChild(_G.SynthState.AimPart) then
+                    local targetPos = t.Character[_G.SynthState.AimPart].Position
+                    
+                    if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
+                        -- Highly game specific, but common pattern injection
+                        -- Often args[1] or args[2] is the position or CFrame. We leave hook broad but safe.
+                    elseif method == "Raycast" then
+                        local origin = args[1]
+                        args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
+                        return oldNamecall(self, unpack(args))
                     end
                 end
-                if target then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, target.Character[_G.SynthState.AimPart].Position), 1/_G.SynthState.AimSmooth) end
+            end
+        end
+        return oldNamecall(self, ...)
+    end)
+
+
+    -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
+    task.spawn(function()
+        local spinAngle = 0
+        RunService.RenderStepped:Connect(function()
+            -- Camera Aimbot
+            if _G.SynthState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+                local t = GetClosestTarget()
+                if t then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, t.Character[_G.SynthState.AimPart].Position), 1/_G.SynthState.AimSmooth) end
             end
             
-            -- Local
+            -- Local Features
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                LocalPlayer.Character.Humanoid.WalkSpeed = _G.SynthState.WalkSpeed
-                LocalPlayer.Character.Humanoid.JumpPower = _G.SynthState.JumpPower
+                local hum = LocalPlayer.Character.Humanoid
+                hum.WalkSpeed = _G.SynthState.WalkSpeed
+                hum.JumpPower = _G.SynthState.JumpPower
                 if _G.SynthState.NoClip then 
                     for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end 
+                end
+                
+                -- Spinbot
+                if _G.SynthState.Spinbot and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    spinAngle = spinAngle + math.rad(_G.SynthState.SpinSpeed)
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    -- Spin keeping position
+                    hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
                 end
             end
         end)
     end)
 
-    -- FULL ESP SYSTEM (Drawing API + Highlights)
+    -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
     task.spawn(function()
+        local DrawPool = {}
+        
+        local function GetLine()
+            local l = Drawing.new("Line"); l.Visible = false; l.Thickness = 1.5; return l
+        end
+
         local function BuildESP(p)
             local Box = Drawing.new("Square"); Box.Visible = false; Box.Color = Color3.new(1,0,0); Box.Thickness = 1; Box.Filled = false
             local Name = Drawing.new("Text"); Name.Visible = false; Name.Color = Color3.new(1,1,1); Name.Size = 14; Name.Center = true; Name.Outline = true
             local Dist = Drawing.new("Text"); Dist.Visible = false; Dist.Color = Color3.new(0.8,0.8,0.8); Dist.Size = 13; Dist.Center = true; Dist.Outline = true
-            local HL = Instance.new("Highlight"); HL.Name = "SynthHL"; HL.FillColor = Color3.fromRGB(180, 100, 255); HL.Enabled = false
             
-            local function cleanup() Box:Remove(); Name:Remove(); Dist:Remove(); if HL then HL:Destroy() end end
+            -- Skeleton lines
+            local Bones = { Head = GetLine(), Spine = GetLine(), LArm = GetLine(), RArm = GetLine(), LLeg = GetLine(), RLeg = GetLine() }
             
-            p.CharacterAdded:Connect(function(char) HL.Parent = char end)
-            if p.Character then HL.Parent = p.Character end
+            local function cleanup() 
+                Box:Remove(); Name:Remove(); Dist:Remove()
+                for _, l in pairs(Bones) do l:Remove() end
+            end
 
             local conn; conn = RunService.RenderStepped:Connect(function()
                 if not p or not p.Parent then cleanup(); conn:Disconnect(); return end
                 
                 if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-                    local root = p.Character.HumanoidRootPart
+                    local char = p.Character
+                    local root = char.HumanoidRootPart
+                    local head = char:FindFirstChild("Head")
                     local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
                     
                     if onScreen then
+                        -- Boxes & Text
                         local rootTop = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
                         local rootBottom = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
                         local sizeY = math.abs(rootBottom.Y - rootTop.Y)
                         local sizeX = sizeY * 0.6
                         
-                        Box.Size = Vector2.new(sizeX, sizeY)
-                        Box.Position = Vector2.new(pos.X - sizeX / 2, rootTop.Y)
-                        Box.Visible = _G.SynthState.BoxESP
+                        Box.Size = Vector2.new(sizeX, sizeY); Box.Position = Vector2.new(pos.X - sizeX / 2, rootTop.Y); Box.Visible = _G.SynthState.BoxESP
+                        Name.Position = Vector2.new(pos.X, rootTop.Y - 16); Name.Text = p.Name; Name.Visible = _G.SynthState.NameESP
+                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.SynthState.DistESP
                         
-                        Name.Position = Vector2.new(pos.X, rootTop.Y - 16)
-                        Name.Text = p.Name
-                        Name.Visible = _G.SynthState.NameESP
-                        
-                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2)
-                        Dist.Text = "[" .. math.floor((LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude) .. "m]"
-                        Dist.Visible = _G.SynthState.DistESP
-                        
-                        if HL then HL.Enabled = _G.SynthState.Chams end
+                        -- Advanced Chams (Material Override)
+                        if _G.SynthState.Chams then
+                            for _, part in pairs(char:GetDescendants()) do
+                                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                                    part.Material = Enum.Material[_G.SynthState.ChamsMat]
+                                    part.Color = _G.SynthState.ChamsColor
+                                end
+                            end
+                        end
+
+                        -- Skeleton ESP
+                        if _G.SynthState.SkeletonESP and head then
+                            local neckP, nV = Camera:WorldToViewportPoint(head.Position - Vector3.new(0, 0.5, 0))
+                            local pelvisP, pV = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 1, 0))
+                            Bones.Spine.From = Vector2.new(pos.X, rootTop.Y); Bones.Spine.To = Vector2.new(pelvisP.X, pelvisP.Y); Bones.Spine.Visible = _G.SynthState.SkeletonESP; Bones.Spine.Color = _G.SynthState.SkeletonColor
+                            Bones.Head.From = Vector2.new(neckP.X, neckP.Y); Bones.Head.To = Vector2.new(pos.X, rootTop.Y); Bones.Head.Visible = _G.SynthState.SkeletonESP; Bones.Head.Color = _G.SynthState.SkeletonColor
+                            -- Arms/Legs conceptual (simplified R6 for speed)
+                            local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightHand")
+                            local lArm = char:FindFirstChild("Left Arm") or char:FindFirstChild("LeftHand")
+                            if rArm then local rap, rv = Camera:WorldToViewportPoint(rArm.Position); Bones.RArm.From = Vector2.new(pos.X, rootTop.Y); Bones.RArm.To = Vector2.new(rap.X, rap.Y); Bones.RArm.Visible = _G.SynthState.SkeletonESP; Bones.RArm.Color = _G.SynthState.SkeletonColor else Bones.RArm.Visible = false end
+                            if lArm then local lap, lv = Camera:WorldToViewportPoint(lArm.Position); Bones.LArm.From = Vector2.new(pos.X, rootTop.Y); Bones.LArm.To = Vector2.new(lap.X, lap.Y); Bones.LArm.Visible = _G.SynthState.SkeletonESP; Bones.LArm.Color = _G.SynthState.SkeletonColor else Bones.LArm.Visible = false end
+                        else
+                            for _, l in pairs(Bones) do l.Visible = false end
+                        end
+
                     else
-                        Box.Visible = false; Name.Visible = false; Dist.Visible = false; if HL then HL.Enabled = false end
+                        Box.Visible = false; Name.Visible = false; Dist.Visible = false
+                        for _, l in pairs(Bones) do l.Visible = false end
                     end
                 else
-                    Box.Visible = false; Name.Visible = false; Dist.Visible = false; if HL then HL.Enabled = false end
+                    Box.Visible = false; Name.Visible = false; Dist.Visible = false
+                    for _, l in pairs(Bones) do l.Visible = false end
                 end
             end)
         end
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
+        
+        -- PROJECTILE ESP (Looking for common physical projectiles)
+        local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
+        RunService.RenderStepped:Connect(function()
+            if _G.SynthState.ProjESP then
+                for _, obj in pairs(ProjContainer:GetDescendants()) do
+                    if obj:IsA("Part") and (obj.Name:lower():find("grenade") or obj.Name:lower():find("rocket") or obj.Name:lower():find("bullet")) then
+                        if not obj:FindFirstChild("ProjHL") then
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "ProjHL"; hl.Parent = obj; hl.FillColor = Color3.fromRGB(255, 50, 50)
+                            local tag = Drawing.new("Text")
+                            tag.Text = "[Grenade/Proj]"; tag.Size = 12; tag.Color = Color3.fromRGB(255,50,50); tag.Center = true
+                            
+                            local c; c = RunService.RenderStepped:Connect(function()
+                                if obj and obj.Parent then
+                                    local p, v = Camera:WorldToViewportPoint(obj.Position)
+                                    if v then tag.Position = Vector2.new(p.X, p.Y - 15); tag.Visible = true else tag.Visible = false end
+                                else
+                                    tag:Remove(); c:Disconnect()
+                                end
+                            end)
+                        end
+                    end
+                end
+            end
+        end)
     end)
 
     Window:SelectTab(1)
-    Fluent:Notify({Title = "Synthesis MEGA", Content = "Fully Loaded! Selections and ESP Restored.", Duration = 5})
+    Fluent:Notify({Title = "Synthesis EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7})
 end)
 
 if not success then
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Synthesis Error", Text = tostring(err), Duration = 20})
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
 end
