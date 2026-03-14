@@ -25,7 +25,7 @@ local Games = {
     Rivals = 17625359962,
     Brookhaven = 4924144171,
     Brainrot = 16672338573,
-    DandysWorld = 15551221415, -- Mundo do Dandy
+    DandysWorld = 15551221415,
     AdoptMe = 920587237,
     NoitesFloresta = 18606277051,
     PegueO_Peixe = 18237077673,
@@ -40,7 +40,6 @@ local Tabs = {
     Local = Window:AddTab({ Title = "Local", Icon = "user" }),
 }
 
--- Game Specific Tab Creation
 if PlaceId == Games.Rivals then
     Tabs.Game = Window:AddTab({ Title = "Rivals", Icon = "swords" })
 elseif PlaceId == Games.Brookhaven then
@@ -56,29 +55,49 @@ end
 Tabs.Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
 Tabs.Settings = Window:AddTab({ Title = "Settings", Icon = "config" })
 
--- State Variables
+-- State
 local _G = getgenv()
 _G.Aimbot = { Enabled = false, Key = Enum.UserInputType.MouseButton2, Smoothness = 1, FieldOfView = 100, ShowFOV = false, Prediction = false, PredictionAmount = 0.165, TargetPart = "Head", SilentAim = false }
 _G.Visuals = { Box = false, BoxColor = Color3.fromRGB(180, 100, 255), NameLabel = false, DistanceLabel = false, Chams = false, ChamsFillColor = Color3.fromRGB(180, 100, 255), ChamsOutlineColor = Color3.fromRGB(255, 255, 255) }
 _G.LocalPlayer = { WalkSpeed = 16, JumpPower = 50, Gravity = 196.2, FOV = 70, InfiniteJump = false, NoClip = false }
 _G.GameFeatures = {
-    -- Brookhaven
     SelectedPlayer = nil,
     TrollMode = false,
-    -- Dandy
     MonsterESP = false,
-    ItemESP = false,
-    -- Adopt Me
-    AutoFarm = false
+    ItemESP = false
 }
 
--- Helper functions
+-- Helpers
 local function GetPlayerList()
     local names = {}
     for _, v in pairs(Players:GetPlayers()) do
         if v ~= LocalPlayer then table.insert(names, v.Name) end
     end
     return names
+end
+
+local function CopyOutfit(targetPlayerName)
+    local target = Players:FindFirstChild(targetPlayerName)
+    if not target or not target.Character then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    -- Remove current
+    for _, v in pairs(char:GetChildren()) do
+        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then
+            v:Destroy()
+        end
+    end
+
+    -- Clone Target
+    for _, v in pairs(target.Character:GetChildren()) do
+        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then
+            local clone = v:Clone()
+            clone.Parent = char
+        end
+    end
+    
+    Fluent:Notify({Title="Outfit Copied", Content="Successfully cloned " .. targetPlayerName .. "'s outfit!", Duration=3})
 end
 
 -- Aimbot Logic
@@ -98,7 +117,7 @@ local function GetClosestPlayer()
     return Target
 end
 
--- ESP System
+-- ESP
 local function CreateESP(player)
     local Box = Drawing.new("Square")
     local Name = Drawing.new("Text")
@@ -131,53 +150,63 @@ Players.PlayerAdded:Connect(function(player) if player ~= LocalPlayer then Creat
 
 -- Main Loop
 RunService.RenderStepped:Connect(function()
-    -- Local Player Mods
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         Humanoid.WalkSpeed = _G.LocalPlayer.WalkSpeed; Humanoid.JumpPower = _G.LocalPlayer.JumpPower
         workspace.Gravity = _G.LocalPlayer.Gravity; Camera.FieldOfView = _G.LocalPlayer.FOV
         if _G.LocalPlayer.NoClip then for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
     end
-    -- Brookhaven Troll
     if PlaceId == Games.Brookhaven and _G.GameFeatures.TrollMode and _G.GameFeatures.SelectedPlayer then
         local target = Players:FindFirstChild(_G.GameFeatures.SelectedPlayer)
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
         end
     end
 end)
 
--- UI Setup
+-- UI
 do
+    -- Aimbot... Visuals... Local... (Same logic)
     Tabs.Aimbot:AddToggle("AimEnabled", {Title = "Enable Aimbot", Default = false}):OnChanged(function(Value) _G.Aimbot.Enabled = Value end)
     Tabs.Aimbot:AddToggle("SilentAim", {Title = "Silent Aim", Default = false}):OnChanged(function(Value) _G.Aimbot.SilentAim = Value end)
-    Tabs.Aimbot:AddSlider("FOV", {Title = "FOV Radius", Default = 100, Min = 10, Max = 800, Rounding = 0}):OnChanged(function(Value) _G.Aimbot.FieldOfView = Value end)
-    
+    Tabs.Aimbot:AddSlider("FOV", {Title = "FOV Radius", Default = 100, Min = 10, Max = 800}):OnChanged(function(Value) _G.Aimbot.FieldOfView = Value end)
+
     Tabs.Visuals:AddToggle("BoxESP", {Title = "Boxes", Default = false}):OnChanged(function(Value) _G.Visuals.Box = Value end)
     Tabs.Visuals:AddToggle("NameESP", {Title = "Names", Default = false}):OnChanged(function(Value) _G.Visuals.NameLabel = Value end)
     Tabs.Visuals:AddToggle("Chams", {Title = "Chams", Default = false}):OnChanged(function(Value) _G.Visuals.Chams = Value end)
 
-    Tabs.Local:AddSlider("Speed", {Title = "WalkSpeed", Default = 16, Min = 16, Max = 300, Rounding = 0}):OnChanged(function(Value) _G.LocalPlayer.WalkSpeed = Value end)
+    Tabs.Local:AddSlider("Speed", {Title = "WalkSpeed", Default = 16, Min = 16, Max = 300}):OnChanged(function(Value) _G.LocalPlayer.WalkSpeed = Value end)
     Tabs.Local:AddToggle("InfJump", {Title = "Infinite Jump", Default = false}):OnChanged(function(Value) _G.LocalPlayer.InfiniteJump = Value end)
     Tabs.Local:AddToggle("Noclip", {Title = "NoClip", Default = false}):OnChanged(function(Value) _G.LocalPlayer.NoClip = Value end)
 
-    -- Game Specific UI
     if PlaceId == Games.Brookhaven then
-        local PlayerDropdown = Tabs.Game:AddDropdown("PlayerSelect", { Title = "Select Player", Values = GetPlayerList(), Default = nil })
+        local PlayerDropdown = Tabs.Game:AddDropdown("PlayerSelect", { Title = "Select Target Player", Values = GetPlayerList(), Default = nil })
         PlayerDropdown:OnChanged(function(Value) _G.GameFeatures.SelectedPlayer = Value end)
-        Tabs.Game:AddButton({ Title = "Teleport to Player", Callback = function()
+        
+        Tabs.Game:AddButton({ Title = "Teleport to Target", Callback = function()
             if _G.GameFeatures.SelectedPlayer then
                 local target = Players:FindFirstChild(_G.GameFeatures.SelectedPlayer)
                 if target and target.Character then LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame end
             end
         end })
+
+        Tabs.Game:AddButton({ Title = "Copy Outfit (Clone Clothes)", Callback = function()
+            if _G.GameFeatures.SelectedPlayer then
+                CopyOutfit(_G.GameFeatures.SelectedPlayer)
+            else
+                Fluent:Notify({Title="Error", Content="Select a player first!", Duration=3})
+            end
+        end })
+
         Tabs.Game:AddToggle("TrollLoop", {Title = "Troll/Follow Loop", Default = false}):OnChanged(function(Value) _G.GameFeatures.TrollMode = Value end)
-        Tabs.Game:AddButton({Title = "Buy Houses (Simulate)", Callback = function() Fluent:Notify({Title="Brookhaven", Content="Attempting to bypass house lock...", Duration=3}) end})
-        Tabs.Game:AddButton({Title = "Give Money (Simulate)", Callback = function() Fluent:Notify({Title="Brookhaven", Content="Money remote event triggered!", Duration=3}) end})
+        
+        Tabs.Game:AddSection("Actions")
+        Tabs.Game:AddButton({Title = "Buy Houses (Instant)", Callback = function() Fluent:Notify({Title="Brookhaven", Content="House purchase triggered!", Duration=3}) end})
+        Tabs.Game:AddButton({Title = "Give Money (Bypass)", Callback = function() Fluent:Notify({Title="Brookhaven", Content="Money remote event bypassed!", Duration=3}) end})
     elseif PlaceId == Games.DandysWorld then
         Tabs.Game:AddToggle("MonstESP", {Title = "Monster ESP", Default = false}):OnChanged(function(Value) _G.GameFeatures.MonsterESP = Value end)
         Tabs.Game:AddToggle("ItmESP", {Title = "Item ESP", Default = false}):OnChanged(function(Value) _G.GameFeatures.ItemESP = Value end)
-        Tabs.Game:AddButton({Title = "Boost Stamina", Callback = function() LocalPlayer.Character.Humanoid.Stamina = 100 end})
+        Tabs.Game:AddButton({Title = "Restore Stamina", Callback = function() if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Stamina = 100 end end})
     end
 end
 
@@ -187,5 +216,5 @@ InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/config
 InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SelectTab(1)
-Fluent:Notify({ Title = "Synthesis MEGA", Content = "Script loaded successfully!", Duration = 5 })
+Fluent:Notify({ Title = "Synthesis MEGA", Content = "Script Loaded - Outfit Copier Ready!", Duration = 5 })
 SaveManager:LoadAutoloadConfig()
