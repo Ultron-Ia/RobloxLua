@@ -19,14 +19,32 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+-- Game Detection
+local PlaceId = game.PlaceId
+local Games = {
+    Rivals = 17625359962,
+    Brookhaven = 4924144171,
+    Brainrot = 16672338573
+}
+
 -- Tabs
 local Tabs = {
     Aimbot = Window:AddTab({ Title = "Aimbot", Icon = "target" }),
     Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Local = Window:AddTab({ Title = "Local", Icon = "user" }),
-    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "config" })
 }
+
+-- Game Specific Tabs
+if PlaceId == Games.Rivals then
+    Tabs.Game = Window:AddTab({ Title = "Rivals", Icon = "swords" })
+elseif PlaceId == Games.Brookhaven then
+    Tabs.Game = Window:AddTab({ Title = "Brookhaven", Icon = "home" })
+elseif PlaceId == Games.Brainrot then
+    Tabs.Game = Window:AddTab({ Title = "Brainrot", Icon = "skull" })
+end
+
+Tabs.Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
+Tabs.Settings = Window:AddTab({ Title = "Settings", Icon = "config" })
 
 local Options = Fluent.Options
 
@@ -41,17 +59,15 @@ _G.Aimbot = {
     ShowFOV = false,
     Prediction = false,
     PredictionAmount = 0.165,
-    TargetPart = "Head"
+    TargetPart = "Head",
+    SilentAim = false
 }
 
 _G.Visuals = {
     Box = false,
-    BoxOutline = false,
     BoxColor = Color3.fromRGB(180, 100, 255),
-    HealthLabel = false,
     NameLabel = false,
     DistanceLabel = false,
-    Skeletons = false,
     Chams = false,
     ChamsFillColor = Color3.fromRGB(180, 100, 255),
     ChamsOutlineColor = Color3.fromRGB(255, 255, 255)
@@ -64,6 +80,19 @@ _G.LocalPlayer = {
     FOV = 70,
     InfiniteJump = false,
     NoClip = false
+}
+
+_G.GameFeatures = {
+    -- Rivals
+    AutoParry = false,
+    ParryDistance = 15,
+    
+    -- Brookhaven
+    UnlockAll = false,
+    
+    -- Brainrot
+    AutoFarm = false,
+    AutoClick = false
 }
 
 -- Drawing FOV
@@ -108,19 +137,16 @@ local function CreateESP(player)
     local Box = Drawing.new("Square")
     local Name = Drawing.new("Text")
     local Distance = Drawing.new("Text")
-    local Health = Drawing.new("Text")
 
     local function RemoveESP()
         Box:Remove()
         Name:Remove()
         Distance:Remove()
-        Health:Remove()
     end
 
     local Updater = RunService.RenderStepped:Connect(function()
         if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
             local RootPart = player.Character.HumanoidRootPart
-            local Humanoid = player.Character:FindFirstChildOfClass("Humanoid")
             local Pos, OnScreen = Camera:WorldToViewportPoint(RootPart.Position)
 
             if OnScreen then
@@ -183,6 +209,23 @@ for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then CreateESP(player) end
 end
 Players.PlayerAdded:Connect(function(player) if player ~= LocalPlayer then CreateESP(player) end end)
+
+-- Rivals: Auto Parry Logic
+if PlaceId == Games.Rivals then
+    spawn(function()
+        while wait() do
+            if _G.GameFeatures.AutoParry then
+                pcall(function()
+                    for _, v in pairs(workspace:GetChildren()) do
+                        if v.Name == "Projectile" and (v.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < _G.GameFeatures.ParryDistance then
+                            game:GetService("ReplicatedStorage").Remotes.Parry:FireServer()
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+end
 
 -- Main Loop
 RunService.RenderStepped:Connect(function()
@@ -270,6 +313,18 @@ do
     Tabs.Local:AddSlider("Grav", {Title = "Gravity", Default = 196.2, Min = 0, Max = 1000, Rounding = 1}):OnChanged(function(Value) _G.LocalPlayer.Gravity = Value end)
     Tabs.Local:AddToggle("InfJump", {Title = "Infinite Jump", Default = false}):OnChanged(function(Value) _G.LocalPlayer.InfiniteJump = Value end)
     Tabs.Local:AddToggle("Noclip", {Title = "NoClip", Default = false}):OnChanged(function(Value) _G.LocalPlayer.NoClip = Value end)
+
+    -- Game Specific UI
+    if PlaceId == Games.Rivals then
+        Tabs.Game:AddToggle("AutoParry", {Title = "Auto Parry", Default = false}):OnChanged(function(Value) _G.GameFeatures.AutoParry = Value end)
+        Tabs.Game:AddSlider("ParryDist", {Title = "Parry Distance", Default = 15, Min = 5, Max = 50, Rounding = 1}):OnChanged(function(Value) _G.GameFeatures.ParryDistance = Value end)
+    elseif PlaceId == Games.Brookhaven then
+        Tabs.Game:AddToggle("UnlockAll", {Title = "Unlock All Gamepasses", Default = false}):OnChanged(function(Value) _G.GameFeatures.UnlockAll = Value end)
+        Tabs.Game:AddButton({Title = "Teleport to Bank", Callback = function() LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-442, 23, -282) end})
+        Tabs.Game:AddButton({Title = "Teleport to Hospital", Callback = function() LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-180, 25, -280) end})
+    elseif PlaceId == Games.Brainrot then
+        Tabs.Game:AddToggle("AutoFarm", {Title = "Auto Farm", Default = false}):OnChanged(function(Value) _G.GameFeatures.AutoFarm = Value end)
+    end
 end
 
 SaveManager:SetLibrary(Fluent)
