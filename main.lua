@@ -189,26 +189,43 @@ local success, err = pcall(function()
             DTab:AddToggle("DandyESP", {Title = "Monster/Entity ESP", Default = false}):OnChanged(function(v)
                 _G.SynthState.DandyESP = v
             end)
+            DTab:AddToggle("DandyItemESP", {Title = "Item/Loot ESP", Default = false}):OnChanged(function(v)
+                _G.SynthState.DandyItemESP = v
+            end)
             
             -- Simple Entity Tracker
             task.spawn(function()
                 while task.wait(1) do
+                    -- ENTITIES
                     if _G.SynthState.DandyESP then
                         for _, obj in pairs(workspace:GetDescendants()) do
                             if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
                                 if not obj:FindFirstChild("SynthEntityESP") then
-                                    local hl = Instance.new("Highlight")
-                                    hl.Name = "SynthEntityESP"
-                                    hl.FillColor = Color3.fromRGB(255, 0, 0)
-                                    hl.Parent = obj
+                                    local hl = Instance.new("Highlight", obj)
+                                    hl.Name = "SynthEntityESP"; hl.FillColor = Color3.fromRGB(255, 0, 0)
                                 end
                             end
                         end
                     else
                         for _, obj in pairs(workspace:GetDescendants()) do
-                            if obj:IsA("Model") and obj:FindFirstChild("SynthEntityESP") then
-                                obj.SynthEntityESP:Destroy()
+                            if obj:IsA("Model") and obj:FindFirstChild("SynthEntityESP") then obj.SynthEntityESP:Destroy() end
+                        end
+                    end
+                    
+                    -- ITEMS (Generic Proximity/Tool Search)
+                    if _G.SynthState.DandyItemESP then
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if (obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("BasePart")) or (obj:IsA("Tool") and obj:FindFirstChild("Handle")) then
+                                local target = obj:IsA("ProximityPrompt") and obj.Parent or obj
+                                if not target:FindFirstChild("SynthItemESP") then
+                                    local hl = Instance.new("Highlight", target)
+                                    hl.Name = "SynthItemESP"; hl.FillColor = Color3.fromRGB(0, 255, 100)
+                                end
                             end
+                        end
+                    else
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:FindFirstChild("SynthItemESP") then obj.SynthItemESP:Destroy() end
                         end
                     end
                 end
