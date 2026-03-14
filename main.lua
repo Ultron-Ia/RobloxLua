@@ -30,17 +30,17 @@ _G.GameFeatures = { SelectedPlayer = nil, TrollMode = false, MonsterESP = false,
 
 -- Detection
 local PlaceId = game.PlaceId
-local GameName = "Universal"
+local GameName = "Unknown"
 pcall(function() GameName = MarketplaceService:GetProductInfo(PlaceId).Name end)
 
--- Tabs Creation (Fixed Order)
+-- Tabs Creation
 local Tabs = {
     Aimbot = Window:AddTab({ Title = "Aimbot", Icon = "target" }),
     Visuals = Window:AddTab({ Title = "Visuals", Icon = "eye" }),
     Local = Window:AddTab({ Title = "Local", Icon = "user" }),
     Game = Window:AddTab({ Title = "Game Hub", Icon = "gamepad" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "settings" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "config" })
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }) -- Fixed icon
 }
 
 -- Helpers
@@ -90,17 +90,12 @@ Tabs.Local:AddToggle("Noclip", {Title = "NoClip", Default = false}):OnChanged(fu
 
 -- SECTION: GAME HUB LOGIC
 local function UpdateGameHub(hubName)
-    -- Clear Game Tab properly if possible, or just add sections
-    -- Fluent doesn't easily support dynamic tab content replacement without recreating the tab
-    -- So we'll update the title and inform the user
     Tabs.Game.Title = hubName .. " Hub"
-    
     if hubName == "Rivals" then
         Tabs.Game:AddSection("Rivals Features")
         Tabs.Game:AddToggle("AutoParry", {Title = "Auto Parry", Default = false}):OnChanged(function(v) _G.GameFeatures.AutoParry = v end)
         Tabs.Game:AddButton({Title = "Unlock All Skins & Weapons", Callback = function()
-            Fluent:Notify({Title="Rivals", Content="Injecting ItemData hooks... Refreshing inventory.", Duration=5})
-            -- Rivals Unlocker Logic (Conceptual/Client-Side)
+            Fluent:Notify({Title="Rivals", Content="Injecting ItemData hooks...", Duration=5})
             pcall(function()
                 local Shared = ReplicatedStorage:FindFirstChild("Shared")
                 if Shared then
@@ -129,7 +124,6 @@ local function UpdateGameHub(hubName)
         pd:OnChanged(function(v) _G.GameFeatures.SelectedPlayer = v end)
         Tabs.Game:AddButton({ Title = "Copy Skin", Callback = function() if _G.GameFeatures.SelectedPlayer then CopyOutfit(_G.GameFeatures.SelectedPlayer) end end })
         Tabs.Game:AddToggle("MonstESP", {Title = "Monster ESP", Default = false}):OnChanged(function(v) _G.GameFeatures.MonsterESP = v end)
-        Tabs.Game:AddButton({Title = "Max Stamina", Callback = function() if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Stamina = 100 end end})
     end
 end
 
@@ -157,9 +151,18 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Finish Setup
-SaveManager:SetLibrary(Fluent); SaveManager:IgnoreThemeSettings(); InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/configs")
-InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
+-- Finish Setup (FIXED SETTINGS TAB)
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent) -- Fixed missing call
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("Synthesis")
+SaveManager:SetFolder("Synthesis/configs")
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
 Window:SelectTab(1)
-Fluent:Notify({ Title = "Synthesis MEGA", Content = "Script Fully Functional!\nDetected: " .. GameName, Duration = 5 })
+Fluent:Notify({ Title = "Synthesis MEGA", Content = "Script Fully Functional!\nPress INSERT to toggle menu.", Duration = 5 })
 SaveManager:LoadAutoloadConfig()
