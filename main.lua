@@ -128,6 +128,56 @@ local success, err = pcall(function()
             end})
 
             BTab:AddSection("Troll & Utilities")
+            
+            -- Keep track of loops
+            local attachLoop = nil
+            local sitLoop = nil
+            
+            BTab:AddToggle("BAttach", {Title = "Attach to Player (Loop TP)", Default = false}):OnChanged(function(v)
+                if v then
+                    attachLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
+                        end
+                    end)
+                else
+                    if attachLoop then attachLoop:Disconnect(); attachLoop = nil end
+                end
+            end)
+
+            BTab:AddToggle("BSit", {Title = "Sit on Player's Shoulders", Default = false}):OnChanged(function(v)
+                if v then
+                    sitLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("Head") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
+                            if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = true end
+                        end
+                    end)
+                else
+                    if sitLoop then sitLoop:Disconnect(); sitLoop = nil end
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
+                end
+            end)
+
+            BTab:AddButton({Title = "Bring Spawned Cars", Callback = function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local myPos = LocalPlayer.Character.HumanoidRootPart.CFrame
+                    -- Scan workspace for generic vehicles
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj:IsA("VehicleSeat") and obj.Parent then
+                            local model = obj.Parent
+                            if model:IsA("Model") and model.PrimaryPart then
+                                model:SetPrimaryPartCFrame(myPos * CFrame.new(0, 5, -10))
+                            elseif obj:IsA("BasePart") then
+                                obj.CFrame = myPos * CFrame.new(0, 5, -10)
+                            end
+                        end
+                    end
+                end
+            end})
+
             BTab:AddButton({Title = "Fling Target (Kill)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
