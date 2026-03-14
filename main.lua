@@ -73,7 +73,7 @@ local success, err = pcall(function()
     Tabs.Main:AddSection("Game Selection")
     Tabs.Main:AddParagraph({ Title = "Manual Loading", Content = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World"}, Default = 1 })
+    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub"}, Default = 1 })
 
     GameSelector:OnChanged(function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -230,6 +230,52 @@ local success, err = pcall(function()
                     end
                 end
             end)
+
+        elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
+            BuiltHubs["Social"] = true
+            local STab = Window:AddTab({ Title = "Social Hub", Icon = "users" })
+            local SPD = STab:AddDropdown("STPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
+            SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            STab:AddButton({Title = "Refresh List", Callback = function() SPD:SetValues(GetPlayers()) end})
+            
+            STab:AddSection("Interactions")
+            STab:AddButton({Title = "Teleport To Player", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+                end
+            end})
+            STab:AddButton({Title = "Bring All Workspace Tools/Items", Callback = function()
+                pcall(function()
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:IsA("Tool") and obj:FindFirstChild("Handle") then
+                                LocalPlayer.Character.Humanoid:EquipTool(obj)
+                            end
+                        end
+                    end
+                end)
+            end})
+            STab:AddButton({Title = "Troll Fling (Kill)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    local thrust = Instance.new("BodyAngularVelocity")
+                    thrust.AngularVelocity = Vector3.new(9000, 9000, 9000)
+                    thrust.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                    thrust.Parent = hrp
+                    
+                    local startTime = tick()
+                    local c; c = RunService.Heartbeat:Connect(function()
+                        if hrp and t.Character:FindFirstChild("HumanoidRootPart") and tick() - startTime < 3.5 then
+                            hrp.CFrame = t.Character.HumanoidRootPart.CFrame
+                        else
+                            if thrust then thrust:Destroy() end
+                            c:Disconnect()
+                        end
+                    end)
+                end
+            end})
         end
     end)
 
@@ -386,14 +432,18 @@ local success, err = pcall(function()
                         
                         Box.Size = Vector2.new(sizeX, sizeY); Box.Position = Vector2.new(pos.X - sizeX / 2, rootTop.Y); Box.Visible = _G.SynthState.BoxESP
                         Name.Position = Vector2.new(pos.X, rootTop.Y - 16); Name.Text = p.Name; Name.Visible = _G.SynthState.NameESP
-                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((LocalPlayer.Character.HumanoidRootPart.Position - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.SynthState.DistESP
+                        
+                        local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
+                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((localPos - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.SynthState.DistESP
                         
                         -- Advanced Chams (Material Override)
                         if _G.SynthState.Chams then
                             for _, part in pairs(char:GetDescendants()) do
                                 if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                                    part.Material = Enum.Material[_G.SynthState.ChamsMat]
-                                    part.Color = _G.SynthState.ChamsColor
+                                    pcall(function() 
+                                        part.Material = Enum.Material[_G.SynthState.ChamsMat]
+                                        part.Color = _G.SynthState.ChamsColor
+                                    end)
                                 end
                             end
                         end
