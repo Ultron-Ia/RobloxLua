@@ -435,27 +435,32 @@ local success, err = pcall(function()
     end
 
     -- SILENT AIM HOOK (Namecall intercept for Raycasting/Bullets)
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        
-        if _G.SynthState.SilentAim and not checkcaller() then
-            if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
-                local targetPos, targetPlayer = GetClosestTarget()
-                if targetPos then
-                    if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
-                        -- Highly game specific, but common pattern injection
-                    elseif method == "Raycast" then
-                        local origin = args[1]
-                        args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
-                        return oldNamecall(self, unpack(args))
+    if type(hookmetamethod) == "function" and type(getnamecallmethod) == "function" then
+        pcall(function()
+            local oldNamecall
+            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+                local method = getnamecallmethod()
+                local args = {...}
+                
+                if _G.SynthState.SilentAim and (type(checkcaller) ~= "function" or not checkcaller()) then
+                    if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
+                        local targetPos, targetPlayer = GetClosestTarget()
+                        if targetPos then
+                            if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
+                                -- Highly game specific, but common pattern injection
+                            elseif method == "Raycast" then
+                                local origin = args[1]
+                                args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
+                                local unp = unpack or table.unpack
+                                return oldNamecall(self, unp(args))
+                            end
+                        end
                     end
                 end
-            end
-        end
-        return oldNamecall(self, ...)
-    end)
+                return oldNamecall(self, ...)
+            end)
+        end)
+    end
 
 
     -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
