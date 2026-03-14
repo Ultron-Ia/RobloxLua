@@ -109,8 +109,21 @@ local success, err = pcall(function()
             BTab:AddButton({Title = "Copy Outfit", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
-                    for _, i in pairs(LocalPlayer.Character:GetChildren()) do if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") then i:Destroy() end end
-                    for _, i in pairs(t.Character:GetChildren()) do if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") then i:Clone().Parent = LocalPlayer.Character end end
+                    -- Clean current outfit
+                    for _, i in pairs(LocalPlayer.Character:GetChildren()) do 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Destroy() end 
+                    end
+                    if LocalPlayer.Character:FindFirstChild("Head") then
+                        for _, v in pairs(LocalPlayer.Character.Head:GetChildren()) do if v:IsA("Decal") then v:Destroy() end end
+                    end
+                    
+                    -- Clone target outfit
+                    for _, i in pairs(t.Character:GetChildren()) do 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Clone().Parent = LocalPlayer.Character end 
+                    end
+                    if t.Character:FindFirstChild("Head") and LocalPlayer.Character:FindFirstChild("Head") then
+                        for _, v in pairs(t.Character.Head:GetChildren()) do if v:IsA("Decal") then v:Clone().Parent = LocalPlayer.Character.Head end end
+                    end
                 end
             end})
 
