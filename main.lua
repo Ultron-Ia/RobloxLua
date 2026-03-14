@@ -119,9 +119,14 @@ local success, err = pcall(function()
                     
                     -- Clone target outfit
                     for _, i in pairs(t.Character:GetChildren()) do 
-                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("BodyColors") or i:IsA("CharacterMesh") or i:IsA("ShirtGraphic") then 
                             local clone = i:Clone()
                             if clone then clone.Parent = LocalPlayer.Character end
+                        elseif i:IsA("Accessory") or i:IsA("Hat") then
+                            local clone = i:Clone()
+                            if clone and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                                LocalPlayer.Character.Humanoid:AddAccessory(clone)
+                            end
                         end 
                     end
                     if t.Character:FindFirstChild("Head") and LocalPlayer.Character:FindFirstChild("Head") then
