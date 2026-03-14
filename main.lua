@@ -124,10 +124,28 @@ local success, err = pcall(function()
                             if clone then clone.Parent = LocalPlayer.Character end
                         elseif i:IsA("Accessory") or i:IsA("Hat") then
                             local clone = i:Clone()
-                            if clone and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                                LocalPlayer.Character.Humanoid:AddAccessory(clone)
+                            if clone then
+                                clone.Parent = LocalPlayer.Character
+                                -- Manual Weld fallback for Brookhaven's local accessory blocks
+                                local handle = clone:FindFirstChild("Handle")
+                                local head = LocalPlayer.Character:FindFirstChild("Head")
+                                if handle and head then
+                                    local originalHandle = i:FindFirstChild("Handle")
+                                    if originalHandle then
+                                        -- Find relative offset from target's head
+                                        local targetHead = t.Character:FindFirstChild("Head")
+                                        if targetHead then
+                                            local offset = targetHead.CFrame:ToObjectSpace(originalHandle.CFrame)
+                                            handle.CFrame = head.CFrame * offset
+                                            local weld = Instance.new("WeldConstraint")
+                                            weld.Part0 = head
+                                            weld.Part1 = handle
+                                            weld.Parent = handle
+                                        end
+                                    end
+                                end
                             end
-                        end 
+                        end  
                     end
                     if t.Character:FindFirstChild("Head") and LocalPlayer.Character:FindFirstChild("Head") then
                         for _, v in pairs(t.Character.Head:GetChildren()) do 
