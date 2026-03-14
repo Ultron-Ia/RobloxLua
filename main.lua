@@ -111,18 +111,41 @@ local success, err = pcall(function()
                 if t and t.Character and LocalPlayer.Character then
                     -- Clean current outfit
                     for _, i in pairs(LocalPlayer.Character:GetChildren()) do 
-                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Destroy() end 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Destroy() end 
                     end
                     if LocalPlayer.Character:FindFirstChild("Head") then
-                        for _, v in pairs(LocalPlayer.Character.Head:GetChildren()) do if v:IsA("Decal") then v:Destroy() end end
+                        for _, v in pairs(LocalPlayer.Character.Head:GetChildren()) do if v:IsA("Decal") or v:IsA("SpecialMesh") then v:Destroy() end end
                     end
                     
                     -- Clone target outfit
                     for _, i in pairs(t.Character:GetChildren()) do 
-                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Clone().Parent = LocalPlayer.Character end 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then 
+                            local clone = i:Clone()
+                            if clone then clone.Parent = LocalPlayer.Character end
+                        end 
                     end
                     if t.Character:FindFirstChild("Head") and LocalPlayer.Character:FindFirstChild("Head") then
-                        for _, v in pairs(t.Character.Head:GetChildren()) do if v:IsA("Decal") then v:Clone().Parent = LocalPlayer.Character.Head end end
+                        for _, v in pairs(t.Character.Head:GetChildren()) do 
+                            if v:IsA("Decal") or v:IsA("SpecialMesh") then 
+                                local clone = v:Clone()
+                                if clone then clone.Parent = LocalPlayer.Character.Head end
+                            end 
+                        end
+                    end
+                    
+                    -- Copy MeshPart data for morph bundles (R15 limbs etc)
+                    for _, part in pairs(t.Character:GetChildren()) do
+                        if part:IsA("MeshPart") then
+                            local myPart = LocalPlayer.Character:FindFirstChild(part.Name)
+                            if myPart and myPart:IsA("MeshPart") then
+                                pcall(function()
+                                    myPart.MeshId = part.MeshId
+                                    myPart.TextureID = part.TextureID
+                                    myPart.Size = part.Size
+                                    myPart.Color = part.Color
+                                end)
+                            end
+                        end
                     end
                 end
             end})
