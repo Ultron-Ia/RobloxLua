@@ -435,14 +435,19 @@ local success, err = pcall(function()
     end
 
     -- SILENT AIM HOOK (Namecall intercept for Raycasting/Bullets)
-    if type(hookmetamethod) == "function" and type(getnamecallmethod) == "function" then
-        pcall(function()
-            local oldNamecall
-            oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-                local method = getnamecallmethod()
-                local args = {...}
+    pcall(function()
+        if not hookmetamethod or not getnamecallmethod then return end
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            local args = {...}
+            
+            if _G.SynthState.SilentAim then
+                -- Safely handle checkcaller
+                local isScript = false
+                pcall(function() isScript = checkcaller() end)
                 
-                if _G.SynthState.SilentAim and (type(checkcaller) ~= "function" or not checkcaller()) then
+                if not isScript then
                     if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
                         local targetPos, targetPlayer = GetClosestTarget()
                         if targetPos then
@@ -457,10 +462,10 @@ local success, err = pcall(function()
                         end
                     end
                 end
-                return oldNamecall(self, ...)
-            end)
+            end
+            return oldNamecall(self, ...)
         end)
-    end
+    end)
 
 
     -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
