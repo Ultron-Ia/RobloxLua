@@ -163,16 +163,56 @@ local success, err = pcall(function()
             DPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
             DTab:AddButton({Title = "Refresh List", Callback = function() DPD:SetValues(GetPlayers()) end})
             
-            DTab:AddButton({Title = "Copy Skin", Callback = function()
+            DTab:AddButton({Title = "Copy Skin (Local Model)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
+                    -- Fallback for custom rigs: try to copy obvious visual meshes/accessories
                     for _, i in pairs(LocalPlayer.Character:GetChildren()) do if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") then i:Destroy() end end
                     for _, i in pairs(t.Character:GetChildren()) do if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") then i:Clone().Parent = LocalPlayer.Character end end
                 end
             end})
-            DTab:AddButton({Title = "Restore Max Stamina", Callback = function()
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Stamina = 100 end
+            DTab:AddButton({Title = "Restore Max Stamina (BETA)", Callback = function()
+                pcall(function()
+                    -- Custom games don't use Humanoid.Stamina. Scan for Attributes or ValueBases
+                    local c = LocalPlayer.Character
+                    if c then
+                        if c:GetAttribute("Stamina") then c:SetAttribute("Stamina", 100) end
+                        local sv = c:FindFirstChild("Stamina") or c:FindFirstChild("stamina")
+                        if sv and (sv:IsA("IntValue") or sv:IsA("NumberValue")) then sv.Value = 100 end
+                    end
+                    if LocalPlayer:GetAttribute("Stamina") then LocalPlayer:SetAttribute("Stamina", 100) end
+                end)
+                Fluent:Notify({Title="Dandy's World", Content="Stamina restore attempted via Value/Attributes.", Duration=3})
             end})
+            
+            DTab:AddSection("World Visuals")
+            DTab:AddToggle("DandyESP", {Title = "Monster/Entity ESP", Default = false}):OnChanged(function(v)
+                _G.SynthState.DandyESP = v
+            end)
+            
+            -- Simple Entity Tracker
+            task.spawn(function()
+                while task.wait(1) do
+                    if _G.SynthState.DandyESP then
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
+                                if not obj:FindFirstChild("SynthEntityESP") then
+                                    local hl = Instance.new("Highlight")
+                                    hl.Name = "SynthEntityESP"
+                                    hl.FillColor = Color3.fromRGB(255, 0, 0)
+                                    hl.Parent = obj
+                                end
+                            end
+                        end
+                    else
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:IsA("Model") and obj:FindFirstChild("SynthEntityESP") then
+                                obj.SynthEntityESP:Destroy()
+                            end
+                        end
+                    end
+                end
+            end)
         end
     end)
 
