@@ -25,7 +25,7 @@ local Games = {
     Rivals = 17625359962,
     Brookhaven = 4924144171,
     Brainrot = 16672338573,
-    DandysWorld = 15551221415,
+    DandysWorld = 16116270224, -- Updated ID for Dandy's World [ALPHA]
     AdoptMe = 920587237,
     NoitesFloresta = 18606277051,
     PegueO_Peixe = 18237077673,
@@ -40,16 +40,23 @@ local Tabs = {
     Local = Window:AddTab({ Title = "Local", Icon = "user" }),
 }
 
+-- Game Specific Tab Creation with fallback detection
+local CurrentGame = "Universal"
 if PlaceId == Games.Rivals then
     Tabs.Game = Window:AddTab({ Title = "Rivals", Icon = "swords" })
+    CurrentGame = "Rivals"
 elseif PlaceId == Games.Brookhaven then
     Tabs.Game = Window:AddTab({ Title = "Brookhaven", Icon = "home" })
-elseif PlaceId == Games.DandysWorld then
+    CurrentGame = "Brookhaven"
+elseif PlaceId == Games.DandysWorld or game.GameId == 5387498703 then -- Added GameId check
     Tabs.Game = Window:AddTab({ Title = "Dandy's World", Icon = "skull" })
+    CurrentGame = "Dandy's World"
 elseif PlaceId == Games.AdoptMe then
     Tabs.Game = Window:AddTab({ Title = "Adopt Me!", Icon = "dog" })
+    CurrentGame = "Adopt Me!"
 elseif PlaceId == Games.NoitesFloresta or PlaceId == Games.Forsaken then
     Tabs.Game = Window:AddTab({ Title = "Survival", Icon = "tent" })
+    CurrentGame = "Survival"
 end
 
 Tabs.Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
@@ -82,21 +89,16 @@ local function CopyOutfit(targetPlayerName)
     local char = LocalPlayer.Character
     if not char then return end
 
-    -- Remove current
     for _, v in pairs(char:GetChildren()) do
-        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then
-            v:Destroy()
-        end
+        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then v:Destroy() end
     end
 
-    -- Clone Target
     for _, v in pairs(target.Character:GetChildren()) do
         if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Accessory") or v:IsA("BodyColors") or v:IsA("ShirtGraphic") then
             local clone = v:Clone()
             clone.Parent = char
         end
     end
-    
     Fluent:Notify({Title="Outfit Copied", Content="Successfully cloned " .. targetPlayerName .. "'s outfit!", Duration=3})
 end
 
@@ -117,7 +119,7 @@ local function GetClosestPlayer()
     return Target
 end
 
--- ESP
+-- ESP System
 local function CreateESP(player)
     local Box = Drawing.new("Square")
     local Name = Drawing.new("Text")
@@ -156,17 +158,10 @@ RunService.RenderStepped:Connect(function()
         workspace.Gravity = _G.LocalPlayer.Gravity; Camera.FieldOfView = _G.LocalPlayer.FOV
         if _G.LocalPlayer.NoClip then for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
     end
-    if PlaceId == Games.Brookhaven and _G.GameFeatures.TrollMode and _G.GameFeatures.SelectedPlayer then
-        local target = Players:FindFirstChild(_G.GameFeatures.SelectedPlayer)
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
-        end
-    end
 end)
 
 -- UI
 do
-    -- Aimbot... Visuals... Local... (Same logic)
     Tabs.Aimbot:AddToggle("AimEnabled", {Title = "Enable Aimbot", Default = false}):OnChanged(function(Value) _G.Aimbot.Enabled = Value end)
     Tabs.Aimbot:AddToggle("SilentAim", {Title = "Silent Aim", Default = false}):OnChanged(function(Value) _G.Aimbot.SilentAim = Value end)
     Tabs.Aimbot:AddSlider("FOV", {Title = "FOV Radius", Default = 100, Min = 10, Max = 800}):OnChanged(function(Value) _G.Aimbot.FieldOfView = Value end)
@@ -179,31 +174,14 @@ do
     Tabs.Local:AddToggle("InfJump", {Title = "Infinite Jump", Default = false}):OnChanged(function(Value) _G.LocalPlayer.InfiniteJump = Value end)
     Tabs.Local:AddToggle("Noclip", {Title = "NoClip", Default = false}):OnChanged(function(Value) _G.LocalPlayer.NoClip = Value end)
 
-    if PlaceId == Games.Brookhaven then
+    if CurrentGame == "Brookhaven" then
         local PlayerDropdown = Tabs.Game:AddDropdown("PlayerSelect", { Title = "Select Target Player", Values = GetPlayerList(), Default = nil })
         PlayerDropdown:OnChanged(function(Value) _G.GameFeatures.SelectedPlayer = Value end)
-        
         Tabs.Game:AddButton({ Title = "Teleport to Target", Callback = function()
-            if _G.GameFeatures.SelectedPlayer then
-                local target = Players:FindFirstChild(_G.GameFeatures.SelectedPlayer)
-                if target and target.Character then LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame end
-            end
+            if _G.GameFeatures.SelectedPlayer then local target = Players:FindFirstChild(_G.GameFeatures.SelectedPlayer); if target and target.Character then LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame end end
         end })
-
-        Tabs.Game:AddButton({ Title = "Copy Outfit (Clone Clothes)", Callback = function()
-            if _G.GameFeatures.SelectedPlayer then
-                CopyOutfit(_G.GameFeatures.SelectedPlayer)
-            else
-                Fluent:Notify({Title="Error", Content="Select a player first!", Duration=3})
-            end
-        end })
-
-        Tabs.Game:AddToggle("TrollLoop", {Title = "Troll/Follow Loop", Default = false}):OnChanged(function(Value) _G.GameFeatures.TrollMode = Value end)
-        
-        Tabs.Game:AddSection("Actions")
-        Tabs.Game:AddButton({Title = "Buy Houses (Instant)", Callback = function() Fluent:Notify({Title="Brookhaven", Content="House purchase triggered!", Duration=3}) end})
-        Tabs.Game:AddButton({Title = "Give Money (Bypass)", Callback = function() Fluent:Notify({Title="Brookhaven", Content="Money remote event bypassed!", Duration=3}) end})
-    elseif PlaceId == Games.DandysWorld then
+        Tabs.Game:AddButton({ Title = "Copy Outfit (Clothes)", Callback = function() if _G.GameFeatures.SelectedPlayer then CopyOutfit(_G.GameFeatures.SelectedPlayer) end end })
+    elseif CurrentGame == "Dandy's World" then
         Tabs.Game:AddToggle("MonstESP", {Title = "Monster ESP", Default = false}):OnChanged(function(Value) _G.GameFeatures.MonsterESP = Value end)
         Tabs.Game:AddToggle("ItmESP", {Title = "Item ESP", Default = false}):OnChanged(function(Value) _G.GameFeatures.ItemESP = Value end)
         Tabs.Game:AddButton({Title = "Restore Stamina", Callback = function() if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Stamina = 100 end end})
@@ -211,10 +189,9 @@ do
 end
 
 SaveManager:SetLibrary(Fluent); InterfaceManager:SetLibrary(Fluent)
-SaveManager:IgnoreThemeSettings(); SaveManager:SetIgnoreIndexes({})
 InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/configs")
 InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SelectTab(1)
-Fluent:Notify({ Title = "Synthesis MEGA", Content = "Script Loaded - Outfit Copier Ready!", Duration = 5 })
+Fluent:Notify({ Title = "Synthesis MEGA", Content = "Loaded for: " .. CurrentGame .. "\nPlace ID: " .. PlaceId, Duration = 6 })
 SaveManager:LoadAutoloadConfig()
