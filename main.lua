@@ -323,17 +323,23 @@ local success, err = pcall(function()
 
     local function GetClosestTarget()
         local best = _G.SynthState.AimFOV
-        local target = nil
+        local targetPos = nil
+        local targetPlayer = nil
+        
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(_G.SynthState.AimPart) and p.Character:FindFirstChildOfClass("Humanoid") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-                local pos, vis = Camera:WorldToViewportPoint(p.Character[_G.SynthState.AimPart].Position)
-                if vis then
-                    local mag = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
-                    if mag < best then best = mag; target = p end
+            if p ~= LocalPlayer then
+                -- Support for games like Rivals where characters might be in workspace root or heavily modified
+                local char = p.Character or workspace:FindFirstChild(p.Name)
+                if char and char:FindFirstChild(_G.SynthState.AimPart) and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
+                    local pos, vis = Camera:WorldToViewportPoint(char[_G.SynthState.AimPart].Position)
+                    if vis then
+                        local mag = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                        if mag < best then best = mag; targetPos = char[_G.SynthState.AimPart].Position; targetPlayer = p end
+                    end
                 end
             end
         end
-        return target
+        return targetPos, targetPlayer
     end
 
     -- SILENT AIM HOOK (Namecall intercept for Raycasting/Bullets)
@@ -344,13 +350,10 @@ local success, err = pcall(function()
         
         if _G.SynthState.SilentAim and not checkcaller() then
             if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
-                local t = GetClosestTarget()
-                if t and t.Character and t.Character:FindFirstChild(_G.SynthState.AimPart) then
-                    local targetPos = t.Character[_G.SynthState.AimPart].Position
-                    
+                local targetPos, targetPlayer = GetClosestTarget()
+                if targetPos then
                     if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
                         -- Highly game specific, but common pattern injection
-                        -- Often args[1] or args[2] is the position or CFrame. We leave hook broad but safe.
                     elseif method == "Raycast" then
                         local origin = args[1]
                         args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
@@ -369,8 +372,8 @@ local success, err = pcall(function()
         RunService.RenderStepped:Connect(function()
             -- Camera Aimbot
             if _G.SynthState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                local t = GetClosestTarget()
-                if t then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, t.Character[_G.SynthState.AimPart].Position), 1/_G.SynthState.AimSmooth) end
+                local targetPos, targetPlayer = GetClosestTarget()
+                if targetPos then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.SynthState.AimSmooth) end
             end
             
             -- Local Features
@@ -415,10 +418,10 @@ local success, err = pcall(function()
             end
 
             local conn; conn = RunService.RenderStepped:Connect(function()
-                if not p or not p.Parent then cleanup(); conn:Disconnect(); return end
+                if not p then cleanup(); conn:Disconnect(); return end
                 
-                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-                    local char = p.Character
+                local char = p.Character or workspace:FindFirstChild(p.Name)
+                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
                     local root = char.HumanoidRootPart
                     local head = char:FindFirstChild("Head")
                     local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
