@@ -277,6 +277,8 @@ local success, err = pcall(function()
                         end
                     end)
                 end
+            end})
+
             BTab:AddButton({Title = "Bypass Houses & Bank (Anti-Ban/Unlock)", Callback = function()
                 for _, obj in pairs(workspace:GetDescendants()) do
                     if obj:IsA("BasePart") then
