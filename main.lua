@@ -586,6 +586,44 @@ local success, err = pcall(function()
                     end
                 end
             end})
+            
+            local socialControlClone = nil
+            STab:AddToggle("SControlWeld", {Title = "Control Player (Weld Bug)", Default = false}):OnChanged(function(v)
+                if v then
+                    local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                    if t and t.Character and LocalPlayer.Character then
+                        local lHead = LocalPlayer.Character:FindFirstChild("Head")
+                        if lHead then
+                            -- Find an accessory on the target
+                            for _, acc in pairs(t.Character:GetChildren()) do
+                                if acc:IsA("Accessory") or acc:IsA("Hat") then
+                                    local clone = acc:Clone()
+                                    if clone then
+                                        clone.Parent = LocalPlayer.Character
+                                        socialControlClone = clone -- Save reference to delete later
+                                        local handle = clone:FindFirstChild("Handle")
+                                        if handle then
+                                            handle.CanCollide = false
+                                            handle.Massless = true
+                                            local weld = Instance.new("WeldConstraint")
+                                            weld.Part0 = lHead
+                                            weld.Part1 = handle
+                                            weld.Parent = handle
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                else
+                    if socialControlClone then
+                        socialControlClone:Destroy()
+                        socialControlClone = nil
+                    end
+                end
+            end)
+            
             STab:AddButton({Title = "Bring All Workspace Tools/Items", Callback = function()
                 pcall(function()
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
