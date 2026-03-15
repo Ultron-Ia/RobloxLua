@@ -413,6 +413,93 @@ local success, err = pcall(function()
                     LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
                 end
             end})
+            STab:AddButton({Title = "Copy Outfit (Full Clone)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and LocalPlayer.Character then
+                    -- Clean current outfit
+                    for _, i in pairs(LocalPlayer.Character:GetChildren()) do 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Destroy() end 
+                    end
+                    if LocalPlayer.Character:FindFirstChild("Head") then
+                        for _, v in pairs(LocalPlayer.Character.Head:GetChildren()) do if v:IsA("Decal") or v:IsA("SpecialMesh") then v:Destroy() end end
+                    end
+                    
+                    -- Clone target outfit
+                    for _, i in pairs(t.Character:GetChildren()) do 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("BodyColors") or i:IsA("CharacterMesh") or i:IsA("ShirtGraphic") then 
+                            local clone = i:Clone()
+                            if clone then clone.Parent = LocalPlayer.Character end
+                        elseif i:IsA("Accessory") or i:IsA("Hat") then
+                            local clone = i:Clone()
+                            if clone then
+                                clone.Parent = LocalPlayer.Character
+                                -- Manual Weld fallback for games that block local AddAccessory
+                                local handle = clone:FindFirstChild("Handle")
+                                local head = LocalPlayer.Character:FindFirstChild("Head")
+                                if handle and head then
+                                    for _, v in pairs(handle:GetChildren()) do
+                                        if v:IsA("Weld") or v:IsA("WeldConstraint") or v:IsA("Motor6D") or v:IsA("BodyMover") or v:IsA("BodyGyro") or v:IsA("AngularVelocity") then
+                                            v:Destroy()
+                                        end
+                                    end
+                                    handle.CanCollide = false
+                                    handle.Massless = true
+                                    
+                                    local originalHandle = i:FindFirstChild("Handle")
+                                    if originalHandle then
+                                        local targetHead = t.Character:FindFirstChild("Head")
+                                        if targetHead then
+                                            local offset = targetHead.CFrame:ToObjectSpace(originalHandle.CFrame)
+                                            handle.CFrame = head.CFrame * offset
+                                            local weld = Instance.new("WeldConstraint")
+                                            weld.Part0 = head
+                                            weld.Part1 = handle
+                                            weld.Parent = handle
+                                        end
+                                    end
+                                end
+                            end
+                        end  
+                    end
+                    if t.Character:FindFirstChild("Head") and LocalPlayer.Character:FindFirstChild("Head") then
+                        for _, v in pairs(t.Character.Head:GetChildren()) do 
+                            if v:IsA("Decal") or v:IsA("SpecialMesh") then 
+                                local clone = v:Clone()
+                                if clone then clone.Parent = LocalPlayer.Character.Head end
+                            end 
+                        end
+                    end
+                    
+                    -- Copy MeshPart data (R15 limbs etc)
+                    for _, part in pairs(t.Character:GetChildren()) do
+                        if part:IsA("MeshPart") then
+                            local myPart = LocalPlayer.Character:FindFirstChild(part.Name)
+                            if myPart and myPart:IsA("MeshPart") then
+                                pcall(function()
+                                    myPart.MeshId = part.MeshId
+                                    myPart.TextureID = part.TextureID
+                                    myPart.Size = part.Size
+                                    myPart.Color = part.Color
+                                end)
+                            end
+                        end
+                    end
+                    
+                    -- Copy Body Scales
+                    local tHum = t.Character:FindFirstChildOfClass("Humanoid")
+                    local lHum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if tHum and lHum then
+                        local scales = {"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "BodyProportionScale", "BodyTypeScale", "HeadScale"}
+                        for _, scaleName in pairs(scales) do
+                            local tScale = tHum:FindFirstChild(scaleName)
+                            local lScale = lHum:FindFirstChild(scaleName)
+                            if tScale and tScale:IsA("NumberValue") and lScale and lScale:IsA("NumberValue") then
+                                lScale.Value = tScale.Value
+                            end
+                        end
+                    end
+                end
+            end})
             STab:AddButton({Title = "Bring All Workspace Tools/Items", Callback = function()
                 pcall(function()
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
