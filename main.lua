@@ -73,7 +73,7 @@ local success, err = pcall(function()
     Tabs.Main:AddSection("Game Selection")
     Tabs.Main:AddParagraph({ Title = "Manual Loading", Content = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub"}, Default = 1 })
+    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu"}, Default = 1 })
 
     GameSelector:OnChanged(function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -705,6 +705,93 @@ local success, err = pcall(function()
                     if flyLoop then flyLoop:Disconnect(); flyLoop = nil end
                     if bv then bv:Destroy() end
                     if bg then bg:Destroy() end
+                end
+            end)
+
+        elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
+            BuiltHubs["Shenanigans"] = true
+            local JTab = Window:AddTab({ Title = "Jujutsu Hub", Icon = "shield" })
+            
+            JTab:AddSection("Invincibility & God Mode")
+            
+            local godLoop = nil
+            JTab:AddToggle("JGodMode", {Title = "Basic God Mode (Max Health)", Default = false}):OnChanged(function(v)
+                if v then
+                    godLoop = RunService.Heartbeat:Connect(function()
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                            local hum = LocalPlayer.Character.Humanoid
+                            if hum.Health > 0 then
+                                hum.MaxHealth = math.huge
+                                hum.Health = math.huge
+                            end
+                        end
+                    end)
+                else
+                    if godLoop then godLoop:Disconnect(); godLoop = nil end
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        LocalPlayer.Character.Humanoid.MaxHealth = 100
+                    end
+                end
+            end)
+
+            local hitboxLoop = nil
+            JTab:AddToggle("JAntiHitbox", {Title = "Delete Enemy Hitboxes (Anti-Damage)", Default = false}):OnChanged(function(v)
+                if v then
+                    hitboxLoop = RunService.RenderStepped:Connect(function()
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:IsA("BasePart") then
+                                local name = obj.Name:lower()
+                                if name:match("hitbox") or name:match("damage") or name:match("attack") then
+                                    if not obj:IsDescendantOf(LocalPlayer.Character) then
+                                        pcall(function() obj:Destroy() end)
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                else
+                    if hitboxLoop then hitboxLoop:Disconnect(); hitboxLoop = nil end
+                end
+            end)
+
+            local dodgeLoop = nil
+            JTab:AddToggle("JAutoDodge", {Title = "Auto Dodge (Proximity TP)", Default = false}):OnChanged(function(v)
+                if v then
+                    dodgeLoop = RunService.Heartbeat:Connect(function()
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            local myPos = LocalPlayer.Character.HumanoidRootPart.Position
+                            for _, p in pairs(Players:GetPlayers()) do
+                                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                                    local dist = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
+                                    if dist < 12 and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+                                        -- Teleport slightly behind them to avoid frontal attacks
+                                        LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                else
+                    if dodgeLoop then dodgeLoop:Disconnect(); dodgeLoop = nil end
+                end
+            end)
+            
+            local antiStunLoop = nil
+            JTab:AddToggle("JAntiStun", {Title = "Anti-Stun / Auto-Sprint", Default = false}):OnChanged(function(v)
+                if v then
+                    antiStunLoop = RunService.RenderStepped:Connect(function()
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                            -- Constant walkspeed enforcement to bypass stuns
+                            if LocalPlayer.Character.Humanoid.WalkSpeed < 16 then
+                                LocalPlayer.Character.Humanoid.WalkSpeed = 16
+                            end
+                            -- Destroying freeze/anchor effects if they exist
+                            local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                            if hrp and hrp.Anchored then hrp.Anchored = false end
+                        end
+                    end)
+                else
+                    if antiStunLoop then antiStunLoop:Disconnect(); antiStunLoop = nil end
                 end
             end)
 

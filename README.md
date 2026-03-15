@@ -35,6 +35,12 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Ultron-Ia/RobloxLua/m
 ### 🐶 Adopt Me!
 - **Auto Farm**: Ganhe dinheiro e upe seus pets automaticamente (em expansão).
 
+### 🥋 [LUCKY COWARD] Shenanigans de Jujutsu
+- **God Mode**: Mantém sua vida sempre no máximo.
+- **Anti-Damage**: Deleta instantaneamente hitboxes e ataques de inimigos próximos.
+- **Auto Dodge**: Esquiva automática ao teleportar para as costas de inimigos muito próximos.
+- **Anti-Stun & Auto-Sprint**: Previne congelamentos e restaura sua velocidade de movimento.
+
 ### 🌲 Survival & Others (99 Noites, Forsaken, Tsunami)
 - **Abas de Sobrevivência**: Funções específicas para coleta e proteção de acordo com o mapa.
 
