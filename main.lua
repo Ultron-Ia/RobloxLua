@@ -187,9 +187,14 @@ local success, err = pcall(function()
                         local scales = {"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "BodyProportionScale", "BodyTypeScale", "HeadScale"}
                         for _, scaleName in pairs(scales) do
                             local tScale = tHum:FindFirstChild(scaleName)
-                            local lScale = lHum:FindFirstChild(scaleName)
-                            if tScale and tScale:IsA("NumberValue") and lScale and lScale:IsA("NumberValue") then
-                                lScale.Value = tScale.Value
+                            if tScale and tScale:IsA("NumberValue") then
+                                local lScale = lHum:FindFirstChild(scaleName)
+                                if lScale and lScale:IsA("NumberValue") then
+                                    lScale.Value = tScale.Value
+                                else
+                                    local cloneScale = tScale:Clone()
+                                    cloneScale.Parent = lHum
+                                end
                             end
                         end
                     end
@@ -492,9 +497,14 @@ local success, err = pcall(function()
                         local scales = {"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "BodyProportionScale", "BodyTypeScale", "HeadScale"}
                         for _, scaleName in pairs(scales) do
                             local tScale = tHum:FindFirstChild(scaleName)
-                            local lScale = lHum:FindFirstChild(scaleName)
-                            if tScale and tScale:IsA("NumberValue") and lScale and lScale:IsA("NumberValue") then
-                                lScale.Value = tScale.Value
+                            if tScale and tScale:IsA("NumberValue") then
+                                local lScale = lHum:FindFirstChild(scaleName)
+                                if lScale and lScale:IsA("NumberValue") then
+                                    lScale.Value = tScale.Value
+                                else
+                                    local cloneScale = tScale:Clone()
+                                    cloneScale.Parent = lHum
+                                end
                             end
                         end
                     end
