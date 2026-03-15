@@ -179,6 +179,20 @@ local success, err = pcall(function()
                             end
                         end
                     end
+                    
+                    -- Copy Body Scales (Height, Width, Depth, Head)
+                    local tHum = t.Character:FindFirstChildOfClass("Humanoid")
+                    local lHum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if tHum and lHum then
+                        local scales = {"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "BodyProportionScale", "BodyTypeScale", "HeadScale"}
+                        for _, scaleName in pairs(scales) do
+                            local tScale = tHum:FindFirstChild(scaleName)
+                            local lScale = lHum:FindFirstChild(scaleName)
+                            if tScale and tScale:IsA("NumberValue") and lScale and lScale:IsA("NumberValue") then
+                                lScale.Value = tScale.Value
+                            end
+                        end
+                    end
                 end
             end})
 
