@@ -197,6 +197,21 @@ local success, err = pcall(function()
                                 end
                             end
                         end
+                        
+                        -- Force engine to recalculate sizes using Description
+                        pcall(function()
+                            local tDesc = tHum:GetAppliedDescription()
+                            local lDesc = lHum:GetAppliedDescription()
+                            if tDesc and lDesc then
+                                lDesc.HeightScale = tDesc.HeightScale
+                                lDesc.WidthScale = tDesc.WidthScale
+                                lDesc.DepthScale = tDesc.DepthScale
+                                lDesc.HeadScale = tDesc.HeadScale
+                                lDesc.ProportionScale = tDesc.ProportionScale
+                                lDesc.BodyTypeScale = tDesc.BodyTypeScale
+                                lHum:ApplyDescription(lDesc)
+                            end
+                        end)
                     end
                 end
             end})
@@ -514,6 +529,21 @@ local success, err = pcall(function()
                                 end
                             end
                         end
+                        
+                        -- Force engine to recalculate sizes using Description
+                        pcall(function()
+                            local tDesc = tHum:GetAppliedDescription()
+                            local lDesc = lHum:GetAppliedDescription()
+                            if tDesc and lDesc then
+                                lDesc.HeightScale = tDesc.HeightScale
+                                lDesc.WidthScale = tDesc.WidthScale
+                                lDesc.DepthScale = tDesc.DepthScale
+                                lDesc.HeadScale = tDesc.HeadScale
+                                lDesc.ProportionScale = tDesc.ProportionScale
+                                lDesc.BodyTypeScale = tDesc.BodyTypeScale
+                                lHum:ApplyDescription(lDesc)
+                            end
+                        end)
                     end
                 end
             end})
