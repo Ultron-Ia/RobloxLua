@@ -277,11 +277,16 @@ local success, err = pcall(function()
                         end
                     end)
                 end
-            end})
-            BTab:AddButton({Title = "Delete Bank/Vault Doors (Local)", Callback = function()
+            BTab:AddButton({Title = "Bypass Houses & Bank (Anti-Ban/Unlock)", Callback = function()
                 for _, obj in pairs(workspace:GetDescendants()) do
-                    if obj:IsA("BasePart") and (obj.Name:lower():match("door") or obj.Name:lower():match("glass") or obj.Name:lower():match("window")) then
-                        obj:Destroy()
+                    if obj:IsA("BasePart") then
+                        local n = obj.Name:lower()
+                        if n:match("ban") or n == "houseban" then
+                            obj:Destroy()
+                        elseif n:match("door") or n:match("glass") or n:match("window") then
+                            obj.CanCollide = false
+                            obj.Transparency = 0.5
+                        end
                     end
                 end
             end})
