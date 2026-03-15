@@ -130,6 +130,15 @@ local success, err = pcall(function()
                                 local handle = clone:FindFirstChild("Handle")
                                 local head = LocalPlayer.Character:FindFirstChild("Head")
                                 if handle and head then
+                                    -- Purge old physics links that connect to the other player
+                                    for _, v in pairs(handle:GetChildren()) do
+                                        if v:IsA("Weld") or v:IsA("WeldConstraint") or v:IsA("Motor6D") or v:IsA("BodyMover") or v:IsA("BodyGyro") or v:IsA("AngularVelocity") then
+                                            v:Destroy()
+                                        end
+                                    end
+                                    handle.CanCollide = false
+                                    handle.Massless = true
+                                    
                                     local originalHandle = i:FindFirstChild("Handle")
                                     if originalHandle then
                                         -- Find relative offset from target's head
