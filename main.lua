@@ -444,6 +444,59 @@ local success, err = pcall(function()
                     end)
                 end
             end})
+
+            local socialSitLoop = nil
+            STab:AddToggle("SSit", {Title = "Sit on Target's Shoulders", Default = false}):OnChanged(function(v)
+                if v then
+                    socialSitLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("Head") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
+                            if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = true end
+                        end
+                    end)
+                else
+                    if socialSitLoop then socialSitLoop:Disconnect(); socialSitLoop = nil end
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
+                end
+            end)
+
+            local flying = false
+            local flyLoop = nil
+            local bv = nil
+            local bg = nil
+            STab:AddToggle("SFly", {Title = "Fly System (Hold Left Click)", Default = false}):OnChanged(function(v)
+                flying = v
+                if flying then
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrp = LocalPlayer.Character.HumanoidRootPart
+                        bv = Instance.new("BodyVelocity")
+                        bv.Velocity = Vector3.new(0,0,0)
+                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        bv.Parent = hrp
+                        bg = Instance.new("BodyGyro")
+                        bg.P = 9e4
+                        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+                        bg.CFrame = hrp.CFrame
+                        bg.Parent = hrp
+                        
+                        flyLoop = RunService.RenderStepped:Connect(function()
+                            if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+                            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                                bv.Velocity = Camera.CFrame.LookVector * 100 -- Flight speed
+                            else
+                                bv.Velocity = Vector3.new(0,0,0)
+                            end
+                            bg.CFrame = Camera.CFrame
+                        end)
+                    end
+                else
+                    if flyLoop then flyLoop:Disconnect(); flyLoop = nil end
+                    if bv then bv:Destroy() end
+                    if bg then bg:Destroy() end
+                end
+            end)
+
         end
     end)
 
