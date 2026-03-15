@@ -656,6 +656,78 @@ local success, err = pcall(function()
                 end
             end})
 
+            local socialAttachLoop = nil
+            STab:AddToggle("SAttach", {Title = "Attach to Player (Loop TP)", Default = false}):OnChanged(function(v)
+                if v then
+                    socialAttachLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
+                        end
+                    end)
+                else
+                    if socialAttachLoop then socialAttachLoop:Disconnect(); socialAttachLoop = nil end
+                end
+            end)
+
+            local spinSitLoop = nil
+            local spinSitAngle = 0
+            STab:AddToggle("SSpinSit", {Title = "Spin on Target's Head (Annoy)", Default = false}):OnChanged(function(v)
+                if v then
+                    spinSitLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("Head") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            spinSitAngle = spinSitAngle + math.rad(40)
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.Head.CFrame * CFrame.new(0, 2, 0) * CFrame.Angles(0, spinSitAngle, 0)
+                            if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = true end
+                        end
+                    end)
+                else
+                    if spinSitLoop then spinSitLoop:Disconnect(); spinSitLoop = nil end
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
+                end
+            end)
+
+            STab:AddButton({Title = "AoE Fling All (Kill Server)", Callback = function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    local thrust = Instance.new("BodyAngularVelocity")
+                    thrust.AngularVelocity = Vector3.new(9000, 9000, 9000)
+                    thrust.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                    thrust.Parent = hrp
+                    
+                    local startTime = tick()
+                    local c; c = RunService.Heartbeat:Connect(function()
+                        if hrp and tick() - startTime < 8 then
+                            local target = nil
+                            for _, p in pairs(Players:GetPlayers()) do
+                                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                                    local root = p.Character.HumanoidRootPart
+                                    if root.Velocity.Magnitude < 100 then
+                                        target = root.CFrame
+                                        break
+                                    end
+                                end
+                            end
+                            if target then hrp.CFrame = target end
+                        else
+                            if thrust then thrust:Destroy() end
+                            c:Disconnect()
+                        end
+                    end)
+                end
+            end})
+
+            STab:AddButton({Title = "Naked Mode (Remove Clothes Local)", Callback = function()
+                if LocalPlayer.Character then
+                    for _, i in pairs(LocalPlayer.Character:GetChildren()) do 
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") then 
+                            i:Destroy() 
+                        end 
+                    end
+                end
+            end})
+
             local socialSitLoop = nil
             STab:AddToggle("SSit", {Title = "Sit on Target's Shoulders", Default = false}):OnChanged(function(v)
                 if v then
