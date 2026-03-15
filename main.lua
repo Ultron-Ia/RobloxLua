@@ -282,6 +282,36 @@ local success, err = pcall(function()
             end})
 
             BTab:AddSection("Local Spoof")
+            
+            local rgbLoop = nil
+            BTab:AddToggle("BRGBSkin", {Title = "RGB / Strobe Skin (Local)", Default = false}):OnChanged(function(v)
+                if v then
+                    rgbLoop = RunService.RenderStepped:Connect(function()
+                        if LocalPlayer.Character then
+                            local hue = tick() % 1 / 1
+                            local color = Color3.fromHSV(hue, 1, 1)
+                            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.Color = color
+                                end
+                            end
+                        end
+                    end)
+                else
+                    if rgbLoop then rgbLoop:Disconnect(); rgbLoop = nil end
+                end
+            end)
+
+            BTab:AddButton({Title = "Hide Name/Id (Visual Anonymous Mode)", Callback = function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+                    for _, child in pairs(LocalPlayer.Character.Head:GetChildren()) do
+                        if child:IsA("BillboardGui") or child.Name:lower():match("name") then
+                            child:Destroy()
+                        end
+                    end
+                end
+            end})
+
             BTab:AddButton({Title = "Get Infinite Money (Visual)", Callback = function()
                 pcall(function()
                     for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
