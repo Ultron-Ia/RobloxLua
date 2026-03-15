@@ -218,35 +218,44 @@ local success, err = pcall(function()
 
             BTab:AddSection("Troll & Utilities")
             
-            BTab:AddButton({Title = "Control Player (Weld Bug)", Callback = function()
-                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
-                if t and t.Character and LocalPlayer.Character then
-                    local lHead = LocalPlayer.Character:FindFirstChild("Head")
-                    if lHead then
-                        -- Find an accessory on the target
-                        for _, acc in pairs(t.Character:GetChildren()) do
-                            if acc:IsA("Accessory") or acc:IsA("Hat") then
-                                local clone = acc:Clone()
-                                if clone then
-                                    clone.Parent = LocalPlayer.Character
-                                    local handle = clone:FindFirstChild("Handle")
-                                    if handle then
-                                        -- Crucial step: Do NOT destroy the original constraints inside the handle.
-                                        -- This keeps the physics link to the target's original head alive on the server physics engine.
-                                        handle.CanCollide = false
-                                        handle.Massless = true
-                                        local weld = Instance.new("WeldConstraint")
-                                        weld.Part0 = lHead
-                                        weld.Part1 = handle
-                                        weld.Parent = handle
-                                        break -- Only need one accessory to link the physics bodies
+            local controlClone = nil
+            BTab:AddToggle("BControlWeld", {Title = "Control Player (Weld Bug)", Default = false}):OnChanged(function(v)
+                if v then
+                    local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                    if t and t.Character and LocalPlayer.Character then
+                        local lHead = LocalPlayer.Character:FindFirstChild("Head")
+                        if lHead then
+                            -- Find an accessory on the target
+                            for _, acc in pairs(t.Character:GetChildren()) do
+                                if acc:IsA("Accessory") or acc:IsA("Hat") then
+                                    local clone = acc:Clone()
+                                    if clone then
+                                        clone.Parent = LocalPlayer.Character
+                                        controlClone = clone -- Save reference to delete later
+                                        local handle = clone:FindFirstChild("Handle")
+                                        if handle then
+                                            -- Crucial step: Do NOT destroy the original constraints inside the handle.
+                                            -- This keeps the physics link to the target's original head alive on the server physics engine.
+                                            handle.CanCollide = false
+                                            handle.Massless = true
+                                            local weld = Instance.new("WeldConstraint")
+                                            weld.Part0 = lHead
+                                            weld.Part1 = handle
+                                            weld.Parent = handle
+                                            break -- Only need one accessory to link the physics bodies
+                                        end
                                     end
                                 end
                             end
                         end
                     end
+                else
+                    if controlClone then
+                        controlClone:Destroy()
+                        controlClone = nil
+                    end
                 end
-            end})
+            end)
             
             -- Keep track of loops
             local attachLoop = nil
