@@ -1521,6 +1521,54 @@ local success, err = pcall(function()
                 WindUI:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4, Icon = "sun"})
             end})
 
+            -- ============================================
+            -- RO-VIBES & SALÃO DE FESTAS
+            -- ============================================
+            STab:Section({ Title = "🎮 Ro-Vibes Specific" })
+            STab:Paragraph({ Title = "Mass Banish (Fling)", Content = "Remove permanentemente todos os jogadores da área do palco usando o exploit de colisão física (Fling)." })
+            STab:Button({Title = "🔥 Stage Clean (Banish All)", Callback = function()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local thrust = Instance.new("BodyAngularVelocity")
+                    thrust.AngularVelocity = Vector3.new(9000, 9000, 9000)
+                    thrust.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                    thrust.Parent = hrp
+                    
+                    local startTime = tick()
+                    local c; c = RunService.Heartbeat:Connect(function()
+                        if hrp and tick() - startTime < 10 then
+                            for _, p in pairs(Players:GetPlayers()) do
+                                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                                    hrp.CFrame = p.Character.HumanoidRootPart.CFrame
+                                    task.wait(0.1)
+                                end
+                            end
+                        else
+                            if thrust then thrust:Destroy() end
+                            c:Disconnect()
+                        end
+                    end)
+                end
+            end})
+
+            STab:Section({ Title = "🎮 Salão de Festas Specific" })
+            STab:Paragraph({ Title = "Void Banish", Content = "Limpa o salão de festas enviando todos os jogadores presentes para o Vácuo (Void)." })
+            STab:Button({Title = "🌌 Void Server (Clear All)", Callback = function()
+                local count = 0
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        pcall(function()
+                            -- This attempts to fling them into the void if manual TP fails
+                            local pRoot = p.Character.HumanoidRootPart
+                            pRoot.Velocity = Vector3.new(0, -1000, 0)
+                            pRoot.CFrame = pRoot.CFrame * CFrame.new(0, -100, 0)
+                        end)
+                        count = count + 1
+                    end
+                end
+                WindUI:Notify({Title="🌌 Void", Content="Attempted to banish " .. count .. " players.", Duration=3, Icon = "zap"})
+            end})
+
         elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
             local JTab = Window:Tab({ Title = "Jujutsu Hub", Icon = "shield" })
