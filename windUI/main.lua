@@ -1,12 +1,5 @@
-local function sNotify(t, m)
-    pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = t, Text = tostring(m):sub(1,150), Duration = 25}) end)
-    print("[SYNTH] " .. t .. ": " .. tostring(m))
-end
-
 local success, err = pcall(function()
-    sNotify("Loading", "Iniciando WindUI...")
     local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-    sNotify("Loading", "WindUI carregado. Criando Window...")
 
     local Window = WindUI:CreateWindow({
         Title = "SYNTHESIS MEGA",
@@ -18,7 +11,6 @@ local success, err = pcall(function()
         Theme = "Dark",
         SideBarWidth = 160,
     })
-    sNotify("Loading", "Window criada OK!")
 
     -- Services
     local Players = game:GetService("Players")
@@ -58,13 +50,12 @@ local success, err = pcall(function()
 
     -- Tabs
     local Tabs = {
-        Main = Window:Tab({ Title = "Loader", Icon = "gamepad-2" }),
-        Aimbot = Window:Tab({ Title = "Aimbot", Icon = "crosshair" }),
+        Main = Window:Tab({ Title = "Loader", Icon = "gamepad" }),
+        Aimbot = Window:Tab({ Title = "Aimbot", Icon = "target" }),
         Visuals = Window:Tab({ Title = "Visuals", Icon = "eye" }),
         Local = Window:Tab({ Title = "Local", Icon = "user" }),
         Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
     }
-    sNotify("Loading", "Tabs criados OK! Criando elementos...")
 
     local BuiltHubs = {}
 
@@ -78,15 +69,18 @@ local success, err = pcall(function()
     end
 
     -- POPULATE LOADER (Game Selection)
-    local MainSection = Tabs.Main:Section({ Title = "Game Selection", Icon = "gamepad-2" })
-    MainSection:Paragraph({ Title = "Manual Loading", Desc = "Selecione o jogo abaixo para carregar as funções específicas." })
+    local _Sec1 = Tabs.Main:Section({Title = "Game Selection"})
+    Tabs.Main:AddParagraph({ Title = "Manual Loading", Content = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = MainSection:Dropdown({ Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Value = "...", Callback = function(v)
+    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Default = 1 })
+
+    GameSelector:OnChanged(function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
             BuiltHubs["Rivals"] = true
             local RTab = Window:Tab({ Title = "Rivals Hub", Icon = "swords" })
-            RTab:Toggle({Title = "Auto Parry", Value = false})
-            RTab:Button({Title = "Unlock All Skins & Weapons", Callback = function()
+            local _Sec2 = RTab:Section({Title = "General"})
+            _Sec2:Toggle({Title = "Auto Parry", Value = false, Callback = function(v) end})
+            _Sec2:Button({Title = "Unlock All Skins & Weapons", Callback = function()
                 WindUI:Notify({Title="Rivals", Content="Liberando inventário...", Duration=3, Icon="unlock"})
                 pcall(function()
                     for _, m in pairs(ReplicatedStorage:GetDescendants()) do
@@ -101,17 +95,19 @@ local success, err = pcall(function()
         elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
             BuiltHubs["Brookhaven"] = true
             local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
-            local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = "None", Callback = function(val) _G.SynthState.TargetPlayer = val end})
-            BTab:Button({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
+            local BPD = BTab:AddDropdown("BHPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
+            BPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local _Sec3 = BTab:Section({Title = "General"})
+            _Sec3:Button({Title = "Refresh Player List", Callback = function() BPD:SetValues(GetPlayers()) end})
             
-            local BTargetSection = BTab:Section({ Title = "Target Actions", Icon = "target" })
-            BTargetSection:Button({Title = "Teleport To Target", Callback = function()
+            local _Sec4 = BTab:Section({Title = "Target Actions"})
+            _Sec4:Button({Title = "Teleport To Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
                 end
             end})
-            BTargetSection:Button({Title = "Copy Outfit", Callback = function()
+            _Sec4:Button({Title = "Copy Outfit", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
                     -- Clean current outfit
@@ -221,10 +217,10 @@ local success, err = pcall(function()
                 end
             end})
 
-            local BTrollSection = BTab:Section({ Title = "Troll & Utilities", Icon = "sparkles" })
+            local _Sec5 = BTab:Section({Title = "Troll & Utilities"})
             
             local controlClone = nil
-            BTrollSection:Toggle({Title = "Control Player (Weld Bug)", Value = false, Callback = function(v)
+            _Sec5:Toggle({Title = "Control Player (Weld Bug)", Value = false}):OnChanged(function(v)
                 if v then
                     local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                     if t and t.Character and LocalPlayer.Character then
@@ -262,10 +258,11 @@ local success, err = pcall(function()
                 end
             end)
             
+            -- Keep track of loops
             local attachLoop = nil
             local sitLoop = nil
             
-            BTrollSection:Toggle({Title = "Attach to Player (Loop TP)", Value = false, Callback = function(v)
+            _Sec5:Toggle({Title = "Attach to Player (Loop TP)", Value = false}):OnChanged(function(v)
                 if v then
                     attachLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -276,9 +273,7 @@ local success, err = pcall(function()
                 else
                     if attachLoop then attachLoop:Disconnect(); attachLoop = nil end
                 end
-            end)
-
-            BTrollSection:Toggle({Title = "Sit on Player's Shoulders", Value = false, Callback = function(v)
+            end, Callback = function(v)
                 if v then
                     sitLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -286,14 +281,9 @@ local success, err = pcall(function()
                             LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
                             if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = true end
                         end
-                    end)
-                else
-                    if sitLoop then sitLoop:Disconnect(); sitLoop = nil end
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
-                end
-            end)
+                    end})
 
-            BTrollSection:Button({Title = "Bring Spawned Cars", Callback = function()
+            _Sec5:Button({Title = "Bring Spawned Cars", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local myPos = LocalPlayer.Character.HumanoidRootPart.CFrame
                     -- Scan workspace for generic vehicles
@@ -310,13 +300,13 @@ local success, err = pcall(function()
                 end
             end})
 
-            BTrollSection:Button({Title = "Reset Character (Suicide)", Callback = function()
+            _Sec5:Button({Title = "Reset Character (Suicide)", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                     LocalPlayer.Character.Humanoid.Health = 0
                 end
             end})
 
-            BTrollSection:Button({Title = "Fling Target (Kill)", Callback = function()
+            _Sec5:Button({Title = "Fling Target (Kill)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = LocalPlayer.Character.HumanoidRootPart
@@ -337,7 +327,7 @@ local success, err = pcall(function()
                 end
             end})
 
-            BTrollSection:Button({Title = "Bypass Houses & Bank (Anti-Ban/Unlock)", Callback = function()
+            _Sec5:Button({Title = "Bypass Houses & Bank (Anti-Ban/Unlock)", Callback = function()
                 for _, obj in pairs(workspace:GetDescendants()) do
                     if obj:IsA("BasePart") then
                         local n = obj.Name:lower()
@@ -351,10 +341,10 @@ local success, err = pcall(function()
                 end
             end})
 
-            local BSpoofSection = BTab:Section({ Title = "Local Spoof", Icon = "user" })
+            local _Sec6 = BTab:Section({Title = "Local Spoof"})
             
             local rgbLoop = nil
-            BSpoofSection:Toggle({Title = "RGB / Strobe Skin (Local)", Value = false, Callback = function(v)
+            _Sec6:Toggle({Title = "RGB / Strobe Skin (Local)", Value = false}):OnChanged(function(v)
                 if v then
                     rgbLoop = RunService.RenderStepped:Connect(function()
                         if LocalPlayer.Character then
@@ -372,7 +362,7 @@ local success, err = pcall(function()
                 end
             end)
 
-            BSpoofSection:Button({Title = "Hide Name/Id (Visual Anonymous Mode)", Callback = function()
+            _Sec6:Button({Title = "Hide Name/Id (Visual Anonymous Mode)", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
                     for _, child in pairs(LocalPlayer.Character.Head:GetChildren()) do
                         if child:IsA("BillboardGui") or child.Name:lower():match("name") then
@@ -382,7 +372,7 @@ local success, err = pcall(function()
                 end
             end})
 
-            BSpoofSection:Button({Title = "Get Infinite Money (Visual)", Callback = function()
+            _Sec6:Button({Title = "Get Infinite Money (Visual)", Callback = function()
                 pcall(function()
                     for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
                         if gui.Name:find("Main") or gui.Name:find("Gui") then
@@ -397,19 +387,19 @@ local success, err = pcall(function()
             -- ============================================
             -- ADMIN COMMANDS
             -- ============================================
-            local BAdminSection = BTab:Section({ Title = "Admin Commands", Icon = "shield-alert" })
+            local _Sec7 = BTab:Section({Title = "⚠️ Admin Commands"})
 
             -- Verify: list all players in the server
-            BAdminSection:Button({Title = "📝 Verify (List Server Players)", Callback = function()
+            _Sec7:Button({Title = "📝 Verify (List Server Players)", Callback = function()
                 local msg = "Players in server:\n"
                 for _, p in pairs(Players:GetPlayers()) do
                     msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
                 end
-                WindUI:Notify({Title = "📝 Server Verify", Content = msg, Duration = 10, Icon = "file-text"})
+                WindUI:Notify({Title = "📝 Server Verify", Content = msg, Duration = 10})
             end})
 
             -- Kick target (exploiting Brookhaven's remote or local kick workaround)
-            BAdminSection:Button({Title = "⚠️ Kick Target", Callback = function()
+            _Sec7:Button({Title = "⚠️ Kick Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t then
                     pcall(function()
@@ -422,12 +412,12 @@ local success, err = pcall(function()
                         -- Fallback: force them to load a bad character
                         t:Kick("You have been removed by an admin.")
                     end)
-                    WindUI:Notify({Title="⚠️ Kick", Content="Attempted to kick " .. _G.SynthState.TargetPlayer, Duration=4, Icon="user-x"})
+                    WindUI:Notify({Title="⚠️ Kick", Content="Attempted to kick " .. _G.SynthState.TargetPlayer, Duration=4})
                 end
             end})
 
             -- Explode target (nuclear bomb effect via BodyForce)
-            BAdminSection:Button({Title = "☢️ Explode Target", Callback = function()
+            _Sec7:Button({Title = "☢️ Explode Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = t.Character.HumanoidRootPart
@@ -445,12 +435,12 @@ local success, err = pcall(function()
                         bf.Parent = hrp
                         task.delay(0.2, function() bf:Destroy() end)
                     end)
-                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3, Icon="bomb"})
+                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
             -- Ragdoll target (disable motor joints)
-            BAdminSection:Button({Title = "Ragdoll Target", Callback = function()
+            _Sec7:Button({Title = "☢️ Ragdoll Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character then
                     for _, v in pairs(t.Character:GetDescendants()) do
@@ -470,12 +460,12 @@ local success, err = pcall(function()
                     if t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
                     end
-                    WindUI:Notify({Title="Ragdoll", Content="Ragdolled " .. _G.SynthState.TargetPlayer, Duration=3, Icon="accessibility"})
+                    WindUI:Notify({Title="☢️ Ragdoll", Content="Ragdolled " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
             -- Fling target upward (kill via height)
-            BAdminSection:Button({Title = "Fling Target (Kill via Height)", Callback = function()
+            _Sec7:Button({Title = "🧲 Fling Target (Kill via Height)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = t.Character.HumanoidRootPart
@@ -486,13 +476,13 @@ local success, err = pcall(function()
                         bv.Parent = hrp
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3, Icon="magnet"})
+                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
             -- Float target (trap them floating in the air)
             local floatLoop = nil
-            BAdminSection:Toggle({Title = "Float Target (Loop)", Value = false, Callback = function(v)
+            _Sec7:Toggle({Title = "🧲 Float Target (Loop)", Value = false}):OnChanged(function(v)
                 if v then
                     floatLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -510,7 +500,7 @@ local success, err = pcall(function()
             end)
 
             -- Launch: force constant directional movement on target
-            BAdminSection:Button({Title = "Launch Target (Into Space)", Callback = function()
+            _Sec7:Button({Title = "🏹 Launch Target (Into Space)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = t.Character.HumanoidRootPart
@@ -521,12 +511,12 @@ local success, err = pcall(function()
                         bv.Parent = hrp
                         task.delay(1, function() bv:Destroy() end)
                     end)
-                    WindUI:Notify({Title="Launch", Content="Launched " .. _G.SynthState.TargetPlayer .. " into orbit!", Duration=3, Icon="rocket"})
+                    WindUI:Notify({Title="🏹 Launch", Content="Launched " .. _G.SynthState.TargetPlayer .. " into orbit!", Duration=3})
                 end
             end})
 
             -- Angel: turn target into an "angel" (white highlight + freeze in sky)
-            BAdminSection:Button({Title = "Angel Target", Callback = function()
+            _Sec7:Button({Title = "🏹 Angel Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = t.Character.HumanoidRootPart
@@ -549,21 +539,21 @@ local success, err = pcall(function()
                     if t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
                     end
-                    WindUI:Notify({Title="Angel", Content=_G.SynthState.TargetPlayer .. " has become an angel!", Duration=4, Icon="cloud-lightning"})
+                    WindUI:Notify({Title="🏹 Angel", Content=_G.SynthState.TargetPlayer .. " has become an angel!", Duration=4})
                 end
             end})
 
             -- Kill target
-            BAdminSection:Button({Title = "Kill Target", Callback = function()
+            _Sec7:Button({Title = "💀 Kill Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                     t.Character.Humanoid.Health = 0
-                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3, Icon="skull"})
+                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
             -- KillPlus: kill with red explosion visual
-            BAdminSection:Button({Title = "KillPlus (Explosion Effect)", Callback = function()
+            _Sec7:Button({Title = "💀 KillPlus (Explosion Effect)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = t.Character.HumanoidRootPart
@@ -576,12 +566,12 @@ local success, err = pcall(function()
                     if t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
                     end
-                    WindUI:Notify({Title="KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3, Icon="zap-off"})
+                    WindUI:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
                 end
             end})
 
             -- Jail: create a brick cage around the target
-            BAdminSection:Button({Title = "Jail Target", Callback = function()
+            _Sec7:Button({Title = "🔒 Jail Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local pos = t.Character.HumanoidRootPart.Position
@@ -606,13 +596,13 @@ local success, err = pcall(function()
                         -- Auto-remove after 30s
                         game:GetService("Debris"):AddItem(part, 30)
                     end
-                    WindUI:Notify({Title="Jail", Content=_G.SynthState.TargetPlayer .. " has been jailed!", Duration=4, Icon="lock"})
+                    WindUI:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " has been jailed!", Duration=4})
                 end
             end})
 
             -- Freeze target (anchor their HRP)
             local freezeLoop = nil
-            BAdminSection:Toggle({Title = "Freeze Target (Loop)", Value = false, Callback = function(v)
+            _Sec7:Toggle({Title = "🔒 Freeze Target (Loop)", Value = false}):OnChanged(function(v)
                 if v then
                     local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -643,7 +633,7 @@ local success, err = pcall(function()
 
             -- Loop Kill
             local loopKillConn = nil
-            BAdminSection:Toggle({Title = "Loop Kill Target", Value = false, Callback = function(v)
+            _Sec7:Toggle({Title = "🔁 Loop Kill Target", Value = false}):OnChanged(function(v)
                 if v then
                     loopKillConn = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -658,7 +648,7 @@ local success, err = pcall(function()
 
             -- Loop Sit on Target
             local bLoopSit2 = nil
-            BAdminSection:Toggle({Title = "Loop Sit on Target (Annoy)", Value = false, Callback = function(v)
+            _Sec7:Toggle({Title = "🔁 Loop Sit on Target (Annoy)", Value = false}):OnChanged(function(v)
                 if v then
                     bLoopSit2 = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -680,10 +670,10 @@ local success, err = pcall(function()
             -- ============================================
             -- HORROR COMMANDS
             -- ============================================
-            local BHorrorSection = BTab:Section({ Title = "Horror Commands", Icon = "ghost" })
+            local _Sec8 = BTab:Section({Title = "🎃 Horror Commands"})
 
             -- The Backrooms: teleport target to a desolate empty corner
-            BHorrorSection:Button({Title = "🪄 The Backrooms (Banish)", Callback = function()
+            _Sec8:Button({Title = "🪄 The Backrooms (Banish)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     -- Teleport to a far, empty liminal space position
@@ -707,12 +697,12 @@ local success, err = pcall(function()
                             lighting.FogStart = 0
                         end)
                     end)
-                    WindUI:Notify({Title="Backrooms", Content=_G.SynthState.TargetPlayer .. " has been banished to The Backrooms...", Duration=5, Icon="map"})
+                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " has been banished to The Backrooms...", Duration=5})
                 end
             end})
 
             -- Jumpscare: Eyes
-            BHorrorSection:Button({Title = "🧟 Jumpscare: Eyes", Callback = function()
+            _Sec8:Button({Title = "🧟 Jumpscare: Eyes", Callback = function()
                 pcall(function()
                     local sg = Instance.new("ScreenGui")
                     sg.Name = "SynthJumpscare"
@@ -744,11 +734,11 @@ local success, err = pcall(function()
                     task.wait(0.5)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="Jumpscare", Content="EYES jumpscare triggered!", Duration=2, Icon="eye"})
+                WindUI:Notify({Title="🧟 Jumpscare", Content="EYES jumpscare triggered!", Duration=2})
             end})
 
             -- Jumpscare: Zombie
-            BHorrorSection:Button({Title = "Zombie Jumpscare", Callback = function()
+            _Sec8:Button({Title = "🧟 Jumpscare: Zombie", Callback = function()
                 pcall(function()
                     local sg = Instance.new("ScreenGui")
                     sg.Name = "SynthJumpscare"
@@ -787,11 +777,11 @@ local success, err = pcall(function()
                     task.wait(0.8)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="Jumpscare", Content="ZOMBIE jumpscare triggered!", Duration=2, Icon="skull"})
+                WindUI:Notify({Title="🧟 Jumpscare", Content="ZOMBIE jumpscare triggered!", Duration=2})
             end})
 
             -- Jumpscare: Ghost
-            BHorrorSection:Button({Title = "Ghost Jumpscare", Callback = function()
+            _Sec8:Button({Title = "🧟 Jumpscare: Ghost", Callback = function()
                 pcall(function()
                     local sg = Instance.new("ScreenGui")
                     sg.Name = "SynthJumpscare"
@@ -831,11 +821,11 @@ local success, err = pcall(function()
                     task.wait(0.6)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="Jumpscare", Content="GHOST jumpscare triggered!", Duration=2, Icon="ghost"})
+                WindUI:Notify({Title="🧟 Jumpscare", Content="GHOST jumpscare triggered!", Duration=2})
             end})
 
             -- Jumpscare: Backrooms
-            BHorrorSection:Button({Title = "Backrooms Jumpscare", Callback = function()
+            _Sec8:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function()
                 pcall(function()
                     local sg = Instance.new("ScreenGui")
                     sg.Name = "SynthJumpscare"
@@ -876,25 +866,30 @@ local success, err = pcall(function()
                     task.wait(1.5)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2, Icon="map-pin"})
+                WindUI:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2})
             end})
 
         elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
             BuiltHubs["PecaDeSailor"] = true
             local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
 
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = "None", Callback = function(val) _G.SynthState.TargetPlayer = val end})
-            STab:Button({Title = "Refresh Player List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
+            -- Player target selector
+            local SPD = STab:AddDropdown("SailorPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
+            SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local _Sec9 = STab:Section({Title = "General"})
+            _Sec9:Button({Title = "🔄 Refresh Player List", Callback = function() SPD:SetValues(GetPlayers()) end})
 
-            local SActionSection = STab:Section({ Title = "Player Actions", Icon = "user" })
-            SActionSection:Button({Title = "Teleport To Target", Callback = function()
+            -- ── Player Actions ──────────────────────────────
+            local _Sec10 = STab:Section({Title = "🏠 Player Actions"})
+
+            _Sec10:Button({Title = "⚡ Teleport To Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
                 end
             end})
 
-            SActionSection:Button({Title = "Copy Outfit", Callback = function()
+            _Sec10:Button({Title = "👗 Copy Outfit", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
                     for _, i in pairs(LocalPlayer.Character:GetChildren()) do
@@ -926,13 +921,13 @@ local success, err = pcall(function()
                             end
                         end
                     end
-                    WindUI:Notify({Title="Outfit", Content="Outfit copiado de " .. _G.SynthState.TargetPlayer, Duration=3, Icon="shirt"})
+                    WindUI:Notify({Title="👗 Outfit", Content="Outfit copiado de " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
             -- Attach loop
             local sailorAttachLoop = nil
-            SActionSection:Toggle({Title = "Attach to Player (Loop TP)", Value = false, Callback = function(v)
+            _Sec10:Toggle({Title = "📌 Attach to Player (Loop TP)", Value = false}):OnChanged(function(v)
                 if v then
                     sailorAttachLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -947,7 +942,7 @@ local success, err = pcall(function()
 
             -- Sit on head loop
             local sailorSitLoop = nil
-            SActionSection:Toggle({Title = "Sit on Target's Head", Value = false, Callback = function(v)
+            _Sec10:Toggle({Title = "🪑 Sit on Target's Head", Value = false}):OnChanged(function(v)
                 if v then
                     sailorSitLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -963,11 +958,11 @@ local success, err = pcall(function()
             end)
 
             -- ── Local ────────────────────────────────────────
-            local SLocalSection = STab:Section({ Title = "Local Sailor", Icon = "star" })
+            local _Sec11 = STab:Section({Title = "🌟 Local Sailor"})
 
             -- RGB skin
             local sailorRGBLoop = nil
-            SLocalSection:Toggle({Title = "Rainbow/RGB Character", Value = false, Callback = function(v)
+            _Sec11:Toggle({Title = "🌈 Rainbow/RGB Character", Value = false}):OnChanged(function(v)
                 if v then
                     sailorRGBLoop = RunService.RenderStepped:Connect(function()
                         if LocalPlayer.Character then
@@ -984,7 +979,7 @@ local success, err = pcall(function()
             end)
 
             -- Sailor Moon aura: neon pink highlight on self
-            SLocalSection:Button({Title = "Sailor Moon Aura (Self)", Callback = function()
+            _Sec11:Button({Title = "🌙 Sailor Moon Aura (Self)", Callback = function()
                 if LocalPlayer.Character then
                     local existing = LocalPlayer.Character:FindFirstChild("SailorAura")
                     if existing then existing:Destroy(); return end
@@ -993,20 +988,20 @@ local success, err = pcall(function()
                     hl.FillColor = Color3.fromRGB(255, 100, 200)
                     hl.OutlineColor = Color3.fromRGB(255, 255, 100)
                     hl.FillTransparency = 0.3
-                    WindUI:Notify({Title="🌙 Aura", Content="Sailor Moon Aura ativada! Clique novamente para remover.", Duration=3, Icon="sun"})
+                    WindUI:Notify({Title="🌙 Aura", Content="Sailor Moon Aura ativada! Clique novamente para remover.", Duration=3})
                 end
             end})
 
-            SLocalSection:Button({Title = "Remove Name Tag (Anon)", Callback = function()
+            _Sec11:Button({Title = "🗑️ Remove Name Tag (Anon)", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
                     for _, child in pairs(LocalPlayer.Character.Head:GetChildren()) do
                         if child:IsA("BillboardGui") or child.Name:lower():match("name") then child:Destroy() end
                     end
                 end
-                WindUI:Notify({Title="Anon", Content="Name tag removido!", Duration=2, Icon="user-minus"})
+                WindUI:Notify({Title="🗑️ Anon", Content="Name tag removido!", Duration=2})
             end})
 
-            SLocalSection:Button({Title = "Visual Infinite Money", Callback = function()
+            _Sec11:Button({Title = "💰 Visual Infinite Money", Callback = function()
                 pcall(function()
                     for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
                         if gui:IsA("TextLabel") and (gui.Text:find("%$") or gui.Text:find("Coins") or gui.Text:find("Gold") or gui.Text:find("Money")) then
@@ -1014,29 +1009,29 @@ local success, err = pcall(function()
                         end
                     end
                 end)
-                WindUI:Notify({Title="Money", Content="Visual money modificado!", Duration=2, Icon="coins"})
+                WindUI:Notify({Title="💰 Money", Content="Visual money modificado!", Duration=2})
             end})
 
             -- ── Admin Commands ────────────────────────────────
-            local SAdminSection = STab:Section({ Title = "Admin Commands", Icon = "shield-alert" })
+            local _Sec12 = STab:Section({Title = "⚠️ Admin Commands"})
 
-            SAdminSection:Button({Title = "Verify (List Players)", Callback = function()
+            _Sec12:Button({Title = "📝 Verify (List Players)", Callback = function()
                 local msg = "Players:\n"
                 for _, p in pairs(Players:GetPlayers()) do
                     msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
                 end
-                WindUI:Notify({Title="Verify", Content=msg, Duration=10, Icon="list"})
+                WindUI:Notify({Title="📝 Verify", Content=msg, Duration=10})
             end})
 
-            SAdminSection:Button({Title = "Kill Target", Callback = function()
+            _Sec12:Button({Title = "💀 Kill Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                     t.Character.Humanoid.Health = 0
-                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3, Icon="skull"})
+                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
-            SAdminSection:Button({Title = "KillPlus (Explosion)", Callback = function()
+            _Sec12:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local exp = Instance.new("Explosion")
@@ -1044,11 +1039,11 @@ local success, err = pcall(function()
                     exp.BlastRadius = 10; exp.BlastPressure = 1000000
                     exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
                     if t.Character:FindFirstChildOfClass("Humanoid") then t.Character.Humanoid.Health = 0 end
-                    WindUI:Notify({Title="KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3, Icon="zap-off"})
+                    WindUI:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
                 end
             end})
 
-            SAdminSection:Button({Title = "Fling Target", Callback = function()
+            _Sec12:Button({Title = "🧲 Fling Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     pcall(function()
@@ -1058,24 +1053,24 @@ local success, err = pcall(function()
                         bv.Parent = t.Character.HumanoidRootPart
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3, Icon="magnet"})
+                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
-            SAdminSection:Button({Title = "Explode Target", Callback = function()
+            _Sec12:Button({Title = "☢️ Explode Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local exp = Instance.new("Explosion")
                     exp.Position = t.Character.HumanoidRootPart.Position
                     exp.BlastRadius = 20; exp.BlastPressure = 5000000
                     exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
-                    WindUI:Notify({Title="Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3, Icon="bomb"})
+                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
             -- Freeze
             local sailorFreezeLoop = nil
-            SAdminSection:Toggle({Title = "Freeze Target (Loop)", Value = false, Callback = function(v)
+            _Sec12:Toggle({Title = "🔒 Freeze Target (Loop)", Value = false}):OnChanged(function(v)
                 if v then
                     local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -1106,7 +1101,7 @@ local success, err = pcall(function()
 
             -- Loop Kill
             local sailorLoopKill = nil
-            SAdminSection:Toggle({Title = "Loop Kill Target", Value = false, Callback = function(v)
+            _Sec12:Toggle({Title = "🔁 Loop Kill Target", Value = false}):OnChanged(function(v)
                 if v then
                     sailorLoopKill = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1120,7 +1115,7 @@ local success, err = pcall(function()
             end)
 
             -- Jail
-            SAdminSection:Button({Title = "Jail Target", Callback = function()
+            _Sec12:Button({Title = "🔒 Jail Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     local pos = t.Character.HumanoidRootPart.Position
@@ -1141,14 +1136,14 @@ local success, err = pcall(function()
                         part.Parent = workspace
                         game:GetService("Debris"):AddItem(part, 30)
                     end
-                    WindUI:Notify({Title="Jail", Content=_G.SynthState.TargetPlayer .. " jailed!", Duration=4, Icon="lock"})
+                    WindUI:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " jailed!", Duration=4})
                 end
             end})
 
             -- ── Horror Commands ───────────────────────────────
-            local SHorrorSection = STab:Section({ Title = "Horror Commands", Icon = "ghost" })
+            local _Sec13 = STab:Section({Title = "🎃 Horror Commands"})
 
-            SHorrorSection:Button({Title = "Backrooms (Banish)", Callback = function()
+            _Sec13:Button({Title = "🪄 Backrooms (Banish)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                     pcall(function() t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999) end)
@@ -1164,7 +1159,7 @@ local success, err = pcall(function()
                             lighting.FogEnd = 100000; lighting.FogStart = 0
                         end)
                     end)
-                    WindUI:Notify({Title="Backrooms", Content=_G.SynthState.TargetPlayer .. " banished!", Duration=5, Icon="map"})
+                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " banished!", Duration=5})
                 end
             end})
 
@@ -1192,18 +1187,20 @@ local success, err = pcall(function()
                 end)
             end
 
-            SHorrorSection:Button({Title = "Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) WindUI:Notify({Title="Scare", Content="Eyes!", Duration=2, Icon="eye"}) end})
-            SHorrorSection:Button({Title = "Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="Scare", Content="Zombie!", Duration=2, Icon="skull"}) end})
-            SHorrorSection:Button({Title = "Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="Scare", Content="Ghost!", Duration=2, Icon="ghost"}) end})
-            SHorrorSection:Button({Title = "Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="Scare", Content="Backrooms!", Duration=2, Icon="map-pin"}) end})
+            _Sec13:Button({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) WindUI:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2}) end})
+            _Sec13:Button({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2}) end})
+            _Sec13:Button({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2}) end})
+            _Sec13:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2}) end})
 
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:Tab({ Title = "Dandy Hub", Icon = "skull" })
-            local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = "None", Callback = function(val) _G.SynthState.TargetPlayer = val end})
-            DTab:Button({Title = "Refresh List", Callback = function() DPD:Refresh(GetPlayers(), true) end})
+            local DPD = DTab:AddDropdown("DPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
+            DPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local _Sec14 = DTab:Section({Title = "General"})
+            _Sec14:Button({Title = "Refresh List", Callback = function() DPD:SetValues(GetPlayers()) end})
             
-            DTab:Button({Title = "Copy Skin (Local Model)", Callback = function()
+            _Sec14:Button({Title = "Copy Skin (Local Model)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
                     -- Fallback for custom rigs: try to copy obvious visual meshes/accessories
@@ -1211,7 +1208,7 @@ local success, err = pcall(function()
                     for _, i in pairs(t.Character:GetChildren()) do if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") then i:Clone().Parent = LocalPlayer.Character end end
                 end
             end})
-            DTab:Button({Title = "Restore Max Stamina (BETA)", Callback = function()
+            _Sec14:Button({Title = "Restore Max Stamina (BETA)", Callback = function()
                 pcall(function()
                     -- Custom games don't use Humanoid.Stamina. Scan for Attributes or ValueBases
                     local c = LocalPlayer.Character
@@ -1222,14 +1219,13 @@ local success, err = pcall(function()
                     end
                     if LocalPlayer:GetAttribute("Stamina") then LocalPlayer:SetAttribute("Stamina", 100) end
                 end)
-                WindUI:Notify({Title="Dandy's World", Content="Stamina restore attempted via Value/Attributes.", Duration=3, Icon="battery-full"})
+                WindUI:Notify({Title="Dandy's World", Content="Stamina restore attempted via Value/Attributes.", Duration=3})
             end})
             
-            local DWorldSection = DTab:Section({ Title = "World Visuals", Icon = "globe" })
-            DWorldSection:Toggle({Title = "Monster/Entity ESP", Value = false, Callback = function(v)
+            local _Sec15 = DTab:Section({Title = "World Visuals"})
+            _Sec15:Toggle({Title = "Monster/Entity ESP", Value = false}):OnChanged(function(v)
                 _G.SynthState.DandyESP = v
-            end})
-            DWorldSection:Toggle({Title = "Item/Loot ESP", Value = false, Callback = function(v)
+            end, Callback = function(v)
                 _G.SynthState.DandyItemESP = v
             end})
             
@@ -1274,17 +1270,18 @@ local success, err = pcall(function()
         elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = "None", Callback = function(val) _G.SynthState.TargetPlayer = val end})
-            STab:Button({Title = "Refresh List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
+            local SPD = STab:AddDropdown("STPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
+            SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            _Sec13:Button({Title = "Refresh List", Callback = function() SPD:SetValues(GetPlayers()) end})
             
-            local SInteractSection = STab:Section({ Title = "Interactions", Icon = "message-circle" })
-            SInteractSection:Button({Title = "Teleport To Player", Callback = function()
+            local _Sec16 = STab:Section({Title = "Interactions"})
+            _Sec16:Button({Title = "Teleport To Player", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
                 end
             end})
-            SInteractSection:Button({Title = "Copy Outfit (Full Clone)", Callback = function()
+            _Sec16:Button({Title = "Copy Outfit (Full Clone)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
                     -- Clean current outfit
@@ -1393,7 +1390,7 @@ local success, err = pcall(function()
             end})
             
             local socialControlClone = nil
-            SInteractSection:Toggle({Title = "Control Player (Weld Bug)", Value = false, Callback = function(v)
+            _Sec16:Toggle({Title = "Control Player (Weld Bug)", Value = false}):OnChanged(function(v)
                 if v then
                     local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                     if t and t.Character and LocalPlayer.Character then
@@ -1429,7 +1426,7 @@ local success, err = pcall(function()
                 end
             end)
             
-            SInteractSection:Button({Title = "Bring All Workspace Tools/Items", Callback = function()
+            _Sec16:Button({Title = "Bring All Workspace Tools/Items", Callback = function()
                 pcall(function()
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                         for _, obj in pairs(workspace:GetDescendants()) do
@@ -1440,7 +1437,7 @@ local success, err = pcall(function()
                     end
                 end)
             end})
-            SInteractSection:Button({Title = "Troll Fling (Kill)", Callback = function()
+            _Sec16:Button({Title = "Troll Fling (Kill)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = LocalPlayer.Character.HumanoidRootPart
@@ -1462,7 +1459,7 @@ local success, err = pcall(function()
             end})
 
             local socialAttachLoop = nil
-            SInteractSection:Toggle({Title = "Attach to Player (Loop TP)", Value = false, Callback = function(v)
+            _Sec16:Toggle({Title = "Attach to Player (Loop TP)", Value = false}):OnChanged(function(v)
                 if v then
                     socialAttachLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1477,7 +1474,7 @@ local success, err = pcall(function()
 
             local spinSitLoop = nil
             local spinSitAngle = 0
-            SInteractSection:Toggle({Title = "Spin on Target's Head (Annoy)", Value = false, Callback = function(v)
+            _Sec16:Toggle({Title = "Spin on Target's Head (Annoy)", Value = false}):OnChanged(function(v)
                 if v then
                     spinSitLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1493,7 +1490,7 @@ local success, err = pcall(function()
                 end
             end)
 
-            SInteractSection:Button({Title = "AoE Fling All (Kill Server)", Callback = function()
+            _Sec16:Button({Title = "AoE Fling All (Kill Server)", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = LocalPlayer.Character.HumanoidRootPart
                     local thrust = Instance.new("BodyAngularVelocity")
@@ -1523,7 +1520,7 @@ local success, err = pcall(function()
                 end
             end})
 
-            SInteractSection:Button({Title = "Naked Mode (Remove Clothes Local)", Callback = function()
+            _Sec16:Button({Title = "Naked Mode (Remove Clothes Local)", Callback = function()
                 if LocalPlayer.Character then
                     for _, i in pairs(LocalPlayer.Character:GetChildren()) do 
                         if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") then 
@@ -1534,7 +1531,7 @@ local success, err = pcall(function()
             end})
 
             local socialSitLoop = nil
-            SInteractSection:Toggle({Title = "Sit on Target's Shoulders", Value = false, Callback = function(v)
+            _Sec16:Toggle({Title = "Sit on Target's Shoulders", Value = false}):OnChanged(function(v)
                 if v then
                     socialSitLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1553,7 +1550,7 @@ local success, err = pcall(function()
             local flyLoop = nil
             local bv = nil
             local bg = nil
-            SInteractSection:Toggle({Title = "Fly System (Hold Left Click)", Value = false, Callback = function(v)
+            _Sec16:Toggle({Title = "Fly System (Hold Left Click)", Value = false}):OnChanged(function(v)
                 flying = v
                 if flying then
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -1587,9 +1584,9 @@ local success, err = pcall(function()
             -- ============================================
             -- HORROR COMMANDS
             -- ============================================
-            local SHorrorSection = STab:Section({ Title = "Horror Commands", Icon = "ghost" })
+            local _Sec17 = STab:Section({Title = "🎃 Horror Commands"})
             
-            SHorrorSection:Button({Title = "🏹 Angel All Players (Kill Server)", Callback = function()
+            _Sec17:Button({Title = "🏹 Angel All Players (Kill Server)", Callback = function()
                 local count = 0
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -1617,17 +1614,17 @@ local success, err = pcall(function()
                         count = count + 1
                     end
                 end
-                WindUI:Notify({Title="Angel All", Content=count.." players have become angels!", Duration=4, Icon="sun"})
+                WindUI:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4, Icon="sun"})
             end})
 
         elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
             local JTab = Window:Tab({ Title = "Jujutsu Hub", Icon = "shield" })
             
-            local JGodSection = JTab:Section({ Title = "Invincibility & God Mode", Icon = "shield-check" })
+            local _Sec18 = JTab:Section({Title = "Invincibility & God Mode"})
             
             local godLoop = nil
-            JGodSection:Toggle({Title = "Basic God Mode (Max Health)", Value = false, Callback = function(v)
+            _Sec18:Toggle({Title = "Basic God Mode (Max Health)", Value = false}):OnChanged(function(v)
                 if v then
                     godLoop = RunService.Heartbeat:Connect(function()
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -1647,7 +1644,7 @@ local success, err = pcall(function()
             end)
 
             local hitboxLoop = nil
-            JGodSection:Toggle({Title = "Delete Enemy Hitboxes (Anti-Damage)", Value = false, Callback = function(v)
+            _Sec18:Toggle({Title = "Delete Enemy Hitboxes (Anti-Damage)", Value = false}):OnChanged(function(v)
                 if v then
                     hitboxLoop = RunService.RenderStepped:Connect(function()
                         for _, obj in pairs(workspace:GetDescendants()) do
@@ -1667,7 +1664,7 @@ local success, err = pcall(function()
             end)
 
             local dodgeLoop = nil
-            JGodSection:Toggle({Title = "Auto Dodge (Proximity TP)", Value = false, Callback = function(v)
+            _Sec18:Toggle({Title = "Auto Dodge (Proximity TP)", Value = false}):OnChanged(function(v)
                 if v then
                     dodgeLoop = RunService.Heartbeat:Connect(function()
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -1689,7 +1686,7 @@ local success, err = pcall(function()
             end)
             
             local antiStunLoop = nil
-            JGodSection:Toggle({Title = "Anti-Stun / Auto-Sprint", Value = false, Callback = function(v)
+            _Sec18:Toggle({Title = "Anti-Stun / Auto-Sprint", Value = false}):OnChanged(function(v)
                 if v then
                     antiStunLoop = RunService.RenderStepped:Connect(function()
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -1712,49 +1709,31 @@ local success, err = pcall(function()
 
 
     -- POPULATE AIMBOT
-    local AimCoreSection = Tabs.Aimbot:Section({Title = "Aimbot Core", Icon = "target"})
-    AimCoreSection:Toggle({Title = "Enable Camera Aimbot", Value = false, Callback = function(v) _G.SynthState.AimEnabled = v end})
-    AimCoreSection:Toggle({Title = "Silent Aim (Magic Bullet)", Value = false, Callback = function(v) _G.SynthState.SilentAim = v end})
-    AimCoreSection:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Value = "Head", Callback = function(v) _G.SynthState.AimPart = v end})
-    
-    local AimSettingsSection = Tabs.Aimbot:Section({Title = "Aimbot Settings", Icon = "settings-2"})
-    AimSettingsSection:Slider({Title = "FOV Size", Step = 1, Value = {Min = 10, Max = 800, Default = 100}, Callback = function(v) _G.SynthState.AimFOV = v end})
-    AimSettingsSection:Slider({Title = "Smoothness (Cam)", Step = 0.1, Value = {Min = 1, Max = 20, Default = 3}, Callback = function(v) _G.SynthState.AimSmooth = v end})
+    local _Sec19 = Tabs.Aimbot:Section({Title = "Aimbot Core"})
+    _Sec19:Toggle({Title = "Enable Camera Aimbot", Value = false}):OnChanged(function(v) _G.SynthState.AimEnabled = v end, Callback = function(v) _G.SynthState.SilentAim = v end})
+    _Sec19:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}}):OnChanged(function(v) _G.SynthState.AimPart = v end)
+    local _Sec20 = Tabs.Aimbot:Section({Title = "Aimbot Settings"})
+    _Sec20:Slider({Title = "FOV Size", Step = 1, Value = {Min = 10, Max = 800, Default = 100}, Callback = function(v) _G.SynthState.AimSmooth = v end})
 
     -- POPULATE VISUALS
-    local ESP2DSection = Tabs.Visuals:Section({Title = "2D ESP", Icon = "layout"})
-    ESP2DSection:Toggle({Title = "Boxes", Value = false, Callback = function(v) _G.SynthState.BoxESP = v end})
-    ESP2DSection:Toggle({Title = "Names", Value = false, Callback = function(v) _G.SynthState.NameESP = v end})
-    ESP2DSection:Toggle({Title = "Distance", Value = false, Callback = function(v) _G.SynthState.DistESP = v end})
-    ESP2DSection:Toggle({Title = "Skeleton Esp", Value = false, Callback = function(v) _G.SynthState.SkeletonESP = v end})
-    ESP2DSection:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1), Callback = function(v) _G.SynthState.SkeletonColor = v end})
+    local _Sec21 = Tabs.Visuals:Section({Title = "2D ESP"})
+    _Sec21:Toggle({Title = "Boxes", Value = false}):OnChanged(function(v) _G.SynthState.BoxESP = v end, Callback = function(v) _G.SynthState.NameESP = v end})
+    _Sec21:Toggle({Title = "Distance", Value = false}):OnChanged(function(v) _G.SynthState.DistESP = v end, Callback = function(v) _G.SynthState.SkeletonESP = v end})
+    _Sec21:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1)}):OnChanged(function(v) _G.SynthState.SkeletonColor = v end)
     
-    local ESP3DSection = Tabs.Visuals:Section({Title = "3D ESP & World", Icon = "box"})
-    ESP3DSection:Toggle({Title = "Enable Chams", Value = false, Callback = function(v) _G.SynthState.Chams = v end})
-    ESP3DSection:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Value = "Neon", Callback = function(v) _G.SynthState.ChamsMat = v end})
-    ESP3DSection:Colorpicker({Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255), Callback = function(v) _G.SynthState.ChamsColor = v end})
-    ESP3DSection:Toggle({Title = "Projectile ESP (Grenades)", Value = false, Callback = function(v) _G.SynthState.ProjESP = v end})
+    local _Sec22 = Tabs.Visuals:Section({Title = "3D ESP & World"})
+    _Sec22:Toggle({Title = "Enable Chams", Value = false}):OnChanged(function(v) _G.SynthState.Chams = v end, Callback = function(v) _G.SynthState.ChamsMat = v end})
+    _Sec22:Colorpicker({Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255)}):OnChanged(function(v) _G.SynthState.ChamsColor = v end, Callback = function(v) _G.SynthState.ProjESP = v end})
 
     -- POPULATE LOCAL
-    local MoveSection = Tabs.Local:Section({Title = "Movement", Icon = "zap"})
-    MoveSection:Slider({Title = "WalkSpeed", Step = 1, Value = {Min = 16, Max = 300, Default = 16}, Callback = function(v) _G.SynthState.WalkSpeed = v end})
-    MoveSection:Slider({Title = "JumpPower", Step = 1, Value = {Min = 50, Max = 500, Default = 50}, Callback = function(v) _G.SynthState.JumpPower = v end})
-    MoveSection:Toggle({Title = "NoClip", Value = false, Callback = function(v) _G.SynthState.NoClip = v end})
+    local _Sec23 = Tabs.Local:Section({Title = "Movement"})
+    _Sec23:Slider({Title = "WalkSpeed", Step = 1, Value = {Min = 16, Max = 300, Default = 16}, Callback = function(v) _G.SynthState.JumpPower = v end})
+    _Sec23:Toggle({Title = "NoClip", Value = false}):OnChanged(function(v) _G.SynthState.NoClip = v end)
     
-    local AntiHitSection = Tabs.Local:Section({Title = "Anti-Hit (CS:GO Style)", Icon = "shield-off"})
-    AntiHitSection:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.SynthState.Spinbot = v end})
-    AntiHitSection:Slider({Title = "Spin Speed", Step = 1, Value = {Min = 10, Max = 200, Default = 50}, Callback = function(v) _G.SynthState.SpinSpeed = v end})
+    local _Sec24 = Tabs.Local:Section({Title = "Anti-Hit (CS:GO Style)"})
+    _Sec24:Toggle({Title = "Spinbot (360)", Value = false}):OnChanged(function(v) _G.SynthState.Spinbot = v end, Callback = function(v) _G.SynthState.SpinSpeed = v end})
 
     -- SETTINGS
-    local ConfigSection = Tabs.Settings:Section({Title = "Configuration", Icon = "file-text"})
-    local CM = Window.ConfigManager
-    local synthConfig = CM:CreateConfig("SynthesisMega")
-    ConfigSection:Button({Title = "Save Config", Callback = function() synthConfig:Save() end})
-    ConfigSection:Button({Title = "Load Config", Callback = function() synthConfig:Load() end})
-    
-    local ThemeSection = Tabs.Settings:Section({Title = "Theme", Icon = "palette"})
-    ThemeSection:Dropdown({Title = "Select Theme", Values = {"Dark", "Light", "Abyss", "Aqua"}, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end})
-    sNotify("Loading", "Aimbot/Visuals/Local/Settings criados!")
 
     -- CHEAT CORE ==========================================
 
@@ -1958,13 +1937,9 @@ local success, err = pcall(function()
     end)
 
     Tabs.Main:Select()
-    WindUI:Notify({Title = "Synthesis MEGA", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "check-circle"})
+    WindUI:Notify({Title = "Synthesis EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7})
 end)
 
 if not success then
-    -- Show error clearly in chat/output
-    print("[SYNTHESIS ERROR] " .. tostring(err))
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "SYNTHESIS ERRO", Text = tostring(err):sub(1, 200), Duration = 30})
-    -- Also write to output for executor console visibility
-    warn("[SYNTHESIS FULL ERROR]: " .. tostring(err))
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
 end
