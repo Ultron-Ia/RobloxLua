@@ -478,7 +478,7 @@ local success, err = pcall(function()
                         bv.Parent = hrp
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3, Icon="magnet"})
                 end
             end})
 
@@ -550,7 +550,7 @@ local success, err = pcall(function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                     t.Character.Humanoid.Health = 0
-                    Fluent:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
+                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3, Icon="skull"})
                 end
             end})
 
@@ -1024,7 +1024,7 @@ local success, err = pcall(function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                     t.Character.Humanoid.Health = 0
-                    Fluent:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
+                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3, Icon="skull"})
                 end
             end})
 
@@ -1050,7 +1050,7 @@ local success, err = pcall(function()
                         bv.Parent = t.Character.HumanoidRootPart
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3, Icon="magnet"})
                 end
             end})
 
@@ -1138,7 +1138,7 @@ local success, err = pcall(function()
             end})
 
             -- ── Horror Commands ───────────────────────────────
-            STab:AddSection("🎃 Horror Commands")
+            local SHorrorSection = STab:Section({ Title = "Horror Commands", Icon = "ghost" })
 
             SHorrorSection:Button({Title = "Backrooms (Banish)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
