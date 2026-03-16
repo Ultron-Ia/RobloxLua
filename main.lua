@@ -390,6 +390,491 @@ local success, err = pcall(function()
                 end)
             end})
 
+            -- ============================================
+            -- ADMIN COMMANDS
+            -- ============================================
+            BTab:AddSection("⚠️ Admin Commands")
+
+            -- Verify: list all players in the server
+            BTab:AddButton({Title = "📝 Verify (List Server Players)", Callback = function()
+                local msg = "Players in server:\n"
+                for _, p in pairs(Players:GetPlayers()) do
+                    msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
+                end
+                Fluent:Notify({Title = "📝 Server Verify", Content = msg, Duration = 10})
+            end})
+
+            -- Kick target (exploiting Brookhaven's remote or local kick workaround)
+            BTab:AddButton({Title = "⚠️ Kick Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t then
+                    pcall(function()
+                        -- Try any kick remote in ReplicatedStorage
+                        for _, r in pairs(ReplicatedStorage:GetDescendants()) do
+                            if r:IsA("RemoteEvent") and (r.Name:lower():find("kick") or r.Name:lower():find("ban")) then
+                                r:FireServer(t)
+                            end
+                        end
+                        -- Fallback: force them to load a bad character
+                        t:Kick("You have been removed by an admin.")
+                    end)
+                    Fluent:Notify({Title="⚠️ Kick", Content="Attempted to kick " .. _G.SynthState.TargetPlayer, Duration=4})
+                end
+            end})
+
+            -- Explode target (nuclear bomb effect via BodyForce)
+            BTab:AddButton({Title = "☢️ Explode Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = t.Character.HumanoidRootPart
+                    -- Visual: create explosion instance near them
+                    local exp = Instance.new("Explosion")
+                    exp.Position = hrp.Position
+                    exp.BlastRadius = 20
+                    exp.BlastPressure = 5000000
+                    exp.DestroyJointRadiusPercent = 0
+                    exp.Parent = workspace
+                    -- Also fling them for effect
+                    pcall(function()
+                        local bf = Instance.new("BodyForce")
+                        bf.Force = Vector3.new(0, 9999999, 0)
+                        bf.Parent = hrp
+                        task.delay(0.2, function() bf:Destroy() end)
+                    end)
+                    Fluent:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            -- Ragdoll target (disable motor joints)
+            BTab:AddButton({Title = "☢️ Ragdoll Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character then
+                    for _, v in pairs(t.Character:GetDescendants()) do
+                        if v:IsA("Motor6D") then
+                            pcall(function()
+                                local a0 = Instance.new("Attachment", v.Part0)
+                                local a1 = Instance.new("Attachment", v.Part1)
+                                local bs = Instance.new("BallSocketConstraint")
+                                bs.Attachment0 = a0
+                                bs.Attachment1 = a1
+                                bs.Parent = v.Part0
+                                v.Enabled = false
+                            end)
+                        end
+                    end
+                    -- Kill the humanoid so the ragdoll persists
+                    if t.Character:FindFirstChildOfClass("Humanoid") then
+                        t.Character.Humanoid.Health = 0
+                    end
+                    Fluent:Notify({Title="☢️ Ragdoll", Content="Ragdolled " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            -- Fling target upward (kill via height)
+            BTab:AddButton({Title = "🧲 Fling Target (Kill via Height)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = t.Character.HumanoidRootPart
+                    pcall(function()
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Velocity = Vector3.new(math.random(-300,300), 9999, math.random(-300,300))
+                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        bv.Parent = hrp
+                        task.delay(0.5, function() bv:Destroy() end)
+                    end)
+                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            -- Float target (trap them floating in the air)
+            local floatLoop = nil
+            BTab:AddToggle("BFloat", {Title = "🧲 Float Target (Loop)", Default = false}):OnChanged(function(v)
+                if v then
+                    floatLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                            local hrp = t.Character.HumanoidRootPart
+                            pcall(function()
+                                hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
+                                hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.5, 0)
+                            end)
+                        end
+                    end)
+                else
+                    if floatLoop then floatLoop:Disconnect(); floatLoop = nil end
+                end
+            end)
+
+            -- Launch: force constant directional movement on target
+            BTab:AddButton({Title = "🏹 Launch Target (Into Space)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = t.Character.HumanoidRootPart
+                    pcall(function()
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Velocity = Vector3.new(0, 99999, 0)
+                        bv.MaxForce = Vector3.new(0, math.huge, 0)
+                        bv.Parent = hrp
+                        task.delay(1, function() bv:Destroy() end)
+                    end)
+                    Fluent:Notify({Title="🏹 Launch", Content="Launched " .. _G.SynthState.TargetPlayer .. " into orbit!", Duration=3})
+                end
+            end})
+
+            -- Angel: turn target into an "angel" (white highlight + freeze in sky)
+            BTab:AddButton({Title = "🏹 Angel Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = t.Character.HumanoidRootPart
+                    -- White glow
+                    pcall(function()
+                        local hl = t.Character:FindFirstChild("AngelHL") or Instance.new("Highlight", t.Character)
+                        hl.Name = "AngelHL"
+                        hl.FillColor = Color3.fromRGB(255, 255, 255)
+                        hl.OutlineColor = Color3.fromRGB(200, 200, 255)
+                        hl.FillTransparency = 0.3
+                    end)
+                    -- Lift up high and anchor
+                    pcall(function()
+                        hrp.CFrame = hrp.CFrame + Vector3.new(0, 200, 0)
+                        hrp.Anchored = true
+                        task.delay(8, function()
+                            pcall(function() hrp.Anchored = false end)
+                        end)
+                    end)
+                    if t.Character:FindFirstChildOfClass("Humanoid") then
+                        t.Character.Humanoid.Health = 0
+                    end
+                    Fluent:Notify({Title="🏹 Angel", Content=_G.SynthState.TargetPlayer .. " has become an angel!", Duration=4})
+                end
+            end})
+
+            -- Kill target
+            BTab:AddButton({Title = "💀 Kill Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                    t.Character.Humanoid.Health = 0
+                    Fluent:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            -- KillPlus: kill with red explosion visual
+            BTab:AddButton({Title = "💀 KillPlus (Explosion Effect)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = t.Character.HumanoidRootPart
+                    local exp = Instance.new("Explosion")
+                    exp.Position = hrp.Position
+                    exp.BlastRadius = 10
+                    exp.BlastPressure = 1000000
+                    exp.DestroyJointRadiusPercent = 0
+                    exp.Parent = workspace
+                    if t.Character:FindFirstChildOfClass("Humanoid") then
+                        t.Character.Humanoid.Health = 0
+                    end
+                    Fluent:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
+                end
+            end})
+
+            -- Jail: create a brick cage around the target
+            BTab:AddButton({Title = "🔒 Jail Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local pos = t.Character.HumanoidRootPart.Position
+                    local walls = {
+                        {CFrame.new(pos + Vector3.new(4, 2, 0)),  Vector3.new(0.5, 6, 8)},
+                        {CFrame.new(pos + Vector3.new(-4, 2, 0)), Vector3.new(0.5, 6, 8)},
+                        {CFrame.new(pos + Vector3.new(0, 2, 4)),  Vector3.new(8, 6, 0.5)},
+                        {CFrame.new(pos + Vector3.new(0, 2, -4)), Vector3.new(8, 6, 0.5)},
+                        {CFrame.new(pos + Vector3.new(0, 5, 0)),  Vector3.new(8, 0.5, 8)},
+                    }
+                    for _, wallData in pairs(walls) do
+                        local part = Instance.new("Part")
+                        part.Anchored = true
+                        part.CanCollide = true
+                        part.Size = wallData[2]
+                        part.CFrame = wallData[1]
+                        part.BrickColor = BrickColor.new("Dark orange")
+                        part.Material = Enum.Material.SmoothPlastic
+                        part.Transparency = 0.4
+                        part.Name = "SynthJailWall"
+                        part.Parent = workspace
+                        -- Auto-remove after 30s
+                        game:GetService("Debris"):AddItem(part, 30)
+                    end
+                    Fluent:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " has been jailed!", Duration=4})
+                end
+            end})
+
+            -- Freeze target (anchor their HRP)
+            local freezeLoop = nil
+            BTab:AddToggle("BFreeze", {Title = "🔒 Freeze Target (Loop)", Default = false}):OnChanged(function(v)
+                if v then
+                    local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                        local frozenCFrame = t.Character.HumanoidRootPart.CFrame
+                        freezeLoop = RunService.Heartbeat:Connect(function()
+                            local target = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                                pcall(function()
+                                    target.Character.HumanoidRootPart.CFrame = frozenCFrame
+                                    target.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                                end)
+                                if target.Character:FindFirstChildOfClass("Humanoid") then
+                                    target.Character.Humanoid.WalkSpeed = 0
+                                    target.Character.Humanoid.JumpPower = 0
+                                end
+                            end
+                        end)
+                    end
+                else
+                    if freezeLoop then freezeLoop:Disconnect(); freezeLoop = nil end
+                    local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                        t.Character.Humanoid.WalkSpeed = 16
+                        t.Character.Humanoid.JumpPower = 50
+                    end
+                end
+            end)
+
+            -- Loop Kill
+            local loopKillConn = nil
+            BTab:AddToggle("BLoopKill", {Title = "🔁 Loop Kill Target", Default = false}):OnChanged(function(v)
+                if v then
+                    loopKillConn = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                            t.Character.Humanoid.Health = 0
+                        end
+                    end)
+                else
+                    if loopKillConn then loopKillConn:Disconnect(); loopKillConn = nil end
+                end
+            end)
+
+            -- Loop Sit on Target
+            local bLoopSit2 = nil
+            BTab:AddToggle("BLoopSit2", {Title = "🔁 Loop Sit on Target (Annoy)", Default = false}):OnChanged(function(v)
+                if v then
+                    bLoopSit2 = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("Head") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
+                            if LocalPlayer.Character:FindFirstChild("Humanoid") then
+                                LocalPlayer.Character.Humanoid.Sit = true
+                            end
+                        end
+                    end)
+                else
+                    if bLoopSit2 then bLoopSit2:Disconnect(); bLoopSit2 = nil end
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        LocalPlayer.Character.Humanoid.Sit = false
+                    end
+                end
+            end)
+
+            -- ============================================
+            -- HORROR COMMANDS
+            -- ============================================
+            BTab:AddSection("🎃 Horror Commands")
+
+            -- The Backrooms: teleport target to a desolate empty corner
+            BTab:AddButton({Title = "🪄 The Backrooms (Banish)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    -- Teleport to a far, empty liminal space position
+                    pcall(function()
+                        t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999)
+                    end)
+                    -- Also dim world for local player (visual effect)
+                    pcall(function()
+                        local lighting = game:GetService("Lighting")
+                        local origBrightness = lighting.Brightness
+                        local origAmbient = lighting.Ambient
+                        lighting.Brightness = 0.05
+                        lighting.Ambient = Color3.fromRGB(20, 15, 10)
+                        lighting.FogColor = Color3.fromRGB(210, 200, 170)
+                        lighting.FogEnd = 60
+                        lighting.FogStart = 5
+                        task.delay(8, function()
+                            lighting.Brightness = origBrightness
+                            lighting.Ambient = origAmbient
+                            lighting.FogEnd = 100000
+                            lighting.FogStart = 0
+                        end)
+                    end)
+                    Fluent:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " has been banished to The Backrooms...", Duration=5})
+                end
+            end})
+
+            -- Jumpscare: Eyes
+            BTab:AddButton({Title = "🧟 Jumpscare: Eyes", Callback = function()
+                pcall(function()
+                    local sg = Instance.new("ScreenGui")
+                    sg.Name = "SynthJumpscare"
+                    sg.IgnoreGuiInset = true
+                    sg.ResetOnSpawn = false
+                    sg.Parent = LocalPlayer.PlayerGui
+
+                    local bg = Instance.new("Frame", sg)
+                    bg.Size = UDim2.fromScale(1, 1)
+                    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                    bg.BackgroundTransparency = 0
+                    bg.ZIndex = 10
+
+                    local eyes = Instance.new("TextLabel", bg)
+                    eyes.Size = UDim2.fromScale(1, 1)
+                    eyes.Position = UDim2.fromScale(0, 0)
+                    eyes.BackgroundTransparency = 1
+                    eyes.Text = "👀"
+                    eyes.TextScaled = true
+                    eyes.TextColor3 = Color3.fromRGB(255, 0, 0)
+                    eyes.Font = Enum.Font.GothamBold
+                    eyes.ZIndex = 11
+
+                    -- Flash effect
+                    for i = 1, 6 do
+                        bg.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 0, 0)
+                        task.wait(0.08)
+                    end
+                    task.wait(0.5)
+                    sg:Destroy()
+                end)
+                Fluent:Notify({Title="🧟 Jumpscare", Content="EYES jumpscare triggered!", Duration=2})
+            end})
+
+            -- Jumpscare: Zombie
+            BTab:AddButton({Title = "🧟 Jumpscare: Zombie", Callback = function()
+                pcall(function()
+                    local sg = Instance.new("ScreenGui")
+                    sg.Name = "SynthJumpscare"
+                    sg.IgnoreGuiInset = true
+                    sg.ResetOnSpawn = false
+                    sg.Parent = LocalPlayer.PlayerGui
+
+                    local bg = Instance.new("Frame", sg)
+                    bg.Size = UDim2.fromScale(1, 1)
+                    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                    bg.ZIndex = 10
+
+                    local lbl = Instance.new("TextLabel", bg)
+                    lbl.Size = UDim2.fromScale(1, 1)
+                    lbl.BackgroundTransparency = 1
+                    lbl.Text = "🧟"
+                    lbl.TextScaled = true
+                    lbl.TextColor3 = Color3.fromRGB(80, 200, 80)
+                    lbl.Font = Enum.Font.GothamBold
+                    lbl.ZIndex = 11
+
+                    local scream = Instance.new("TextLabel", bg)
+                    scream.Size = UDim2.new(1, 0, 0.2, 0)
+                    scream.Position = UDim2.new(0, 0, 0.8, 0)
+                    scream.BackgroundTransparency = 1
+                    scream.Text = "BRAAIIINS..."
+                    scream.TextScaled = true
+                    scream.TextColor3 = Color3.fromRGB(255, 50, 50)
+                    scream.Font = Enum.Font.GothamBold
+                    scream.ZIndex = 12
+
+                    for i = 1, 8 do
+                        bg.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(50, 120, 0) or Color3.fromRGB(0, 0, 0)
+                        task.wait(0.07)
+                    end
+                    task.wait(0.8)
+                    sg:Destroy()
+                end)
+                Fluent:Notify({Title="🧟 Jumpscare", Content="ZOMBIE jumpscare triggered!", Duration=2})
+            end})
+
+            -- Jumpscare: Ghost
+            BTab:AddButton({Title = "🧟 Jumpscare: Ghost", Callback = function()
+                pcall(function()
+                    local sg = Instance.new("ScreenGui")
+                    sg.Name = "SynthJumpscare"
+                    sg.IgnoreGuiInset = true
+                    sg.ResetOnSpawn = false
+                    sg.Parent = LocalPlayer.PlayerGui
+
+                    local bg = Instance.new("Frame", sg)
+                    bg.Size = UDim2.fromScale(1, 1)
+                    bg.BackgroundColor3 = Color3.fromRGB(200, 200, 255)
+                    bg.BackgroundTransparency = 0.1
+                    bg.ZIndex = 10
+
+                    local lbl = Instance.new("TextLabel", bg)
+                    lbl.Size = UDim2.fromScale(1, 1)
+                    lbl.BackgroundTransparency = 1
+                    lbl.Text = "👻"
+                    lbl.TextScaled = true
+                    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    lbl.Font = Enum.Font.GothamBold
+                    lbl.ZIndex = 11
+
+                    local scream = Instance.new("TextLabel", bg)
+                    scream.Size = UDim2.new(1, 0, 0.15, 0)
+                    scream.Position = UDim2.new(0, 0, 0.82, 0)
+                    scream.BackgroundTransparency = 1
+                    scream.Text = "BOO!"
+                    scream.TextScaled = true
+                    scream.TextColor3 = Color3.fromRGB(0, 0, 0)
+                    scream.Font = Enum.Font.GothamBold
+                    scream.ZIndex = 12
+
+                    for i = 1, 6 do
+                        bg.BackgroundTransparency = (i % 2 == 0) and 0 or 0.9
+                        task.wait(0.1)
+                    end
+                    task.wait(0.6)
+                    sg:Destroy()
+                end)
+                Fluent:Notify({Title="🧟 Jumpscare", Content="GHOST jumpscare triggered!", Duration=2})
+            end})
+
+            -- Jumpscare: Backrooms
+            BTab:AddButton({Title = "🧟 Jumpscare: Backrooms", Callback = function()
+                pcall(function()
+                    local sg = Instance.new("ScreenGui")
+                    sg.Name = "SynthJumpscare"
+                    sg.IgnoreGuiInset = true
+                    sg.ResetOnSpawn = false
+                    sg.Parent = LocalPlayer.PlayerGui
+
+                    local bg = Instance.new("Frame", sg)
+                    bg.Size = UDim2.fromScale(1, 1)
+                    bg.BackgroundColor3 = Color3.fromRGB(210, 190, 130)
+                    bg.ZIndex = 10
+
+                    local lbl = Instance.new("TextLabel", bg)
+                    lbl.Size = UDim2.fromScale(1, 0.7)
+                    lbl.Position = UDim2.fromScale(0, 0.05)
+                    lbl.BackgroundTransparency = 1
+                    lbl.Text = "You shouldn't be here."
+                    lbl.TextScaled = true
+                    lbl.TextColor3 = Color3.fromRGB(30, 20, 0)
+                    lbl.Font = Enum.Font.Gotham
+                    lbl.ZIndex = 11
+
+                    local sub = Instance.new("TextLabel", bg)
+                    sub.Size = UDim2.new(1, 0, 0.15, 0)
+                    sub.Position = UDim2.new(0, 0, 0.78, 0)
+                    sub.BackgroundTransparency = 1
+                    sub.Text = "Level 0 — The Backrooms"
+                    sub.TextScaled = true
+                    sub.TextColor3 = Color3.fromRGB(80, 60, 0)
+                    sub.Font = Enum.Font.GothamLight
+                    sub.ZIndex = 12
+
+                    -- Flicker lights
+                    for i = 1, 10 do
+                        bg.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(210, 190, 130) or Color3.fromRGB(40, 35, 10)
+                        task.wait(0.06)
+                    end
+                    task.wait(1.5)
+                    sg:Destroy()
+                end)
+                Fluent:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2})
+            end})
+
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:AddTab({ Title = "Dandy Hub", Icon = "skull" })
