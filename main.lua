@@ -71,9 +71,9 @@ local success, err = pcall(function()
 
     -- POPULATE LOADER (Game Selection)
     Tabs.Main:AddSection("Game Selection")
-    _Sec1:Paragraph({ Title = "Manual Loading", Desc = "Selecione o jogo abaixo para carregar as funções específicas." })
+    Tabs.Main:AddParagraph({ Title = "Manual Loading", Content = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = Tabs.Main:Dropdown({ Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Default = 1 })
+    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Default = 1 })
 
     GameSelector:OnChanged(function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -81,7 +81,7 @@ local success, err = pcall(function()
             local RTab = Window:AddTab({ Title = "Rivals Hub", Icon = "swords" })
             RTab:AddToggle("RParry", {Title = "Auto Parry", Default = false})
             RTab:AddButton({Title = "Unlock All Skins & Weapons", Callback = function()
-                WindUI:Notify({Title="Rivals", Content="Liberando inventário...", Duration=3})
+                Fluent:Notify({Title="Rivals", Content="Liberando inventário...", Duration=3})
                 pcall(function()
                     for _, m in pairs(ReplicatedStorage:GetDescendants()) do
                         if m:IsA("ModuleScript") and (m.Name:find("Item") or m.Name:find("Skin")) then
@@ -95,9 +95,9 @@ local success, err = pcall(function()
         elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
             BuiltHubs["Brookhaven"] = true
             local BTab = Window:AddTab({ Title = "Brookhaven Hub", Icon = "home" })
-            local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
+            local BPD = BTab:AddDropdown("BHPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
             BPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
-            BTab:AddButton({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
+            BTab:AddButton({Title = "Refresh Player List", Callback = function() BPD:SetValues(GetPlayers()) end})
             
             BTab:AddSection("Target Actions")
             BTab:AddButton({Title = "Teleport To Target", Callback = function()
@@ -401,7 +401,7 @@ local success, err = pcall(function()
                 for _, p in pairs(Players:GetPlayers()) do
                     msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
                 end
-                WindUI:Notify({Title = "📝 Server Verify", Content = msg, Duration = 10})
+                Fluent:Notify({Title = "📝 Server Verify", Content = msg, Duration = 10})
             end})
 
             -- Kick target (exploiting Brookhaven's remote or local kick workaround)
@@ -418,7 +418,7 @@ local success, err = pcall(function()
                         -- Fallback: force them to load a bad character
                         t:Kick("You have been removed by an admin.")
                     end)
-                    WindUI:Notify({Title="⚠️ Kick", Content="Attempted to kick " .. _G.SynthState.TargetPlayer, Duration=4})
+                    Fluent:Notify({Title="⚠️ Kick", Content="Attempted to kick " .. _G.SynthState.TargetPlayer, Duration=4})
                 end
             end})
 
@@ -441,7 +441,7 @@ local success, err = pcall(function()
                         bf.Parent = hrp
                         task.delay(0.2, function() bf:Destroy() end)
                     end)
-                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -466,7 +466,7 @@ local success, err = pcall(function()
                     if t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
                     end
-                    WindUI:Notify({Title="☢️ Ragdoll", Content="Ragdolled " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="☢️ Ragdoll", Content="Ragdolled " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -482,7 +482,7 @@ local success, err = pcall(function()
                         bv.Parent = hrp
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -517,7 +517,7 @@ local success, err = pcall(function()
                         bv.Parent = hrp
                         task.delay(1, function() bv:Destroy() end)
                     end)
-                    WindUI:Notify({Title="🏹 Launch", Content="Launched " .. _G.SynthState.TargetPlayer .. " into orbit!", Duration=3})
+                    Fluent:Notify({Title="🏹 Launch", Content="Launched " .. _G.SynthState.TargetPlayer .. " into orbit!", Duration=3})
                 end
             end})
 
@@ -545,7 +545,7 @@ local success, err = pcall(function()
                     if t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
                     end
-                    WindUI:Notify({Title="🏹 Angel", Content=_G.SynthState.TargetPlayer .. " has become an angel!", Duration=4})
+                    Fluent:Notify({Title="🏹 Angel", Content=_G.SynthState.TargetPlayer .. " has become an angel!", Duration=4})
                 end
             end})
 
@@ -554,7 +554,7 @@ local success, err = pcall(function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                     t.Character.Humanoid.Health = 0
-                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -572,7 +572,7 @@ local success, err = pcall(function()
                     if t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
                     end
-                    WindUI:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
+                    Fluent:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
                 end
             end})
 
@@ -602,7 +602,7 @@ local success, err = pcall(function()
                         -- Auto-remove after 30s
                         game:GetService("Debris"):AddItem(part, 30)
                     end
-                    WindUI:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " has been jailed!", Duration=4})
+                    Fluent:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " has been jailed!", Duration=4})
                 end
             end})
 
@@ -703,7 +703,7 @@ local success, err = pcall(function()
                             lighting.FogStart = 0
                         end)
                     end)
-                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " has been banished to The Backrooms...", Duration=5})
+                    Fluent:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " has been banished to The Backrooms...", Duration=5})
                 end
             end})
 
@@ -740,7 +740,7 @@ local success, err = pcall(function()
                     task.wait(0.5)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="🧟 Jumpscare", Content="EYES jumpscare triggered!", Duration=2})
+                Fluent:Notify({Title="🧟 Jumpscare", Content="EYES jumpscare triggered!", Duration=2})
             end})
 
             -- Jumpscare: Zombie
@@ -783,7 +783,7 @@ local success, err = pcall(function()
                     task.wait(0.8)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="🧟 Jumpscare", Content="ZOMBIE jumpscare triggered!", Duration=2})
+                Fluent:Notify({Title="🧟 Jumpscare", Content="ZOMBIE jumpscare triggered!", Duration=2})
             end})
 
             -- Jumpscare: Ghost
@@ -827,7 +827,7 @@ local success, err = pcall(function()
                     task.wait(0.6)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="🧟 Jumpscare", Content="GHOST jumpscare triggered!", Duration=2})
+                Fluent:Notify({Title="🧟 Jumpscare", Content="GHOST jumpscare triggered!", Duration=2})
             end})
 
             -- Jumpscare: Backrooms
@@ -872,7 +872,7 @@ local success, err = pcall(function()
                     task.wait(1.5)
                     sg:Destroy()
                 end)
-                WindUI:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2})
+                Fluent:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2})
             end})
 
         elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
@@ -880,9 +880,9 @@ local success, err = pcall(function()
             local STab = Window:AddTab({ Title = "Sailor Hub", Icon = "star" })
 
             -- Player target selector
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
+            local SPD = STab:AddDropdown("SailorPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
             SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
-            STab:AddButton({Title = "🔄 Refresh Player List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
+            STab:AddButton({Title = "🔄 Refresh Player List", Callback = function() SPD:SetValues(GetPlayers()) end})
 
             -- ── Player Actions ──────────────────────────────
             STab:AddSection("🏠 Player Actions")
@@ -926,7 +926,7 @@ local success, err = pcall(function()
                             end
                         end
                     end
-                    WindUI:Notify({Title="👗 Outfit", Content="Outfit copiado de " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="👗 Outfit", Content="Outfit copiado de " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -993,7 +993,7 @@ local success, err = pcall(function()
                     hl.FillColor = Color3.fromRGB(255, 100, 200)
                     hl.OutlineColor = Color3.fromRGB(255, 255, 100)
                     hl.FillTransparency = 0.3
-                    WindUI:Notify({Title="🌙 Aura", Content="Sailor Moon Aura ativada! Clique novamente para remover.", Duration=3})
+                    Fluent:Notify({Title="🌙 Aura", Content="Sailor Moon Aura ativada! Clique novamente para remover.", Duration=3})
                 end
             end})
 
@@ -1003,7 +1003,7 @@ local success, err = pcall(function()
                         if child:IsA("BillboardGui") or child.Name:lower():match("name") then child:Destroy() end
                     end
                 end
-                WindUI:Notify({Title="🗑️ Anon", Content="Name tag removido!", Duration=2})
+                Fluent:Notify({Title="🗑️ Anon", Content="Name tag removido!", Duration=2})
             end})
 
             STab:AddButton({Title = "💰 Visual Infinite Money", Callback = function()
@@ -1014,7 +1014,7 @@ local success, err = pcall(function()
                         end
                     end
                 end)
-                WindUI:Notify({Title="💰 Money", Content="Visual money modificado!", Duration=2})
+                Fluent:Notify({Title="💰 Money", Content="Visual money modificado!", Duration=2})
             end})
 
             -- ── Admin Commands ────────────────────────────────
@@ -1025,14 +1025,14 @@ local success, err = pcall(function()
                 for _, p in pairs(Players:GetPlayers()) do
                     msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
                 end
-                WindUI:Notify({Title="📝 Verify", Content=msg, Duration=10})
+                Fluent:Notify({Title="📝 Verify", Content=msg, Duration=10})
             end})
 
             STab:AddButton({Title = "💀 Kill Target", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                     t.Character.Humanoid.Health = 0
-                    WindUI:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -1044,7 +1044,7 @@ local success, err = pcall(function()
                     exp.BlastRadius = 10; exp.BlastPressure = 1000000
                     exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
                     if t.Character:FindFirstChildOfClass("Humanoid") then t.Character.Humanoid.Health = 0 end
-                    WindUI:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
+                    Fluent:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
                 end
             end})
 
@@ -1058,7 +1058,7 @@ local success, err = pcall(function()
                         bv.Parent = t.Character.HumanoidRootPart
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -1069,7 +1069,7 @@ local success, err = pcall(function()
                     exp.Position = t.Character.HumanoidRootPart.Position
                     exp.BlastRadius = 20; exp.BlastPressure = 5000000
                     exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
-                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
+                    Fluent:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
                 end
             end})
 
@@ -1141,7 +1141,7 @@ local success, err = pcall(function()
                         part.Parent = workspace
                         game:GetService("Debris"):AddItem(part, 30)
                     end
-                    WindUI:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " jailed!", Duration=4})
+                    Fluent:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " jailed!", Duration=4})
                 end
             end})
 
@@ -1164,7 +1164,7 @@ local success, err = pcall(function()
                             lighting.FogEnd = 100000; lighting.FogStart = 0
                         end)
                     end)
-                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " banished!", Duration=5})
+                    Fluent:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " banished!", Duration=5})
                 end
             end})
 
@@ -1192,17 +1192,17 @@ local success, err = pcall(function()
                 end)
             end
 
-            STab:AddButton({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) WindUI:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2}) end})
-            STab:AddButton({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2}) end})
-            STab:AddButton({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2}) end})
-            STab:AddButton({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) Fluent:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) Fluent:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) Fluent:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) Fluent:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2}) end})
 
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:AddTab({ Title = "Dandy Hub", Icon = "skull" })
-            local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
+            local DPD = DTab:AddDropdown("DPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
             DPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
-            DTab:AddButton({Title = "Refresh List", Callback = function() DPD:Refresh(GetPlayers(), true) end})
+            DTab:AddButton({Title = "Refresh List", Callback = function() DPD:SetValues(GetPlayers()) end})
             
             DTab:AddButton({Title = "Copy Skin (Local Model)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1223,7 +1223,7 @@ local success, err = pcall(function()
                     end
                     if LocalPlayer:GetAttribute("Stamina") then LocalPlayer:SetAttribute("Stamina", 100) end
                 end)
-                WindUI:Notify({Title="Dandy's World", Content="Stamina restore attempted via Value/Attributes.", Duration=3})
+                Fluent:Notify({Title="Dandy's World", Content="Stamina restore attempted via Value/Attributes.", Duration=3})
             end})
             
             DTab:AddSection("World Visuals")
@@ -1275,9 +1275,9 @@ local success, err = pcall(function()
         elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:AddTab({ Title = "Social Hub", Icon = "users" })
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
+            local SPD = STab:AddDropdown("STPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
             SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
-            STab:AddButton({Title = "Refresh List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
+            STab:AddButton({Title = "Refresh List", Callback = function() SPD:SetValues(GetPlayers()) end})
             
             STab:AddSection("Interactions")
             STab:AddButton({Title = "Teleport To Player", Callback = function()
@@ -1619,7 +1619,7 @@ local success, err = pcall(function()
                         count = count + 1
                     end
                 end
-                WindUI:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4})
+                Fluent:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4})
             end})
 
         elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
@@ -1717,7 +1717,7 @@ local success, err = pcall(function()
     Tabs.Aimbot:AddSection("Aimbot Core")
     Tabs.Aimbot:AddToggle("AimToggle", {Title = "Enable Camera Aimbot", Default = false}):OnChanged(function(v) _G.SynthState.AimEnabled = v end)
     Tabs.Aimbot:AddToggle("SilentToggle", {Title = "Silent Aim (Magic Bullet)", Default = false}):OnChanged(function(v) _G.SynthState.SilentAim = v end)
-    Tabs.Aimbot:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1}):OnChanged(function(v) _G.SynthState.AimPart = v end)
+    Tabs.Aimbot:AddDropdown("AimPart", {Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1}):OnChanged(function(v) _G.SynthState.AimPart = v end)
     Tabs.Aimbot:AddSection("Aimbot Settings")
     Tabs.Aimbot:AddSlider("AimFOV", {Title = "FOV Size", Default = 100, Min = 10, Max = 800, Rounding = 0}):OnChanged(function(v) _G.SynthState.AimFOV = v end)
     Tabs.Aimbot:AddSlider("AimSmooth", {Title = "Smoothness (Cam)", Default = 3, Min = 1, Max = 20, Rounding = 1}):OnChanged(function(v) _G.SynthState.AimSmooth = v end)
@@ -1732,7 +1732,7 @@ local success, err = pcall(function()
     
     Tabs.Visuals:AddSection("3D ESP & World")
     Tabs.Visuals:AddToggle("ChamsToggle", {Title = "Enable Chams", Default = false}):OnChanged(function(v) _G.SynthState.Chams = v end)
-    Tabs.Visuals:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Default = 1}):OnChanged(function(v) _G.SynthState.ChamsMat = v end)
+    Tabs.Visuals:AddDropdown("ChamsMat", {Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Default = 1}):OnChanged(function(v) _G.SynthState.ChamsMat = v end)
     Tabs.Visuals:AddColorpicker("ChamsColor", {Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255)}):OnChanged(function(v) _G.SynthState.ChamsColor = v end)
     Tabs.Visuals:AddToggle("ProjToggle", {Title = "Projectile ESP (Grenades)", Default = false}):OnChanged(function(v) _G.SynthState.ProjESP = v end)
 
@@ -1751,16 +1751,6 @@ local success, err = pcall(function()
     SaveManager:IgnoreThemeSettings(); SaveManager:SetIgnoreIndexes({})
     InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/configs")
     InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
-
-    local _SettSec = Tabs.Settings:Section({Title = "Configuration", Icon = "settings"})
-    local _CM = Window.ConfigManager
-    local _cfg = _CM:CreateConfig("SynthesisMega")
-    _SettSec:Button({Title = "Save Config", Callback = function() _cfg:Save() end})
-    _SettSec:Button({Title = "Load Config", Callback = function() _cfg:Load() end})
-    local _ThemeSec = Tabs.Settings:Section({Title = "Theme", Icon = "palette"})
-    _ThemeSec:Dropdown({Title = "Select Theme", Values = {"Dark", "Light", "Abyss", "Aqua"}, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end})
-
-    -- CHEAT CORE
 
     -- CHEAT CORE ==========================================
 
@@ -1963,12 +1953,10 @@ local success, err = pcall(function()
         end)
     end)
 
-    Tabs.Main:Select()
-    WindUI:Notify({Title = "Synthesis EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7})
+    Window:SelectTab(1)
+    Fluent:Notify({Title = "Synthesis EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7})
 end)
 
 if not success then
-    print("[SYNTHESIS ERROR]: " .. tostring(err))
-    warn(tostring(err))
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "ERRO", Text = tostring(err):sub(1,200), Duration = 30})
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
 end
