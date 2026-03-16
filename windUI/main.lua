@@ -60,6 +60,9 @@ local success, err = pcall(function()
 
     local function GetPlayers()
         local list = {}
+        for _, v in pairs(Players:GetPlayers()) do 
+            if v ~= LocalPlayer then table.insert(list, v.Name) end 
+        end
         if #list == 0 then table.insert(list, "None") end
         return list
     end
@@ -1648,9 +1651,6 @@ local success, err = pcall(function()
 
     -- SETTINGS
     WindUI:Notify({Title="Synthesis", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
-    
-    InterfaceManager:SetFolder("Synthesis"); SaveManager:SetFolder("Synthesis/configs")
-    InterfaceManager:BuildInterfaceSection(Tabs.Settings); SaveManager:BuildConfigSection(Tabs.Settings)
 
     -- CHEAT CORE ==========================================
 
