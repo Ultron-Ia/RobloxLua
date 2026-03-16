@@ -254,7 +254,7 @@ local success, err = pcall(function()
                         controlClone = nil
                     end
                 end
-            end)
+            end})
             
             -- Keep track of loops
             local attachLoop = nil
@@ -271,7 +271,8 @@ local success, err = pcall(function()
                 else
                     if attachLoop then attachLoop:Disconnect(); attachLoop = nil end
                 end
-            end)
+                end
+            })
 
                 BTab:Toggle({Title = "Sit on Player's Shoulders", Default = false, Callback = function(v)
                 if v then
@@ -286,7 +287,8 @@ local success, err = pcall(function()
                     if sitLoop then sitLoop:Disconnect(); sitLoop = nil end
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
                 end
-            end)
+                end
+            })
 
                 BTab:Button({Title = "Bring Spawned Cars", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -365,7 +367,8 @@ local success, err = pcall(function()
                 else
                     if rgbLoop then rgbLoop:Disconnect(); rgbLoop = nil end
                 end
-            end)
+                end
+            })
 
                 BTab:Button({Title = "Hide Name/Id (Visual Anonymous Mode)", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
@@ -440,9 +443,9 @@ local success, err = pcall(function()
                         bf.Parent = hrp
                         task.delay(0.2, function() bf:Destroy() end)
                     end)
-                    Fluent:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
+                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3, Icon = "bomb"})
                 end
-            end})
+            })
 
             -- Ragdoll target (disable motor joints)
                 BTab:Button({Title = "☢️ Ragdoll Target", Callback = function()
@@ -481,9 +484,9 @@ local success, err = pcall(function()
                         bv.Parent = hrp
                         task.delay(0.5, function() bv:Destroy() end)
                     end)
-                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3, Icon = "wind"})
                 end
-            end})
+            })
 
             -- Float target (trap them floating in the air)
                 local floatLoop = nil
@@ -502,7 +505,8 @@ local success, err = pcall(function()
                 else
                     if floatLoop then floatLoop:Disconnect(); floatLoop = nil end
                 end
-            end)
+                end
+            })
 
             -- Launch: force constant directional movement on target
                 BTab:Button({Title = "🏹 Launch Target (Into Space)", Callback = function()
@@ -634,7 +638,8 @@ local success, err = pcall(function()
                         t.Character.Humanoid.JumpPower = 50
                     end
                 end
-            end)
+                end
+            })
 
             -- Loop Kill
                 local loopKillConn = nil
@@ -649,7 +654,8 @@ local success, err = pcall(function()
                 else
                     if loopKillConn then loopKillConn:Disconnect(); loopKillConn = nil end
                 end
-            end)
+                end
+            })
 
             -- Loop Sit on Target
                 local bLoopSit2 = nil
@@ -670,7 +676,8 @@ local success, err = pcall(function()
                         LocalPlayer.Character.Humanoid.Sit = false
                     end
                 end
-            end)
+                end
+            })
 
             -- ============================================
             -- HORROR COMMANDS
@@ -1132,7 +1139,7 @@ local success, err = pcall(function()
                     LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
                 end
             end})
-            STab:AddButton({Title = "Copy Outfit (Full Clone)", Callback = function()
+            STab:Button({Title = "Copy Outfit (Full Clone)", Callback = function()
                 local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
                     -- Clean current outfit
@@ -1275,7 +1282,8 @@ local success, err = pcall(function()
                         socialControlClone = nil
                     end
                 end
-            end)
+                end
+            })
             
             STab:Button({Title = "Bring All Workspace Tools/Items", Callback = function()
                 pcall(function()
@@ -1321,7 +1329,8 @@ local success, err = pcall(function()
                 else
                     if socialAttachLoop then socialAttachLoop:Disconnect(); socialAttachLoop = nil end
                 end
-            end)
+                end
+            })
 
             local spinSitLoop = nil
             local spinSitAngle = 0
@@ -1339,7 +1348,8 @@ local success, err = pcall(function()
                     if spinSitLoop then spinSitLoop:Disconnect(); spinSitLoop = nil end
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
                 end
-            end)
+                end
+            })
 
             STab:Button({Title = "AoE Fling All (Kill Server)", Callback = function()
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -1395,7 +1405,8 @@ local success, err = pcall(function()
                     if socialSitLoop then socialSitLoop:Disconnect(); socialSitLoop = nil end
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
                 end
-            end)
+                end
+            })
 
             local flying = false
             local flyLoop = nil
@@ -1431,7 +1442,8 @@ local success, err = pcall(function()
                     if bv then bv:Destroy() end
                     if bg then bg:Destroy() end
                 end
-            end)
+                end
+            })
             -- ============================================
             -- HORROR COMMANDS
             -- ============================================
@@ -1465,7 +1477,7 @@ local success, err = pcall(function()
                         count = count + 1
                     end
                 end
-                Fluent:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4})
+                WindUI:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4, Icon = "sun"})
             end})
 
         elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
@@ -1492,7 +1504,8 @@ local success, err = pcall(function()
                         LocalPlayer.Character.Humanoid.MaxHealth = 100
                     end
                 end
-            end)
+                end
+            })
 
             local hitboxLoop = nil
             JTab:Toggle({Title = "Delete Enemy Hitboxes (Anti-Damage)", Default = false, Callback = function(v)
@@ -1512,7 +1525,8 @@ local success, err = pcall(function()
                 else
                     if hitboxLoop then hitboxLoop:Disconnect(); hitboxLoop = nil end
                 end
-            end)
+                end
+            })
 
             local dodgeLoop = nil
             JTab:Toggle({Title = "Auto Dodge (Proximity TP)", Default = false, Callback = function(v)
@@ -1534,7 +1548,8 @@ local success, err = pcall(function()
                 else
                     if dodgeLoop then dodgeLoop:Disconnect(); dodgeLoop = nil end
                 end
-            end)
+                end
+            })
             
             local antiStunLoop = nil
             JTab:Toggle({Title = "Anti-Stun / Auto-Sprint", Default = false, Callback = function(v)
@@ -1553,7 +1568,8 @@ local success, err = pcall(function()
                 else
                     if antiStunLoop then antiStunLoop:Disconnect(); antiStunLoop = nil end
                 end
-            end)
+                end
+            })
 
         end
     end)
