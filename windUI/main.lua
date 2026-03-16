@@ -1951,5 +1951,9 @@ local success, err = pcall(function()
 end)
 
 if not success then
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
+    -- Show error clearly in chat/output
+    print("[SYNTHESIS ERROR] " .. tostring(err))
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "SYNTHESIS ERRO", Text = tostring(err):sub(1, 200), Duration = 30})
+    -- Also write to output for executor console visibility
+    warn("[SYNTHESIS FULL ERROR]: " .. tostring(err))
 end
