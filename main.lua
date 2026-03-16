@@ -73,7 +73,7 @@ local success, err = pcall(function()
     Tabs.Main:AddSection("Game Selection")
     Tabs.Main:AddParagraph({ Title = "Manual Loading", Content = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu"}, Default = 1 })
+    local GameSelector = Tabs.Main:AddDropdown("GameSelect", { Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Default = 1 })
 
     GameSelector:OnChanged(function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -874,6 +874,328 @@ local success, err = pcall(function()
                 end)
                 Fluent:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2})
             end})
+
+        elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
+            BuiltHubs["PecaDeSailor"] = true
+            local STab = Window:AddTab({ Title = "Sailor Hub", Icon = "star" })
+
+            -- Player target selector
+            local SPD = STab:AddDropdown("SailorPlayer", {Title = "Target Player", Values = GetPlayers(), Default = 1})
+            SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            STab:AddButton({Title = "🔄 Refresh Player List", Callback = function() SPD:SetValues(GetPlayers()) end})
+
+            -- ── Player Actions ──────────────────────────────
+            STab:AddSection("🏠 Player Actions")
+
+            STab:AddButton({Title = "⚡ Teleport To Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                end
+            end})
+
+            STab:AddButton({Title = "👗 Copy Outfit", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and LocalPlayer.Character then
+                    for _, i in pairs(LocalPlayer.Character:GetChildren()) do
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then i:Destroy() end
+                    end
+                    for _, i in pairs(t.Character:GetChildren()) do
+                        if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("BodyColors") or i:IsA("CharacterMesh") or i:IsA("ShirtGraphic") then
+                            local clone = i:Clone(); if clone then clone.Parent = LocalPlayer.Character end
+                        elseif i:IsA("Accessory") or i:IsA("Hat") then
+                            local clone = i:Clone()
+                            if clone then
+                                clone.Parent = LocalPlayer.Character
+                                local handle = clone:FindFirstChild("Handle")
+                                local head = LocalPlayer.Character:FindFirstChild("Head")
+                                if handle and head then
+                                    for _, v2 in pairs(handle:GetChildren()) do
+                                        if v2:IsA("Weld") or v2:IsA("WeldConstraint") or v2:IsA("Motor6D") then v2:Destroy() end
+                                    end
+                                    handle.CanCollide = false; handle.Massless = true
+                                    local oh = i:FindFirstChild("Handle")
+                                    local th = t.Character:FindFirstChild("Head")
+                                    if oh and th then
+                                        local offset = th.CFrame:ToObjectSpace(oh.CFrame)
+                                        handle.CFrame = head.CFrame * offset
+                                        local wc = Instance.new("WeldConstraint")
+                                        wc.Part0 = head; wc.Part1 = handle; wc.Parent = handle
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    Fluent:Notify({Title="👗 Outfit", Content="Outfit copiado de " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            -- Attach loop
+            local sailorAttachLoop = nil
+            STab:AddToggle("SailorAttach", {Title = "📌 Attach to Player (Loop TP)", Default = false}):OnChanged(function(v)
+                if v then
+                    sailorAttachLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
+                        end
+                    end)
+                else
+                    if sailorAttachLoop then sailorAttachLoop:Disconnect(); sailorAttachLoop = nil end
+                end
+            end)
+
+            -- Sit on head loop
+            local sailorSitLoop = nil
+            STab:AddToggle("SailorSit", {Title = "🪑 Sit on Target's Head", Default = false}):OnChanged(function(v)
+                if v then
+                    sailorSitLoop = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChild("Head") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
+                            if LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = true end
+                        end
+                    end)
+                else
+                    if sailorSitLoop then sailorSitLoop:Disconnect(); sailorSitLoop = nil end
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.Sit = false end
+                end
+            end)
+
+            -- ── Local ────────────────────────────────────────
+            STab:AddSection("🌟 Local Sailor")
+
+            -- RGB skin
+            local sailorRGBLoop = nil
+            STab:AddToggle("SailorRGB", {Title = "🌈 Rainbow/RGB Character", Default = false}):OnChanged(function(v)
+                if v then
+                    sailorRGBLoop = RunService.RenderStepped:Connect(function()
+                        if LocalPlayer.Character then
+                            local hue = tick() % 1
+                            local color = Color3.fromHSV(hue, 1, 1)
+                            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                                if part:IsA("BasePart") then part.Color = color end
+                            end
+                        end
+                    end)
+                else
+                    if sailorRGBLoop then sailorRGBLoop:Disconnect(); sailorRGBLoop = nil end
+                end
+            end)
+
+            -- Sailor Moon aura: neon pink highlight on self
+            STab:AddButton({Title = "🌙 Sailor Moon Aura (Self)", Callback = function()
+                if LocalPlayer.Character then
+                    local existing = LocalPlayer.Character:FindFirstChild("SailorAura")
+                    if existing then existing:Destroy(); return end
+                    local hl = Instance.new("Highlight", LocalPlayer.Character)
+                    hl.Name = "SailorAura"
+                    hl.FillColor = Color3.fromRGB(255, 100, 200)
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 100)
+                    hl.FillTransparency = 0.3
+                    Fluent:Notify({Title="🌙 Aura", Content="Sailor Moon Aura ativada! Clique novamente para remover.", Duration=3})
+                end
+            end})
+
+            STab:AddButton({Title = "🗑️ Remove Name Tag (Anon)", Callback = function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+                    for _, child in pairs(LocalPlayer.Character.Head:GetChildren()) do
+                        if child:IsA("BillboardGui") or child.Name:lower():match("name") then child:Destroy() end
+                    end
+                end
+                Fluent:Notify({Title="🗑️ Anon", Content="Name tag removido!", Duration=2})
+            end})
+
+            STab:AddButton({Title = "💰 Visual Infinite Money", Callback = function()
+                pcall(function()
+                    for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                        if gui:IsA("TextLabel") and (gui.Text:find("%$") or gui.Text:find("Coins") or gui.Text:find("Gold") or gui.Text:find("Money")) then
+                            gui.Text = "$9,999,999"
+                        end
+                    end
+                end)
+                Fluent:Notify({Title="💰 Money", Content="Visual money modificado!", Duration=2})
+            end})
+
+            -- ── Admin Commands ────────────────────────────────
+            STab:AddSection("⚠️ Admin Commands")
+
+            STab:AddButton({Title = "📝 Verify (List Players)", Callback = function()
+                local msg = "Players:\n"
+                for _, p in pairs(Players:GetPlayers()) do
+                    msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
+                end
+                Fluent:Notify({Title="📝 Verify", Content=msg, Duration=10})
+            end})
+
+            STab:AddButton({Title = "💀 Kill Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                    t.Character.Humanoid.Health = 0
+                    Fluent:Notify({Title="💀 Kill", Content="Killed " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            STab:AddButton({Title = "💀 KillPlus (Explosion)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local exp = Instance.new("Explosion")
+                    exp.Position = t.Character.HumanoidRootPart.Position
+                    exp.BlastRadius = 10; exp.BlastPressure = 1000000
+                    exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
+                    if t.Character:FindFirstChildOfClass("Humanoid") then t.Character.Humanoid.Health = 0 end
+                    Fluent:Notify({Title="💀 KillPlus", Content=_G.SynthState.TargetPlayer .. " eliminated!", Duration=3})
+                end
+            end})
+
+            STab:AddButton({Title = "🧲 Fling Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    pcall(function()
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Velocity = Vector3.new(math.random(-300,300), 9999, math.random(-300,300))
+                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        bv.Parent = t.Character.HumanoidRootPart
+                        task.delay(0.5, function() bv:Destroy() end)
+                    end)
+                    Fluent:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            STab:AddButton({Title = "☢️ Explode Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local exp = Instance.new("Explosion")
+                    exp.Position = t.Character.HumanoidRootPart.Position
+                    exp.BlastRadius = 20; exp.BlastPressure = 5000000
+                    exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
+                    Fluent:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3})
+                end
+            end})
+
+            -- Freeze
+            local sailorFreezeLoop = nil
+            STab:AddToggle("SailorFreeze", {Title = "🔒 Freeze Target (Loop)", Default = false}):OnChanged(function(v)
+                if v then
+                    local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                        local frozenCF = t.Character.HumanoidRootPart.CFrame
+                        sailorFreezeLoop = RunService.Heartbeat:Connect(function()
+                            local tgt = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                            if tgt and tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart") then
+                                pcall(function()
+                                    tgt.Character.HumanoidRootPart.CFrame = frozenCF
+                                    tgt.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                                end)
+                                if tgt.Character:FindFirstChildOfClass("Humanoid") then
+                                    tgt.Character.Humanoid.WalkSpeed = 0
+                                    tgt.Character.Humanoid.JumpPower = 0
+                                end
+                            end
+                        end)
+                    end
+                else
+                    if sailorFreezeLoop then sailorFreezeLoop:Disconnect(); sailorFreezeLoop = nil end
+                    local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                        t.Character.Humanoid.WalkSpeed = 16
+                        t.Character.Humanoid.JumpPower = 50
+                    end
+                end
+            end)
+
+            -- Loop Kill
+            local sailorLoopKill = nil
+            STab:AddToggle("SailorLoopKill", {Title = "🔁 Loop Kill Target", Default = false}):OnChanged(function(v)
+                if v then
+                    sailorLoopKill = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                            t.Character.Humanoid.Health = 0
+                        end
+                    end)
+                else
+                    if sailorLoopKill then sailorLoopKill:Disconnect(); sailorLoopKill = nil end
+                end
+            end)
+
+            -- Jail
+            STab:AddButton({Title = "🔒 Jail Target", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local pos = t.Character.HumanoidRootPart.Position
+                    local walls = {
+                        {CFrame.new(pos + Vector3.new(4, 2, 0)),  Vector3.new(0.5, 6, 8)},
+                        {CFrame.new(pos + Vector3.new(-4, 2, 0)), Vector3.new(0.5, 6, 8)},
+                        {CFrame.new(pos + Vector3.new(0, 2, 4)),  Vector3.new(8, 6, 0.5)},
+                        {CFrame.new(pos + Vector3.new(0, 2, -4)), Vector3.new(8, 6, 0.5)},
+                        {CFrame.new(pos + Vector3.new(0, 5, 0)),  Vector3.new(8, 0.5, 8)},
+                    }
+                    for _, wd in pairs(walls) do
+                        local part = Instance.new("Part")
+                        part.Anchored = true; part.CanCollide = true
+                        part.Size = wd[2]; part.CFrame = wd[1]
+                        part.BrickColor = BrickColor.new("Hot pink")
+                        part.Material = Enum.Material.Neon
+                        part.Transparency = 0.4; part.Name = "SailorJail"
+                        part.Parent = workspace
+                        game:GetService("Debris"):AddItem(part, 30)
+                    end
+                    Fluent:Notify({Title="🔒 Jail", Content=_G.SynthState.TargetPlayer .. " jailed!", Duration=4})
+                end
+            end})
+
+            -- ── Horror Commands ───────────────────────────────
+            STab:AddSection("🎃 Horror Commands")
+
+            STab:AddButton({Title = "🪄 Backrooms (Banish)", Callback = function()
+                local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    pcall(function() t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999) end)
+                    pcall(function()
+                        local lighting = game:GetService("Lighting")
+                        local ob, oa = lighting.Brightness, lighting.Ambient
+                        lighting.Brightness = 0.05
+                        lighting.Ambient = Color3.fromRGB(20, 15, 10)
+                        lighting.FogColor = Color3.fromRGB(210, 200, 170)
+                        lighting.FogEnd = 60; lighting.FogStart = 5
+                        task.delay(8, function()
+                            lighting.Brightness = ob; lighting.Ambient = oa
+                            lighting.FogEnd = 100000; lighting.FogStart = 0
+                        end)
+                    end)
+                    Fluent:Notify({Title="🪄 Backrooms", Content=_G.SynthState.TargetPlayer .. " banished!", Duration=5})
+                end
+            end})
+
+            local function SailorJumpscare(icon, flashR, flashG, flashB, text, delay_)
+                pcall(function()
+                    local sg = Instance.new("ScreenGui")
+                    sg.Name = "SailorScare"; sg.IgnoreGuiInset = true
+                    sg.ResetOnSpawn = false; sg.Parent = LocalPlayer.PlayerGui
+                    local bg = Instance.new("Frame", sg)
+                    bg.Size = UDim2.fromScale(1,1); bg.BackgroundColor3 = Color3.fromRGB(0,0,0); bg.ZIndex = 10
+                    local ico = Instance.new("TextLabel", bg)
+                    ico.Size = UDim2.fromScale(1,1); ico.BackgroundTransparency = 1
+                    ico.Text = icon; ico.TextScaled = true
+                    ico.TextColor3 = Color3.fromRGB(255,255,255); ico.Font = Enum.Font.GothamBold; ico.ZIndex = 11
+                    local lbl = Instance.new("TextLabel", bg)
+                    lbl.Size = UDim2.new(1,0,0.15,0); lbl.Position = UDim2.new(0,0,0.82,0)
+                    lbl.BackgroundTransparency = 1; lbl.Text = text; lbl.TextScaled = true
+                    lbl.TextColor3 = Color3.fromRGB(flashR, flashG, flashB); lbl.Font = Enum.Font.GothamBold; lbl.ZIndex = 12
+                    for i = 1, 8 do
+                        bg.BackgroundColor3 = (i%2==0) and Color3.fromRGB(flashR,flashG,flashB) or Color3.fromRGB(0,0,0)
+                        task.wait(0.07)
+                    end
+                    task.wait(delay_ or 0.5)
+                    sg:Destroy()
+                end)
+            end
+
+            STab:AddButton({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) Fluent:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) Fluent:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) Fluent:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2}) end})
+            STab:AddButton({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) Fluent:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2}) end})
 
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
