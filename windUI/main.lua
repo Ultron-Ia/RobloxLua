@@ -63,8 +63,48 @@ local success, err = pcall(function()
         for _, v in pairs(Players:GetPlayers()) do 
             if v ~= LocalPlayer then table.insert(list, v.Name) end 
         end
-        if #list == 0 then table.insert(list, "None") end
         return list
+    end
+
+    local function ElephantScare(emoji, r, g, b, screamText, duration)
+        pcall(function()
+            local sg = Instance.new("ScreenGui")
+            sg.Name = "SynthJumpscare"
+            sg.IgnoreGuiInset = true
+            sg.ResetOnSpawn = false
+            sg.Parent = LocalPlayer.PlayerGui
+
+            local bg = Instance.new("Frame", sg)
+            bg.Size = UDim2.fromScale(1, 1)
+            bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            bg.ZIndex = 10
+
+            local lbl = Instance.new("TextLabel", bg)
+            lbl.Size = UDim2.fromScale(1, 1)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = emoji
+            lbl.TextScaled = true
+            lbl.TextColor3 = Color3.fromRGB(r, g, b)
+            lbl.Font = Enum.Font.GothamBold
+            lbl.ZIndex = 11
+
+            local scream = Instance.new("TextLabel", bg)
+            scream.Size = UDim2.new(1, 0, 0.2, 0)
+            scream.Position = UDim2.new(0, 0, 0.8, 0)
+            scream.BackgroundTransparency = 1
+            scream.Text = screamText
+            scream.TextScaled = true
+            scream.TextColor3 = Color3.fromRGB(255, 50, 50)
+            scream.Font = Enum.Font.GothamBold
+            scream.ZIndex = 12
+
+            for i = 1, 8 do
+                bg.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(r/2, g/2, b/2) or Color3.fromRGB(0, 0, 0)
+                task.wait(0.07)
+            end
+            task.wait(duration)
+            sg:Destroy()
+        end)
     end
 
     -- POPULATE LOADER (Game Selection)
@@ -445,7 +485,7 @@ local success, err = pcall(function()
                     end)
                     WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.SynthState.TargetPlayer, Duration=3, Icon = "bomb"})
                 end
-            })
+            end})
 
             -- Ragdoll target (disable motor joints)
                 BTab:Button({Title = "☢️ Ragdoll Target", Callback = function()
@@ -486,7 +526,7 @@ local success, err = pcall(function()
                     end)
                     WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.SynthState.TargetPlayer, Duration=3, Icon = "wind"})
                 end
-            })
+            end})
 
             -- Float target (trap them floating in the air)
                 local floatLoop = nil
@@ -1572,7 +1612,7 @@ local success, err = pcall(function()
             })
 
         end
-    end)
+    end})
 
 
     -- POPULATE AIMBOT
