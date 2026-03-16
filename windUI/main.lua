@@ -1710,8 +1710,8 @@ local success, err = pcall(function()
     AimCoreSection:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Value = "Head", Callback = function(v) _G.SynthState.AimPart = v end})
     
     local AimSettingsSection = Tabs.Aimbot:Section({Title = "Aimbot Settings", Icon = "settings-2"})
-    AimSettingsSection:Slider({Title = "FOV Size", Value = 100, Min = 10, Max = 800, Step = 1, Callback = function(v) _G.SynthState.AimFOV = v end})
-    AimSettingsSection:Slider({Title = "Smoothness (Cam)", Value = 3, Min = 1, Max = 20, Step = 0.1, Callback = function(v) _G.SynthState.AimSmooth = v end})
+    AimSettingsSection:Slider({Title = "FOV Size", Step = 1, Value = {Min = 10, Max = 800, Default = 100}, Callback = function(v) _G.SynthState.AimFOV = v end})
+    AimSettingsSection:Slider({Title = "Smoothness (Cam)", Step = 0.1, Value = {Min = 1, Max = 20, Default = 3}, Callback = function(v) _G.SynthState.AimSmooth = v end})
 
     -- POPULATE VISUALS
     local ESP2DSection = Tabs.Visuals:Section({Title = "2D ESP", Icon = "layout"})
@@ -1729,13 +1729,13 @@ local success, err = pcall(function()
 
     -- POPULATE LOCAL
     local MoveSection = Tabs.Local:Section({Title = "Movement", Icon = "zap"})
-    MoveSection:Slider({Title = "WalkSpeed", Value = 16, Min = 16, Max = 300, Step = 1, Callback = function(v) _G.SynthState.WalkSpeed = v end})
-    MoveSection:Slider({Title = "JumpPower", Value = 50, Min = 50, Max = 500, Step = 1, Callback = function(v) _G.SynthState.JumpPower = v end})
+    MoveSection:Slider({Title = "WalkSpeed", Step = 1, Value = {Min = 16, Max = 300, Default = 16}, Callback = function(v) _G.SynthState.WalkSpeed = v end})
+    MoveSection:Slider({Title = "JumpPower", Step = 1, Value = {Min = 50, Max = 500, Default = 50}, Callback = function(v) _G.SynthState.JumpPower = v end})
     MoveSection:Toggle({Title = "NoClip", Value = false, Callback = function(v) _G.SynthState.NoClip = v end})
     
     local AntiHitSection = Tabs.Local:Section({Title = "Anti-Hit (CS:GO Style)", Icon = "shield-off"})
     AntiHitSection:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.SynthState.Spinbot = v end})
-    AntiHitSection:Slider({Title = "Spin Speed", Value = 50, Min = 10, Max = 200, Step = 1, Callback = function(v) _G.SynthState.SpinSpeed = v end})
+    AntiHitSection:Slider({Title = "Spin Speed", Step = 1, Value = {Min = 10, Max = 200, Default = 50}, Callback = function(v) _G.SynthState.SpinSpeed = v end})
 
     -- SETTINGS
     local ConfigSection = Tabs.Settings:Section({Title = "Configuration", Icon = "file-text"})
