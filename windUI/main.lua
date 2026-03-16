@@ -1,5 +1,12 @@
+local function sNotify(t, m)
+    pcall(function() game:GetService("StarterGui"):SetCore("SendNotification", {Title = t, Text = tostring(m):sub(1,150), Duration = 25}) end)
+    print("[SYNTH] " .. t .. ": " .. tostring(m))
+end
+
 local success, err = pcall(function()
+    sNotify("Loading", "Iniciando WindUI...")
     local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    sNotify("Loading", "WindUI carregado. Criando Window...")
 
     local Window = WindUI:CreateWindow({
         Title = "SYNTHESIS MEGA",
@@ -10,8 +17,8 @@ local success, err = pcall(function()
         Transparent = true,
         Theme = "Dark",
         SideBarWidth = 160,
-        HasCloseButton = true
     })
+    sNotify("Loading", "Window criada OK!")
 
     -- Services
     local Players = game:GetService("Players")
@@ -57,6 +64,7 @@ local success, err = pcall(function()
         Local = Window:Tab({ Title = "Local", Icon = "user" }),
         Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
     }
+    sNotify("Loading", "Tabs criados OK! Criando elementos...")
 
     local BuiltHubs = {}
 
@@ -1746,6 +1754,7 @@ local success, err = pcall(function()
     
     local ThemeSection = Tabs.Settings:Section({Title = "Theme", Icon = "palette"})
     ThemeSection:Dropdown({Title = "Select Theme", Values = {"Dark", "Light", "Abyss", "Aqua"}, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end})
+    sNotify("Loading", "Aimbot/Visuals/Local/Settings criados!")
 
     -- CHEAT CORE ==========================================
 
