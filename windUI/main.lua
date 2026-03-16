@@ -1739,11 +1739,13 @@ local success, err = pcall(function()
 
     -- SETTINGS
     local ConfigSection = Tabs.Settings:Section({Title = "Configuration", Icon = "file-text"})
-    ConfigSection:Button({Title = "Save Config", Callback = function() Window.ConfigManager:CreateConfig() end})
-    ConfigSection:Button({Title = "Load Config", Callback = function() Window.ConfigManager:LoadConfig() end})
+    local CM = Window.ConfigManager
+    local synthConfig = CM:CreateConfig("SynthesisMega")
+    ConfigSection:Button({Title = "Save Config", Callback = function() synthConfig:Save() end})
+    ConfigSection:Button({Title = "Load Config", Callback = function() synthConfig:Load() end})
     
     local ThemeSection = Tabs.Settings:Section({Title = "Theme", Icon = "palette"})
-    ThemeSection:Dropdown({Title = "Select Theme", Values = {"Dark", "Light", "Abyss", "Aqua"}, Value = "Dark", Callback = function(v) Window:SetTheme(v) end})
+    ThemeSection:Dropdown({Title = "Select Theme", Values = {"Dark", "Light", "Abyss", "Aqua"}, Value = "Dark", Callback = function(v) WindUI:SetTheme(v) end})
 
     -- CHEAT CORE ==========================================
 
@@ -1946,7 +1948,7 @@ local success, err = pcall(function()
         end)
     end)
 
-    Window:SelectTab(1)
+    Tabs.Main:Select()
     WindUI:Notify({Title = "Synthesis MEGA", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "check-circle"})
 end)
 
