@@ -1,5 +1,6 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
+local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
         Title = "SYNTHESIS MEGA",
         Icon = "shield",
@@ -1799,7 +1800,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
     end)
 
     Window:SelectTab(1)
-    Fluent:Notify({Title = "Synthesis EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7})
+    WindUI:Notify({Title = "Synthesis EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "zap"})
 end)
 
 if not success then
