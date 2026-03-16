@@ -73,9 +73,7 @@ local success, err = pcall(function()
     Tabs.Main:AddSection("Game Selection")
     _Sec1:Paragraph({ Title = "Manual Loading", Desc = "Selecione o jogo abaixo para carregar as funções específicas." })
     
-    local GameSelector = Tabs.Main:Dropdown({ Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Default = 1 })
-
-    GameSelector:OnChanged(function(v)
+    local GameSelector = _Sec1:Dropdown({Title = "Select Game Module", Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, Value = "...", Callback = function(v)
         if v == "Rivals" and not BuiltHubs["Rivals"] then
             BuiltHubs["Rivals"] = true
             local RTab = Window:AddTab({ Title = "Rivals Hub", Icon = "swords" })
@@ -95,8 +93,7 @@ local success, err = pcall(function()
         elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
             BuiltHubs["Brookhaven"] = true
             local BTab = Window:AddTab({ Title = "Brookhaven Hub", Icon = "home" })
-            local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
-            BPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1}, Callback = function(val) _G.SynthState.TargetPlayer = val end})
             BTab:AddButton({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
             
             BTab:AddSection("Target Actions")
@@ -880,8 +877,7 @@ local success, err = pcall(function()
             local STab = Window:AddTab({ Title = "Sailor Hub", Icon = "star" })
 
             -- Player target selector
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
-            SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1}, Callback = function(val) _G.SynthState.TargetPlayer = val end})
             STab:AddButton({Title = "🔄 Refresh Player List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
 
             -- ── Player Actions ──────────────────────────────
@@ -1200,8 +1196,7 @@ local success, err = pcall(function()
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:AddTab({ Title = "Dandy Hub", Icon = "skull" })
-            local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
-            DPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1}, Callback = function(val) _G.SynthState.TargetPlayer = val end})
             DTab:AddButton({Title = "Refresh List", Callback = function() DPD:Refresh(GetPlayers(), true) end})
             
             DTab:AddButton({Title = "Copy Skin (Local Model)", Callback = function()
@@ -1275,8 +1270,7 @@ local success, err = pcall(function()
         elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:AddTab({ Title = "Social Hub", Icon = "users" })
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1})
-            SPD:OnChanged(function(val) _G.SynthState.TargetPlayer = val end)
+            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1}, Callback = function(val) _G.SynthState.TargetPlayer = val end})
             STab:AddButton({Title = "Refresh List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
             
             STab:AddSection("Interactions")
@@ -1710,14 +1704,14 @@ local success, err = pcall(function()
             end)
 
         end
-    end)
+    end})
 
 
     -- POPULATE AIMBOT
     Tabs.Aimbot:AddSection("Aimbot Core")
     Tabs.Aimbot:AddToggle("AimToggle", {Title = "Enable Camera Aimbot", Default = false}):OnChanged(function(v) _G.SynthState.AimEnabled = v end)
     Tabs.Aimbot:AddToggle("SilentToggle", {Title = "Silent Aim (Magic Bullet)", Default = false}):OnChanged(function(v) _G.SynthState.SilentAim = v end)
-    Tabs.Aimbot:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1}):OnChanged(function(v) _G.SynthState.AimPart = v end)
+    Tabs.Aimbot:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}}):OnChanged(function(v) _G.SynthState.AimPart = v end)
     Tabs.Aimbot:AddSection("Aimbot Settings")
     Tabs.Aimbot:AddSlider("AimFOV", {Title = "FOV Size", Default = 100, Min = 10, Max = 800, Rounding = 0}):OnChanged(function(v) _G.SynthState.AimFOV = v end)
     Tabs.Aimbot:AddSlider("AimSmooth", {Title = "Smoothness (Cam)", Default = 3, Min = 1, Max = 20, Rounding = 1}):OnChanged(function(v) _G.SynthState.AimSmooth = v end)
@@ -1732,7 +1726,7 @@ local success, err = pcall(function()
     
     Tabs.Visuals:AddSection("3D ESP & World")
     Tabs.Visuals:AddToggle("ChamsToggle", {Title = "Enable Chams", Default = false}):OnChanged(function(v) _G.SynthState.Chams = v end)
-    Tabs.Visuals:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Default = 1}):OnChanged(function(v) _G.SynthState.ChamsMat = v end)
+    Tabs.Visuals:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}}):OnChanged(function(v) _G.SynthState.ChamsMat = v end)
     Tabs.Visuals:AddColorpicker("ChamsColor", {Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255)}):OnChanged(function(v) _G.SynthState.ChamsColor = v end)
     Tabs.Visuals:AddToggle("ProjToggle", {Title = "Projectile ESP (Grenades)", Default = false}):OnChanged(function(v) _G.SynthState.ProjESP = v end)
 
