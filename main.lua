@@ -1586,6 +1586,41 @@ local success, err = pcall(function()
                     if bg then bg:Destroy() end
                 end
             end)
+            -- ============================================
+            -- HORROR COMMANDS
+            -- ============================================
+            STab:AddSection("🎃 Horror Commands")
+            
+            STab:AddButton({Title = "🏹 Angel All Players (Kill Server)", Callback = function()
+                local count = 0
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrp = p.Character.HumanoidRootPart
+                        -- White glow
+                        pcall(function()
+                            local hl = p.Character:FindFirstChild("AngelHL") or Instance.new("Highlight", p.Character)
+                            hl.Name = "AngelHL"
+                            hl.FillColor = Color3.fromRGB(255, 255, 255)
+                            hl.OutlineColor = Color3.fromRGB(200, 200, 255)
+                            hl.FillTransparency = 0.3
+                        end)
+                        -- Lift up high and anchor
+                        pcall(function()
+                            hrp.CFrame = hrp.CFrame + Vector3.new(0, 200, 0)
+                            hrp.Anchored = true
+                            task.delay(8, function()
+                                pcall(function() hrp.Anchored = false end)
+                            end)
+                        end)
+                        
+                        if p.Character:FindFirstChildOfClass("Humanoid") then
+                            p.Character.Humanoid.Health = 0
+                        end
+                        count = count + 1
+                    end
+                end
+                Fluent:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4})
+            end})
 
         elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
