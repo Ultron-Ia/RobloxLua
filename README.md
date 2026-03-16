@@ -6,8 +6,14 @@ O **Synthesis Mega** é o script definitivo para exploradores e jogadores compet
 
 Copie e cole o comando abaixo no seu executor favorito:
 
+### Versão Clássica (Fluent UI)
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Ultron-Ia/RobloxLua/main/main.lua"))()
+```
+
+### Versão Premium (WindUI - Recomendado ✨)
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Ultron-Ia/RobloxLua/main/windUI/main.lua"))()
 ```
 
 ## ✨ Funcionalidades Universais (Base)
@@ -28,6 +34,18 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Ultron-Ia/RobloxLua/m
 - **Teleporte p/ Jogador**: Vá até qualquer um instantaneamente.
 - **Modo Troll/Seguir**: Siga e trolle jogadores selecionados automaticamente.
 - **Acesso Rápido**: Teleportes para Banco, Hospital e simulação de compras/dinheiro.
+- **Horror Commands**: Jumpscares e banimentos para o Backrooms.
+
+### 💬 Social Hub (Talking Hub)
+- **Clone de Outfits**: Copie o visual completo de qualquer jogador.
+- **Controle de Jogador**: Bug de weld para controlar o movimento de terceiros.
+- **Fling Party**: Jogue jogadores para longe (Kill).
+- **🏹 Angel All Players**: Transforme todos os jogadores do servidor em "anjos" (Kill Server) com efeitos visuais divinos.
+- **Sistema de Voo**: Fly completo controlado pelo mouse.
+
+### ⚓ Peça de Sailor
+- **Sailor Hub**: Funções de teleporte, cópia de avatar e aura de Sailor Moon.
+- **Admin Tools**: Prisão (Jail), explosão e loop kill para alvos selecionados.
 
 ### ⚔️ Rivals
 - **Auto Parry Hub**: Bloqueio automático com ajuste de sensibilidade e distância.
