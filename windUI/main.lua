@@ -804,7 +804,7 @@ local success, err = pcall(function()
                 local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
 
                 -- Player target selector
-                local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.SynthState.TargetPlayer = val end})
+                local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.SynthState.TargetPlayer = val end})
                 STab:Button({Title = "🔄 Refresh Player List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
 
                 -- ── Player Actions ──────────────────────────────
@@ -855,7 +855,7 @@ local success, err = pcall(function()
 
                 -- Attach loop
                 local sailorAttachLoop = nil
-                STab:Toggle({Title = "📌 Attach to Player (Loop TP)", Default = false, Callback = function(v)
+                STab:Toggle({Title = "📌 Attach to Player (Loop TP)", Value = false, Callback = function(v)
                     if v then
                         sailorAttachLoop = RunService.Heartbeat:Connect(function()
                             local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -870,7 +870,7 @@ local success, err = pcall(function()
 
                 -- Sit on head loop
                 local sailorSitLoop = nil
-                STab:Toggle({Title = "🪑 Sit on Target's Head", Default = false, Callback = function(v)
+                STab:Toggle({Title = "🪑 Sit on Target's Head", Value = false, Callback = function(v)
                     if v then
                         sailorSitLoop = RunService.Heartbeat:Connect(function()
                             local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -890,7 +890,7 @@ local success, err = pcall(function()
 
                 -- RGB skin
                 local sailorRGBLoop = nil
-                STab:Toggle({Title = "🌈 Rainbow/RGB Character", Default = false, Callback = function(v)
+                STab:Toggle({Title = "🌈 Rainbow/RGB Character", Value = false, Callback = function(v)
                     if v then
                         sailorRGBLoop = RunService.RenderStepped:Connect(function()
                             if LocalPlayer.Character then
@@ -997,7 +997,7 @@ local success, err = pcall(function()
 
                 -- Freeze
                 local sailorFreezeLoop = nil
-                STab:Toggle({Title = "🔒 Freeze Target (Loop)", Default = false, Callback = function(v)
+                STab:Toggle({Title = "🔒 Freeze Target (Loop)", Value = false, Callback = function(v)
                     if v then
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                         if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -1028,7 +1028,7 @@ local success, err = pcall(function()
 
                 -- Loop Kill
                 local sailorLoopKill = nil
-                STab:Toggle({Title = "🔁 Loop Kill Target", Default = false, Callback = function(v)
+                STab:Toggle({Title = "🔁 Loop Kill Target", Value = false, Callback = function(v)
                     if v then
                         sailorLoopKill = RunService.Heartbeat:Connect(function()
                             local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1102,7 +1102,7 @@ local success, err = pcall(function()
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:Tab({ Title = "Dandy Hub", Icon = "flower" })
-            local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.SynthState.TargetPlayer = val end})
+            local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.SynthState.TargetPlayer = val end})
             DTab:Button({Title = "Refresh List", Callback = function() DPD:Refresh(GetPlayers(), true) end})
             
             DTab:Button({Title = "Copy Skin (Local Model)", Callback = function()
@@ -1126,8 +1126,8 @@ local success, err = pcall(function()
             end})
             
             DTab:Section({ Title = "World Visuals" })
-            DTab:Toggle({Title = "Monster/Entity ESP", Default = false, Callback = function(v) _G.SynthState.DandyESP = v end})
-            DTab:Toggle({Title = "Item/Loot ESP", Default = false, Callback = function(v) _G.SynthState.DandyItemESP = v end})
+            DTab:Toggle({Title = "Monster/Entity ESP", Value = false, Callback = function(v) _G.SynthState.DandyESP = v end})
+            DTab:Toggle({Title = "Item/Loot ESP", Value = false, Callback = function(v) _G.SynthState.DandyItemESP = v end})
             
             -- Simple Entity Tracker
             task.spawn(function()
@@ -1170,7 +1170,7 @@ local success, err = pcall(function()
         elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
-            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.SynthState.TargetPlayer = val end})
+            local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.SynthState.TargetPlayer = val end})
             STab:Button({Title = "Refresh List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
             
             STab:Section({ Title = "Interactions" })
@@ -1289,7 +1289,7 @@ local success, err = pcall(function()
             end})
             
             local socialControlClone = nil
-            STab:Toggle({Title = "Control Player (Weld Bug)", Default = false, Callback = function(v)
+            STab:Toggle({Title = "Control Player (Weld Bug)", Value = false, Callback = function(v)
                 if v then
                     local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
                     if t and t.Character and LocalPlayer.Character then
@@ -1359,7 +1359,7 @@ local success, err = pcall(function()
             end})
 
             local socialAttachLoop = nil
-            STab:Toggle({Title = "Attach to Player (Loop TP)", Default = false, Callback = function(v)
+            STab:Toggle({Title = "Attach to Player (Loop TP)", Value = false, Callback = function(v)
                 if v then
                     socialAttachLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1375,7 +1375,7 @@ local success, err = pcall(function()
 
             local spinSitLoop = nil
             local spinSitAngle = 0
-            STab:Toggle({Title = "Spin on Target's Head (Annoy)", Default = false, Callback = function(v)
+            STab:Toggle({Title = "Spin on Target's Head (Annoy)", Value = false, Callback = function(v)
                 if v then
                     spinSitLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1433,7 +1433,7 @@ local success, err = pcall(function()
             end})
 
             local socialSitLoop = nil
-            STab:Toggle({Title = "Sit on Target's Shoulders", Default = false, Callback = function(v)
+            STab:Toggle({Title = "Sit on Target's Shoulders", Value = false, Callback = function(v)
                 if v then
                     socialSitLoop = RunService.Heartbeat:Connect(function()
                         local t = Players:FindFirstChild(_G.SynthState.TargetPlayer)
@@ -1453,7 +1453,7 @@ local success, err = pcall(function()
             local flyLoop = nil
             local bv = nil
             local bg = nil
-            STab:Toggle({Title = "Fly System (Hold Left Click)", Default = false, Callback = function(v)
+            STab:Toggle({Title = "Fly System (Hold Left Click)", Value = false, Callback = function(v)
                 flying = v
                 if flying then
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -1576,7 +1576,7 @@ local success, err = pcall(function()
             JTab:Section({ Title = "Invincibility & God Mode" })
             
             local godLoop = nil
-            JTab:Toggle({Title = "Basic God Mode (Max Health)", Default = false, Callback = function(v)
+            JTab:Toggle({Title = "Basic God Mode (Max Health)", Value = false, Callback = function(v)
                 if v then
                     godLoop = RunService.Heartbeat:Connect(function()
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -1597,7 +1597,7 @@ local success, err = pcall(function()
             })
 
             local hitboxLoop = nil
-            JTab:Toggle({Title = "Delete Enemy Hitboxes (Anti-Damage)", Default = false, Callback = function(v)
+            JTab:Toggle({Title = "Delete Enemy Hitboxes (Anti-Damage)", Value = false, Callback = function(v)
                 if v then
                     hitboxLoop = RunService.RenderStepped:Connect(function()
                         for _, obj in pairs(workspace:GetDescendants()) do
@@ -1618,7 +1618,7 @@ local success, err = pcall(function()
             })
 
             local dodgeLoop = nil
-            JTab:Toggle({Title = "Auto Dodge (Proximity TP)", Default = false, Callback = function(v)
+            JTab:Toggle({Title = "Auto Dodge (Proximity TP)", Value = false, Callback = function(v)
                 if v then
                     dodgeLoop = RunService.Heartbeat:Connect(function()
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -1641,7 +1641,7 @@ local success, err = pcall(function()
             })
             
             local antiStunLoop = nil
-            JTab:Toggle({Title = "Anti-Stun / Auto-Sprint", Default = false, Callback = function(v)
+            JTab:Toggle({Title = "Anti-Stun / Auto-Sprint", Value = false, Callback = function(v)
                 if v then
                     antiStunLoop = RunService.RenderStepped:Connect(function()
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -1666,36 +1666,36 @@ local success, err = pcall(function()
 
     -- POPULATE AIMBOT
     Tabs.Aimbot:Section({ Title = "Aimbot Core" })
-    Tabs.Aimbot:Toggle({Title = "Enable Camera Aimbot", Default = false, Callback = function(v) _G.SynthState.AimEnabled = v end})
-    Tabs.Aimbot:Toggle({Title = "Silent Aim (Magic Bullet)", Default = false, Callback = function(v) _G.SynthState.SilentAim = v end})
-    Tabs.Aimbot:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1, Callback = function(v) _G.SynthState.AimPart = v end})
+    Tabs.Aimbot:Toggle({Title = "Enable Camera Aimbot", Value = false, Callback = function(v) _G.SynthState.AimEnabled = v end})
+    Tabs.Aimbot:Toggle({Title = "Silent Aim (Magic Bullet)", Value = false, Callback = function(v) _G.SynthState.SilentAim = v end})
+    Tabs.Aimbot:Dropdown({Title = "Target Part", Values = {"Head", "HumanoidRootPart"}, Value = 1, Callback = function(v) _G.SynthState.AimPart = v end})
     Tabs.Aimbot:Section({ Title = "Aimbot Settings" })
-    Tabs.Aimbot:Slider({Title = "FOV Size", Default = 100, Min = 10, Max = 800, Step = 1, Callback = function(v) _G.SynthState.AimFOV = v end})
-    Tabs.Aimbot:Slider({Title = "Smoothness (Cam)", Default = 3, Min = 1, Max = 20, Step = 0.1, Callback = function(v) _G.SynthState.AimSmooth = v end})
+    Tabs.Aimbot:Slider({Title = "FOV Size", Value = {Default = 100, Min = 10, Max = 800}, Step = 1, Callback = function(v) _G.SynthState.AimFOV = v end})
+    Tabs.Aimbot:Slider({Title = "Smoothness (Cam)", Value = {Default = 3, Min = 1, Max = 20}, Step = 0.1, Callback = function(v) _G.SynthState.AimSmooth = v end})
 
     -- POPULATE VISUALS
     Tabs.Visuals:Section({ Title = "2D ESP" })
-    Tabs.Visuals:Toggle({Title = "Boxes", Default = false, Callback = function(v) _G.SynthState.BoxESP = v end})
-    Tabs.Visuals:Toggle({Title = "Names", Default = false, Callback = function(v) _G.SynthState.NameESP = v end})
-    Tabs.Visuals:Toggle({Title = "Distance", Default = false, Callback = function(v) _G.SynthState.DistESP = v end})
-    Tabs.Visuals:Toggle({Title = "Skeleton Esp", Default = false, Callback = function(v) _G.SynthState.SkeletonESP = v end})
+    Tabs.Visuals:Toggle({Title = "Boxes", Value = false, Callback = function(v) _G.SynthState.BoxESP = v end})
+    Tabs.Visuals:Toggle({Title = "Names", Value = false, Callback = function(v) _G.SynthState.NameESP = v end})
+    Tabs.Visuals:Toggle({Title = "Distance", Value = false, Callback = function(v) _G.SynthState.DistESP = v end})
+    Tabs.Visuals:Toggle({Title = "Skeleton Esp", Value = false, Callback = function(v) _G.SynthState.SkeletonESP = v end})
     Tabs.Visuals:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1), Callback = function(v) _G.SynthState.SkeletonColor = v end})
     
     Tabs.Visuals:Section({ Title = "3D ESP & World" })
-    Tabs.Visuals:Toggle({Title = "Enable Chams", Default = false, Callback = function(v) _G.SynthState.Chams = v end})
-    Tabs.Visuals:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Default = 1, Callback = function(v) _G.SynthState.ChamsMat = v end})
+    Tabs.Visuals:Toggle({Title = "Enable Chams", Value = false, Callback = function(v) _G.SynthState.Chams = v end})
+    Tabs.Visuals:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Value = 1, Callback = function(v) _G.SynthState.ChamsMat = v end})
     Tabs.Visuals:Colorpicker({Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255), Callback = function(v) _G.SynthState.ChamsColor = v end})
-    Tabs.Visuals:Toggle({Title = "Projectile ESP (Grenades)", Default = false, Callback = function(v) _G.SynthState.ProjESP = v end})
+    Tabs.Visuals:Toggle({Title = "Projectile ESP (Grenades)", Value = false, Callback = function(v) _G.SynthState.ProjESP = v end})
 
     -- POPULATE LOCAL
     Tabs.Local:Section({ Title = "Movement" })
-    Tabs.Local:Slider({Title = "WalkSpeed", Default = 16, Min = 16, Max = 300, Step = 1, Callback = function(v) _G.SynthState.WalkSpeed = v end})
-    Tabs.Local:Slider({Title = "JumpPower", Default = 50, Min = 50, Max = 500, Step = 1, Callback = function(v) _G.SynthState.JumpPower = v end})
-    Tabs.Local:Toggle({Title = "NoClip", Default = false, Callback = function(v) _G.SynthState.NoClip = v end})
+    Tabs.Local:Slider({Title = "WalkSpeed", Value = 16, Min = 16, Max = 300, Step = 1, Callback = function(v) _G.SynthState.WalkSpeed = v end})
+    Tabs.Local:Slider({Title = "JumpPower", Value = 50, Min = 50, Max = 500, Step = 1, Callback = function(v) _G.SynthState.JumpPower = v end})
+    Tabs.Local:Toggle({Title = "NoClip", Value = false, Callback = function(v) _G.SynthState.NoClip = v end})
     
     Tabs.Local:Section({ Title = "Anti-Hit (CS:GO Style)" })
-    Tabs.Local:Toggle({Title = "Spinbot (360)", Default = false, Callback = function(v) _G.SynthState.Spinbot = v end})
-    Tabs.Local:Slider({Title = "Spin Speed", Default = 50, Min = 10, Max = 200, Step = 1, Callback = function(v) _G.SynthState.SpinSpeed = v end})
+    Tabs.Local:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.SynthState.Spinbot = v end})
+1698:     Tabs.Local:Slider({Title = "Spin Speed", Value = {Default = 50, Min = 10, Max = 200}, Step = 1, Callback = function(v) _G.SynthState.SpinSpeed = v end})
 
     -- SETTINGS
     WindUI:Notify({Title="Synthesis", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
