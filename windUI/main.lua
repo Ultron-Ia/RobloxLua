@@ -8,7 +8,9 @@ local success, err = pcall(function()
         Folder = "SynthesisMega",
         Size = UDim2.fromOffset(580, 460),
         Transparent = true,
-        Theme = "Dark"
+        Theme = "Dark",
+        Keybind = Enum.KeyCode.Insert,
+        ToggleKey = Enum.KeyCode.Insert
     })
 
     -- Services
@@ -1899,6 +1901,15 @@ local success, err = pcall(function()
                 end
             end
         end)
+    end)
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
+            pcall(function()
+                if Window.Toggle then
+                    Window:Toggle()
+                end
+            end)
+        end
     end)
 
     Window:SelectTab(1)
