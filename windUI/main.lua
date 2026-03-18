@@ -1695,7 +1695,7 @@ local success, err = pcall(function()
     
     Tabs.Local:Section({ Title = "Anti-Hit (CS:GO Style)" })
     Tabs.Local:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.SynthState.Spinbot = v end})
-1698:     Tabs.Local:Slider({Title = "Spin Speed", Value = {Default = 50, Min = 10, Max = 200}, Step = 1, Callback = function(v) _G.SynthState.SpinSpeed = v end})
+    Tabs.Local:Slider({Title = "Spin Speed", Value = {Default = 50, Min = 10, Max = 200}, Step = 1, Callback = function(v) _G.SynthState.SpinSpeed = v end})
 
     -- SETTINGS
     WindUI:Notify({Title="Synthesis", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
