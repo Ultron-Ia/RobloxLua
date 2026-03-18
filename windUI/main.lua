@@ -1689,8 +1689,8 @@ local success, err = pcall(function()
 
     -- POPULATE LOCAL
     Tabs.Local:Section({ Title = "Movement" })
-    Tabs.Local:Slider({Title = "WalkSpeed", Value = 16, Min = 16, Max = 300, Step = 1, Callback = function(v) _G.SynthState.WalkSpeed = v end})
-    Tabs.Local:Slider({Title = "JumpPower", Value = 50, Min = 50, Max = 500, Step = 1, Callback = function(v) _G.SynthState.JumpPower = v end})
+    Tabs.Local:Slider({Title = "WalkSpeed", Value = {Default = 16, Min = 16, Max = 300}, Step = 1, Callback = function(v) _G.SynthState.WalkSpeed = v end})
+    Tabs.Local:Slider({Title = "JumpPower", Value = {Default = 50, Min = 50, Max = 500}, Step = 1, Callback = function(v) _G.SynthState.JumpPower = v end})
     Tabs.Local:Toggle({Title = "NoClip", Value = false, Callback = function(v) _G.SynthState.NoClip = v end})
     
     Tabs.Local:Section({ Title = "Anti-Hit (CS:GO Style)" })
