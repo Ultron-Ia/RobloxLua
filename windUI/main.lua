@@ -1,3 +1,7 @@
+if not game:IsLoaded() then game.Loaded:Wait() end
+local playersExist, _ = pcall(function() return game:GetService("Players") end)
+if not playersExist then return end
+
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local success, err = pcall(function()
