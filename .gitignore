@@ -1,0 +1,8 @@
+# Private Source
+windUI/
+obfuscator.py
+main_obfuscated.lua
+
+# Debug/Temp
+out.txt
+*.tmp
