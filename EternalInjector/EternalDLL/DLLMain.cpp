@@ -2,12 +2,7 @@
 #include <iostream>
 #include <thread>
 
-// Forward declaration
-namespace rbx {
-    namespace Execution {
-        void StartPipeServer();
-    }
-}
+#include "Luau/Luau.hpp"
 
 void MainThread(HMODULE hModule) {
     // Visual confirmation that injection worked

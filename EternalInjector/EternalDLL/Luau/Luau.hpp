@@ -20,8 +20,8 @@ namespace rbx {
     };
 
     // Execution Core
-    class Execution {
-    public:
-        static void execute(std::string script);
-    };
+    namespace Execution {
+        void execute(std::string script);
+        void StartPipeServer(); // Added for DLLMain clarity
+    }
 }
