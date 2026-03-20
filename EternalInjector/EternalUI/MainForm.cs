@@ -104,22 +104,25 @@ namespace EternalUI
         private async void btnExecute_Click(object sender, EventArgs e)
         {
             string script = scriptEditor.Text;
+            lblStatus.Text = "Status: Sending Script...";
+            
             try
             {
                 using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
                 {
-                    await pipeClient.ConnectAsync(1000);
+                    // Incrementei o timeout para 2 segundos para dar tempo ao Driver
+                    await pipeClient.ConnectAsync(2000);
                     using (StreamWriter sw = new StreamWriter(pipeClient))
                     {
                         sw.Write(script);
                     }
                 }
-                lblStatus.Text = "Status: Script Sent!";
+                lblStatus.Text = "Status: Script Executed!";
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Status: DLL Not Found (Attach first)";
-                MessageBox.Show("Você precisa injetar a DLL no Roblox antes de executar!", "ETERNAL Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                lblStatus.Text = "Status: Communication Error";
+                MessageBox.Show($"Ocorreu um erro ao enviar o script para o Roblox:\n\n{ex.Message}\n\nNota: Certifique-se de que injetou a DLL e que o MessageBox apareceu no jogo.", "Erro de Execução", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 

@@ -19,8 +19,14 @@ namespace rbx {
         void StartPipeServer()
         {
             HANDLE hPipe;
-            char buffer[1024 * 10]; // 10KB buffer for scripts
+            char buffer[1024 * 10];
             DWORD dwRead;
+
+            // Security descriptor to allow everyone access (NULL DACL)
+            SECURITY_DESCRIPTOR sd;
+            InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+            SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE);
+            SECURITY_ATTRIBUTES sa = { sizeof(sa), &sd, FALSE };
 
             while (true)
             {
@@ -28,15 +34,14 @@ namespace rbx {
                     "\\\\.\\pipe\\EternalPipe",
                     PIPE_ACCESS_DUPLEX,
                     PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-                    1,
+                    PIPE_UNLIMITED_INSTANCES,
                     1024 * 10,
                     1024 * 10,
                     0,
-                    NULL
+                    &sa // Use security attributes
                 );
 
                 if (hPipe == INVALID_HANDLE_VALUE) {
-                    std::cout << "Failed to create pipe." << std::endl;
                     Sleep(1000);
                     continue;
                 }
