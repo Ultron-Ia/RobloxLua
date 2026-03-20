@@ -1,8 +1,16 @@
-# Private Source
-windUI/
-obfuscator.py
-main_obfuscated.lua
-
-# Debug/Temp
-out.txt
-*.tmp
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.db
+*.pdb
+*.exe
+*.dll
+*.exp
+*.lib
+EternalInjector/EternalUI/bin/
+EternalInjector/EternalUI/obj/
+EternalInjector/EternalDLL/x64/
+EternalInjector/EternalDLL/Debug/
+EternalInjector/EternalDLL/Release/
