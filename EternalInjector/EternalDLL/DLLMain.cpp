@@ -8,32 +8,26 @@ extern void StartPipeServer();
 void MainThread()
 {
     // Initialize Console for Debugging
-    AllocConsole();
-    FILE* f;
-    freopen_s(&f, "CONOUT$", "w", stdout);
-    freopen_s(&f, "CONIN$", "r", stdin);
-
-    std::cout << "--- ETERNAL DLL LOADED ---" << std::endl;
-    std::cout << "Initializing Pipe Server..." << std::endl;
-
-    // Start Pipe Server in a separate thread
-    std::thread(StartPipeServer).detach();
-
-    std::cout << "Ready for execution commands." << std::endl;
-
-    while (true)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+// Forward declaration
+namespace rbx {
+    namespace Execution {
+        void StartPipeServer();
     }
+}
+
+void MainThread(HMODULE hModule) {
+    // Visual confirmation that injection worked
+    MessageBoxA(NULL, "ETERNAL DLL Carregada com Sucesso!", "ETERNAL", MB_OK | MB_ICONINFORMATION);
+    
+    // Start receiving scripts
+    rbx::Execution::StartPipeServer();
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MainThread, 0, 0, 0);
-        break;
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
+        DisableThreadLibraryCalls(hModule);
+        std::thread(MainThread, hModule).detach();
     }
     return TRUE;
 }
