@@ -2,12 +2,6 @@
 #include <iostream>
 #include <thread>
 
-// Forward declaration from Execution.cpp
-extern void StartPipeServer();
-
-void MainThread()
-{
-    // Initialize Console for Debugging
 // Forward declaration
 namespace rbx {
     namespace Execution {
@@ -27,6 +21,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hModule);
+        
+        // Spawn main communication thread
         std::thread(MainThread, hModule).detach();
     }
     return TRUE;
