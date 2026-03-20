@@ -91,13 +91,13 @@ namespace EternalUI
             {
                 btnInject.Text = "⚡ INJECTED";
                 btnInject.ForeColor = Color.SpringGreen;
-                lblStatus.Text = "Status: Injected & Ready";
+                lblStatus.Text = "Status: " + Injector.LastError;
             }
             else
             {
-                lblStatus.Text = "Status: Injection Failed (Roblox open?)";
+                lblStatus.Text = "Status: Error";
                 btnInject.Text = "⚡ INJECT";
-                MessageBox.Show("Falha ao injetar! Certifique-se de que o Roblox (RobloxPlayerBeta) está aberto.", "Erro de Injeção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Erro de Injeção: " + Injector.LastError + "\n\nSugestões:\n1. Execute o ETERNAL como Administrador.\n2. Verifique se o Roblox está em execução.\n3. Certifique-se de que a DLL é x64.", "ETERNAL Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

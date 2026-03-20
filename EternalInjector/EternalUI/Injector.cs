@@ -32,26 +32,85 @@ namespace EternalUI
         const uint MEM_RESERVE = 0x2000;
         const uint PAGE_READWRITE = 0x40;
 
+        public static string LastError = "";
+
         public static bool Inject(string dllPath)
         {
-            Process[] processes = Process.GetProcessesByName("RobloxPlayerBeta");
-            if (processes.Length == 0) return false;
+            try
+            {
+                Process[] processes = Process.GetProcessesByName("RobloxPlayerBeta");
+                if (processes.Length == 0)
+                {
+                    LastError = "RobloxPlayerBeta.exe não encontrado.";
+                    return false;
+                }
 
-            Process roblox = processes[0];
-            IntPtr hProcess = OpenProcess(PROCESS_ALL_ACCESS, false, roblox.Id);
-            if (hProcess == IntPtr.Zero) return false;
+                Process roblox = processes[0];
+                IntPtr hProcess = OpenProcess(PROCESS_ALL_ACCESS, false, roblox.Id);
+                if (hProcess == IntPtr.Zero)
+                {
+                    LastError = "Falha ao abrir o processo (Tente rodar como Administrador).";
+                    return false;
+                }
 
-            IntPtr loadLibAddr = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
-            
-            IntPtr allocMem = VirtualAllocEx(hProcess, IntPtr.Zero, (uint)((dllPath.Length + 1) * Marshal.SizeOf(typeof(char))), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-            
-            IntPtr bytesWritten;
-            byte[] dllBytes = Encoding.Default.GetBytes(dllPath);
-            WriteProcessMemory(hProcess, allocMem, dllBytes, (uint)dllBytes.Length, out bytesWritten);
+                IntPtr loadLibAddr = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+                if (loadLibAddr == IntPtr.Zero)
+                {
+                    LastError = "Falha ao obter endereço do LoadLibraryA.";
+                    return false;
+                }
 
-            CreateRemoteThread(hProcess, IntPtr.Zero, 0, loadLibAddr, allocMem, 0, IntPtr.Zero);
+                byte[] dllBytes = Encoding.Default.GetBytes(dllPath);
+                uint size = (uint)dllBytes.Length + 1;
 
-            return true;
+                IntPtr allocMem = VirtualAllocEx(hProcess, IntPtr.Zero, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+                if (allocMem == IntPtr.Zero)
+                {
+                    LastError = "Falha ao alocar memória no processo.";
+                    return false;
+                }
+
+                IntPtr bytesWritten;
+                if (!WriteProcessMemory(hProcess, allocMem, dllBytes, size, out bytesWritten))
+                {
+                    LastError = "Falha ao escrever caminho da DLL na memória.";
+                    return false;
+                }
+
+                IntPtr hThread = CreateRemoteThread(hProcess, IntPtr.Zero, 0, loadLibAddr, allocMem, 0, IntPtr.Zero);
+                if (hThread == IntPtr.Zero)
+                {
+                    LastError = "Falha ao criar thread remoto (Bypass de Anti-Cheat necessário?).";
+                    return false;
+                }
+
+                // Verify if it actually loaded (Wait 1s for initialization)
+                System.Threading.Thread.Sleep(1000);
+                roblox.Refresh(); // Important to get updated module list
+                bool isLoaded = false;
+                foreach (ProcessModule module in roblox.Modules)
+                {
+                    if (module.ModuleName.Equals("EternalDLL.dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isLoaded = true;
+                        break;
+                    }
+                }
+
+                if (!isLoaded)
+                {
+                    LastError = "DLL solicitada mas NÃO carregada (Verifique se é x64 ou faltam redistribuíveis C++).";
+                    return false;
+                }
+
+                LastError = "Injeção realizada com sucesso!";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LastError = "Erro: " + ex.Message;
+                return false;
+            }
         }
     }
 }
