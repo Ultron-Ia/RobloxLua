@@ -36,6 +36,55 @@ namespace EternalUI
 
         public static bool Inject(string dllPath)
         {
+            if (!System.IO.File.Exists(dllPath))
+            {
+                LastError = "DLL não encontrada: " + dllPath;
+                return false;
+            }
+
+            // Prioritize Kernel Injection if the helper is present
+            string helperPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KernelInjector.exe");
+            if (System.IO.File.Exists(helperPath))
+            {
+                return InjectKernel(dllPath, helperPath);
+            }
+
+            return InjectUserMode(dllPath);
+        }
+
+        private static bool InjectKernel(string dllPath, string helperPath)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo();
+                psi.FileName = helperPath;
+                psi.Arguments = $"\"{dllPath}\" RobloxPlayerBeta";
+                psi.Verb = "runas"; // Secure execution
+                psi.UseShellExecute = true;
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+
+                Process p = Process.Start(psi);
+                if (p != null)
+                {
+                    p.WaitForExit();
+                    if (p.ExitCode == 0)
+                    {
+                        LastError = "Injeção Kernel realizada com sucesso!";
+                        return true;
+                    }
+                }
+                LastError = "Kernel Injector falhou (Código: " + p?.ExitCode + ")";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                LastError = "Erro Kernel: " + ex.Message;
+                return false;
+            }
+        }
+
+        private static bool InjectUserMode(string dllPath)
+        {
             try
             {
                 Process[] processes = Process.GetProcessesByName("RobloxPlayerBeta");
@@ -49,44 +98,27 @@ namespace EternalUI
                 IntPtr hProcess = OpenProcess(PROCESS_ALL_ACCESS, false, roblox.Id);
                 if (hProcess == IntPtr.Zero)
                 {
-                    LastError = "Falha ao abrir o processo (Tente rodar como Administrador).";
+                    LastError = "Falha ao abrir o processo (Run as Admin).";
                     return false;
                 }
 
                 IntPtr loadLibAddr = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
-                if (loadLibAddr == IntPtr.Zero)
-                {
-                    LastError = "Falha ao obter endereço do LoadLibraryA.";
-                    return false;
-                }
-
                 byte[] dllBytes = Encoding.Default.GetBytes(dllPath);
                 uint size = (uint)dllBytes.Length + 1;
 
                 IntPtr allocMem = VirtualAllocEx(hProcess, IntPtr.Zero, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-                if (allocMem == IntPtr.Zero)
-                {
-                    LastError = "Falha ao alocar memória no processo.";
-                    return false;
-                }
-
                 IntPtr bytesWritten;
-                if (!WriteProcessMemory(hProcess, allocMem, dllBytes, size, out bytesWritten))
-                {
-                    LastError = "Falha ao escrever caminho da DLL na memória.";
-                    return false;
-                }
+                WriteProcessMemory(hProcess, allocMem, dllBytes, size, out bytesWritten);
 
                 IntPtr hThread = CreateRemoteThread(hProcess, IntPtr.Zero, 0, loadLibAddr, allocMem, 0, IntPtr.Zero);
                 if (hThread == IntPtr.Zero)
                 {
-                    LastError = "Falha ao criar thread remoto (Bypass de Anti-Cheat necessário?).";
+                    LastError = "CreateRemoteThread falhou (Anti-Cheat detectado).";
                     return false;
                 }
 
-                // Verify if it actually loaded (Wait 1s for initialization)
                 System.Threading.Thread.Sleep(1000);
-                roblox.Refresh(); // Important to get updated module list
+                roblox.Refresh();
                 bool isLoaded = false;
                 foreach (ProcessModule module in roblox.Modules)
                 {
@@ -99,16 +131,16 @@ namespace EternalUI
 
                 if (!isLoaded)
                 {
-                    LastError = "DLL solicitada mas NÃO carregada (Verifique se é x64 ou faltam redistribuíveis C++).";
+                    LastError = "DLL injetada mas não carregada (Proteção ativa).";
                     return false;
                 }
 
-                LastError = "Injeção realizada com sucesso!";
+                LastError = "Injeção User-Mode completa!";
                 return true;
             }
             catch (Exception ex)
             {
-                LastError = "Erro: " + ex.Message;
+                LastError = "Erro User-Mode: " + ex.Message;
                 return false;
             }
         }
