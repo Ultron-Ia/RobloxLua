@@ -73,18 +73,32 @@ namespace EternalUI
         {
             lblStatus.Text = "Status: Injecting...";
             btnInject.Text = "⚡ INJECTING";
+
+            // Prioritize the same folder as the .exe
+            string dllPath = Path.Combine(Application.StartupPath, "EternalDLL.dll");
             
-            // TODO: Call your DLL Injector here (e.g., Manual Map)
-            
-            System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
-            t.Interval = 2000;
-            t.Tick += (s, args) => {
+            if (!File.Exists(dllPath))
+            {
+                lblStatus.Text = "Status: DLL Not Found!";
+                btnInject.Text = "⚡ INJECT";
+                MessageBox.Show("Arquivo 'EternalDLL.dll' não encontrado!\n\nCertifique-se de que a DLL está na MESMA PASTA que este executável.", "Erro de Injeção", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            bool success = Injector.Inject(dllPath);
+
+            if (success)
+            {
                 btnInject.Text = "⚡ INJECTED";
                 btnInject.ForeColor = Color.SpringGreen;
                 lblStatus.Text = "Status: Injected & Ready";
-                t.Stop();
-            };
-            t.Start();
+            }
+            else
+            {
+                lblStatus.Text = "Status: Injection Failed (Roblox open?)";
+                btnInject.Text = "⚡ INJECT";
+                MessageBox.Show("Falha ao injetar! Certifique-se de que o Roblox (RobloxPlayerBeta) está aberto.", "Erro de Injeção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private async void btnExecute_Click(object sender, EventArgs e)
