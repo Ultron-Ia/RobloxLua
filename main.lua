@@ -1,8 +1,15 @@
-if not game:IsLoaded() then game.Loaded:Wait() end
-local playersExist, _ = pcall(function() return game:GetService("\080\108\097\121\101\114\115") end)
-if not playersExist then return end
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+pcall(function()
+ game:GetService("\083\116\097\114\116\101\114\071\117\105"):SetCore("\083\101\110\100\078\111\116\105\102\105\099\097\116\105\111\110", {
+ Title = "\069\084\069\082\078\065\076",
+ Text = "\067\097\114\114\101\103\097\110\100\111\032\069\116\101\114\110\097\108\032\072\117\098\046\046\046",
+ Duration = 5
+ })
+end)
 local success, err = pcall(function()
+ if not game:IsLoaded() then game.Loaded:Wait() end
+ local playersExist, _ = pcall(function() return game:GetService("\080\108\097\121\101\114\115") end)
+ if not playersExist then return end
+ local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
  local Window = WindUI:CreateWindow({
  Title = "\069\084\069\082\078\065\076",
  Icon = "\115\104\105\101\108\100",
