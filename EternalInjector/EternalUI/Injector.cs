@@ -42,45 +42,17 @@ namespace EternalUI
                 return false;
             }
 
-            // Prioritize Kernel Injection if the helper is present
-            string helperPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KernelInjector.exe");
-            if (System.IO.File.Exists(helperPath))
+            // URGENTE: Usar o novo método nativo que portamos do ZhangBing
+            string kernelError;
+            if (NativeKernel.Inject(dllPath, out kernelError))
             {
-                return InjectKernel(dllPath, helperPath);
+                LastError = "Sucesso: " + kernelError;
+                return true;
             }
 
+            // Se o Kernel falhar (pode ser falta de admin), tentamos User-Mode como fallback
+            LastError = "Erro Kernel: " + kernelError + " | Tentando User-Mode...";
             return InjectUserMode(dllPath);
-        }
-
-        private static bool InjectKernel(string dllPath, string helperPath)
-        {
-            try
-            {
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = helperPath;
-                psi.Arguments = $"\"{dllPath}\" RobloxPlayerBeta";
-                psi.Verb = "runas"; // Secure execution
-                psi.UseShellExecute = true;
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-
-                Process p = Process.Start(psi);
-                if (p != null)
-                {
-                    p.WaitForExit();
-                    if (p.ExitCode == 0)
-                    {
-                        LastError = "Injeção Kernel realizada com sucesso!";
-                        return true;
-                    }
-                }
-                LastError = "Kernel Injector falhou (Código: " + p?.ExitCode + ")";
-                return false;
-            }
-            catch (Exception ex)
-            {
-                LastError = "Erro Kernel: " + ex.Message;
-                return false;
-            }
         }
 
         private static bool InjectUserMode(string dllPath)
