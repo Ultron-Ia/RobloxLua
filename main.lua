@@ -22,6 +22,7 @@ local success, err = pcall(function()
     local RunService = game:GetService("RunService")
     local UserInputService = game:GetService("UserInputService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local MarketplaceService = game:GetService("MarketplaceService")
     local LocalPlayer = Players.LocalPlayer
     local Camera = workspace.CurrentCamera
 
@@ -1716,35 +1717,61 @@ local success, err = pcall(function()
     })
     Tabs.Local:Button({
         Title = "Apply Skin",
-        Desc = "Aplica a skin ou bundle ao seu personagem",
+        Desc = "Aplica a skin, bundle ou item (ID) ao seu personagem",
         Callback = function()
             local idStr = _G.EternalState.SkinID:gsub("%s+", "") -- Remove espaços
             local id = tonumber(idStr)
             
             if id then
-                WindUI:Notify({Title="Skin Changer", Content="Processando ID: "..id, Duration=3, Icon = "package"})
+                WindUI:Notify({Title="Skin Changer", Content="Analisando ID: "..id, Duration=3, Icon = "search"})
                 pcall(function()
                     local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                     if hum then
                         local description = nil
                         
-                        -- Tenta carregar como Outfit (Costume)
-                        local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
-                        if sO and dO then
-                            description = dO
-                        else
-                            -- Tenta carregar como Bundle (Catalog Bundle)
-                            local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
-                            if sB and dB then
-                                description = dB
+                        -- Tenta identificar o tipo de item via MarketplaceService
+                        local successM, info = pcall(function() return MarketplaceService:GetProductInfo(id) end)
+                        
+                        if successM and info then
+                            local assetType = info.AssetTypeId
+                            description = hum:GetAppliedDescription() -- Pega o que o jogador já está vestindo
+                            
+                            if assetType == 2 then -- T-Shirt (Camiseta)
+                                description.GraphicTShirt = id
+                                WindUI:Notify({Title="Skin Changer", Content="Camiseta (T-Shirt) detectada!", Duration=2})
+                            elseif assetType == 11 then -- Shirt (Camisa)
+                                description.Shirt = id
+                                WindUI:Notify({Title="Skin Changer", Content="Camisa detectada!", Duration=2})
+                            elseif assetType == 12 then -- Pants (Calça)
+                                description.Pants = id
+                                WindUI:Notify({Title="Skin Changer", Content="Calça detectada!", Duration=2})
+                            elseif assetType == 8 or (assetType >= 41 and assetType <= 47) then -- Hat / Acessório
+                                -- Para acessórios, adicionamos à lista existente
+                                local currentAccs = description:GetAccessories(false)
+                                table.insert(currentAccs, {AssetId = id, AccessoryType = Enum.AccessoryType.Unknown})
+                                description:SetAccessories(currentAccs, false)
+                                WindUI:Notify({Title="Skin Changer", Content="Acessório detectado!", Duration=2})
+                            else
+                                -- Se não for um item simples, tenta carregar como Outfit ou Bundle
+                                local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
+                                if sO and dO then
+                                    description = dO
+                                    WindUI:Notify({Title="Skin Changer", Content="Traje (Outfit) detectado!", Duration=2})
+                                else
+                                    local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
+                                    if sB and dB then
+                                        description = dB
+                                        WindUI:Notify({Title="Skin Changer", Content="Pacote (Bundle) detectado!", Duration=2})
+                                    end
+                                end
                             end
                         end
                         
                         if description then
                             hum:ApplyDescription(description)
-                            WindUI:Notify({Title="Skin Changer", Content="Skin/Bundle aplicada com sucesso!", Duration=3, Icon = "check-circle"})
+                            WindUI:Notify({Title="Skin Changer", Content="Aplicado com sucesso!", Duration=3, Icon = "check-circle"})
                         else
-                            WindUI:Notify({Title="Skin Changer", Content="Erro: ID não encontrado no banco de dados do Roblox.", Duration=5, Icon = "alert-circle"})
+                            WindUI:Notify({Title="Skin Changer", Content="Erro: Não foi possível identificar o ID.", Duration=5, Icon = "alert-circle"})
                         end
                     end
                 end)
