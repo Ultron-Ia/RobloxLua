@@ -1716,16 +1716,34 @@ local success, err = pcall(function()
     })
     Tabs.Local:Button({
         Title = "Apply Skin",
-        Desc = "Aplica a skin ao seu personagem",
+        Desc = "Aplica a skin ou bundle ao seu personagem",
         Callback = function()
             local id = tonumber(_G.EternalState.SkinID)
             if id then
-                WindUI:Notify({Title="Skin Changer", Content="Aplicando skin ID: "..id, Duration=3, Icon = "package"})
+                WindUI:Notify({Title="Skin Changer", Content="Processando ID: "..id, Duration=3, Icon = "package"})
                 pcall(function()
                     local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                     if hum then
-                        local description = game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id)
-                        hum:ApplyDescription(description)
+                        local description = nil
+                        
+                        -- Tenta carregar como Outfit (Costume)
+                        local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
+                        if sO and dO then
+                            description = dO
+                        else
+                            -- Tenta carregar como Bundle (Catalog Bundle)
+                            local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
+                            if sB and dB then
+                                description = dB
+                            end
+                        end
+                        
+                        if description then
+                            hum:ApplyDescription(description)
+                            WindUI:Notify({Title="Skin Changer", Content="Skin/Bundle aplicada com sucesso!", Duration=3, Icon = "check-circle"})
+                        else
+                            WindUI:Notify({Title="Skin Changer", Content="Erro: ID não encontrado como Outfit ou Bundle.", Duration=4, Icon = "alert-circle"})
+                        end
                     end
                 end)
             else
