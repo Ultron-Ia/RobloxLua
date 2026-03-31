@@ -1734,35 +1734,40 @@ local success, err = pcall(function()
                         
                         if successM and info then
                             local assetType = info.AssetTypeId
-                            description = hum:GetAppliedDescription() -- Pega o que o jogador já está vestindo
+                            description = hum:GetAppliedDescription()
                             
+                            -- Função para forçar a textura (Geralmente ignora bloqueios de games)
+                            local function forceAsset(className, property, id)
+                                local char = LocalPlayer.Character
+                                if char then
+                                    local item = char:FindFirstChildOfClass(className) or Instance.new(className, char)
+                                    item[property] = "rbxassetid://" .. id
+                                end
+                            end
+
                             if assetType == 2 then -- T-Shirt (Camiseta)
                                 description.GraphicTShirt = id
-                                WindUI:Notify({Title="Skin Changer", Content="Camiseta (T-Shirt) detectada!", Duration=2})
+                                forceAsset("ShirtGraphic", "Graphic", id)
+                                WindUI:Notify({Title="Skin Changer", Content="Forçando Camiseta (T-Shirt)...", Duration=2})
                             elseif assetType == 11 then -- Shirt (Camisa)
                                 description.Shirt = id
-                                WindUI:Notify({Title="Skin Changer", Content="Camisa detectada!", Duration=2})
+                                forceAsset("Shirt", "ShirtTemplate", id)
+                                WindUI:Notify({Title="Skin Changer", Content="Forçando Camisa...", Duration=2})
                             elseif assetType == 12 then -- Pants (Calça)
                                 description.Pants = id
-                                WindUI:Notify({Title="Skin Changer", Content="Calça detectada!", Duration=2})
+                                forceAsset("Pants", "PantsTemplate", id)
+                                WindUI:Notify({Title="Skin Changer", Content="Forçando Calça...", Duration=2})
                             elseif assetType == 8 or (assetType >= 41 and assetType <= 47) then -- Hat / Acessório
-                                -- Para acessórios, adicionamos à lista existente
                                 local currentAccs = description:GetAccessories(false)
                                 table.insert(currentAccs, {AssetId = id, AccessoryType = Enum.AccessoryType.Unknown})
                                 description:SetAccessories(currentAccs, false)
-                                WindUI:Notify({Title="Skin Changer", Content="Acessório detectado!", Duration=2})
+                                WindUI:Notify({Title="Skin Changer", Content="Adicionando Acessório...", Duration=2})
                             else
-                                -- Se não for um item simples, tenta carregar como Outfit ou Bundle
+                                -- Fallback para Bundles/Outfits
                                 local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
-                                if sO and dO then
-                                    description = dO
-                                    WindUI:Notify({Title="Skin Changer", Content="Traje (Outfit) detectado!", Duration=2})
-                                else
+                                if sO and dO then description = dO else
                                     local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
-                                    if sB and dB then
-                                        description = dB
-                                        WindUI:Notify({Title="Skin Changer", Content="Pacote (Bundle) detectado!", Duration=2})
-                                    end
+                                    if sB and dB then description = dB end
                                 end
                             end
                         end
