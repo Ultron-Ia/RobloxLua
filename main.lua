@@ -1723,12 +1723,12 @@ local success, err = pcall(function()
             local id = tonumber(idStr)
             
             if id then
-                WindUI:Notify({Title="Skin Changer", Content="Limpando personagem e injetando ID: "..id, Duration=3, Icon = "refresh-ccw"})
+                WindUI:Notify({Title="Skin Changer", Content="Limpando e buscando objeto: "..id, Duration=3, Icon = "refresh-ccw"})
                 pcall(function()
                     local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
                     local char = LocalPlayer.Character
                     if hum and char then
-                        -- 1. LIMPEZA MANUAL (Igual à função de copiar outfit)
+                        -- 1. LIMPEZA MANUAL (Estilo Brookhaven)
                         for _, i in pairs(char:GetChildren()) do 
                             if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then 
                                 i:Destroy() 
@@ -1738,51 +1738,29 @@ local success, err = pcall(function()
                             for _, v in pairs(char.Head:GetChildren()) do if v:IsA("Decal") or v:IsA("SpecialMesh") then v:Destroy() end end
                         end
 
-                        -- 2. INJEÇÃO DO ID
-                        local description = nil
-                        local successM, info = pcall(function() return MarketplaceService:GetProductInfo(id) end)
+                        -- 2. TENTA INJETAR VIA GetObjects (Mais robusto para roupas individuais)
+                        local objSuccess, objects = pcall(function() return game:GetObjects("rbxassetid://" .. id) end)
                         
-                        if successM and info then
-                            local assetType = info.AssetTypeId
-                            
-                            -- Pega a descrição base (limpa) para evitar conflitos
-                            description = game:GetService("Players"):GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
-                            
-                            if assetType == 2 then -- T-Shirt (Camiseta)
-                                description.GraphicTShirt = id
-                                local g = Instance.new("ShirtGraphic", char)
-                                g.Graphic = "rbxassetid://" .. id
-                                WindUI:Notify({Title="Skin Changer", Content="Injetando Camiseta...", Duration=2})
-                            elseif assetType == 11 then -- Shirt (Camisa)
-                                description.Shirt = id
-                                local s = Instance.new("Shirt", char)
-                                s.ShirtTemplate = "rbxassetid://" .. id
-                                WindUI:Notify({Title="Skin Changer", Content="Injetando Camisa...", Duration=2})
-                            elseif assetType == 12 then -- Pants (Calça)
-                                description.Pants = id
-                                local p = Instance.new("Pants", char)
-                                p.PantsTemplate = "rbxassetid://" .. id
-                                WindUI:Notify({Title="Skin Changer", Content="Injetando Calça...", Duration=2})
-                            elseif assetType == 8 or (assetType >= 41 and assetType <= 47) then -- Hat / Acessório
-                                local currentAccs = description:GetAccessories(false)
-                                table.insert(currentAccs, {AssetId = id, AccessoryType = Enum.AccessoryType.Unknown})
-                                description:SetAccessories(currentAccs, false)
-                                WindUI:Notify({Title="Skin Changer", Content="Injetando Acessório...", Duration=2})
-                            else
-                                -- Fallback para Bundles/Outfits com os itens limpos
-                                local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
-                                if sO and dO then description = dO else
-                                    local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
-                                    if sB and dB then description = dB end
-                                end
+                        if objSuccess and objects and #objects > 0 then
+                            for _, obj in pairs(objects) do
+                                pcall(function() obj.Parent = char end)
                             end
-                        end
-                        
-                        if description then
-                            hum:ApplyDescription(description)
-                            WindUI:Notify({Title="Skin Changer", Content="Injetado com sucesso!", Duration=3, Icon = "check-circle"})
+                            WindUI:Notify({Title="Skin Changer", Content="Objeto injetado com sucesso!", Duration=3, Icon = "check-circle"})
                         else
-                            WindUI:Notify({Title="Skin Changer", Content="Erro ao identificar item.", Duration=5, Icon = "alert-circle"})
+                            -- 3. FALLBACK PARA OUTFITS/BUNDLES (API Oficial)
+                            local description = nil
+                            local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
+                            if sO and dO then description = dO else
+                                local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
+                                if sB and dB then description = dB end
+                            end
+                            
+                            if description then
+                                hum:ApplyDescription(description)
+                                WindUI:Notify({Title="Skin Changer", Content="Traje aplicado via API!", Duration=3, Icon = "check-circle"})
+                            else
+                                WindUI:Notify({Title="Skin Changer", Content="Erro: ID não identificado.", Duration=5, Icon = "alert-circle"})
+                            end
                         end
                     end
                 end)
