@@ -1789,6 +1789,22 @@ local success, err = pcall(function()
         end
     })
 
+    Tabs.Local:Button({
+        Title = "Reset Skin",
+        Desc = "Volta o seu personagem para a skin original do Roblox",
+        Callback = function()
+            WindUI:Notify({Title="Skin Changer", Content="Resetando a skin...", Duration=3, Icon = "refresh-ccw"})
+            pcall(function()
+                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    local desc = game:GetService("Players"):GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+                    hum:ApplyDescription(desc)
+                    WindUI:Notify({Title="Skin Changer", Content="Skin resetada!", Duration=3, Icon = "check"})
+                end
+            end)
+        end
+    })
+
     -- SETTINGS
     WindUI:Notify({Title="Eternal", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
 
