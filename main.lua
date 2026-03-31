@@ -50,7 +50,8 @@ local success, err = pcall(function()
         Spinbot = false,
         SpinSpeed = 50,
         
-        TargetPlayer = "None"
+        TargetPlayer = "None",
+        SkinID = "0"
     }
 
     -- Tabs
@@ -1702,6 +1703,36 @@ local success, err = pcall(function()
     Tabs.Local:Section({ Title = "Anti-Hit (CS:GO Style)" })
     Tabs.Local:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.EternalState.Spinbot = v end})
     Tabs.Local:Slider({Title = "Spin Speed", Value = {Default = 50, Min = 10, Max = 200}, Step = 1, Callback = function(v) _G.EternalState.SpinSpeed = v end})
+
+    Tabs.Local:Section({ Title = "Skin Changer" })
+    Tabs.Local:Input({
+        Title = "Outfit/Skin ID",
+        Desc = "Insira o ID da skin/outfit do Roblox",
+        Value = "0",
+        Placeholder = "ID aqui...",
+        Callback = function(v)
+            _G.EternalState.SkinID = v
+        end
+    })
+    Tabs.Local:Button({
+        Title = "Apply Skin",
+        Desc = "Aplica a skin ao seu personagem",
+        Callback = function()
+            local id = tonumber(_G.EternalState.SkinID)
+            if id then
+                WindUI:Notify({Title="Skin Changer", Content="Aplicando skin ID: "..id, Duration=3, Icon = "package"})
+                pcall(function()
+                    local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        local description = game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id)
+                        hum:ApplyDescription(description)
+                    end
+                end)
+            else
+                WindUI:Notify({Title="Skin Changer", Content="ID Inválido!", Duration=3, Icon = "alert-circle"})
+            end
+        end
+    })
 
     -- SETTINGS
     WindUI:Notify({Title="Eternal", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
