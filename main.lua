@@ -1718,7 +1718,9 @@ local success, err = pcall(function()
         Title = "Apply Skin",
         Desc = "Aplica a skin ou bundle ao seu personagem",
         Callback = function()
-            local id = tonumber(_G.EternalState.SkinID)
+            local idStr = _G.EternalState.SkinID:gsub("%s+", "") -- Remove espaços
+            local id = tonumber(idStr)
+            
             if id then
                 WindUI:Notify({Title="Skin Changer", Content="Processando ID: "..id, Duration=3, Icon = "package"})
                 pcall(function()
@@ -1742,12 +1744,20 @@ local success, err = pcall(function()
                             hum:ApplyDescription(description)
                             WindUI:Notify({Title="Skin Changer", Content="Skin/Bundle aplicada com sucesso!", Duration=3, Icon = "check-circle"})
                         else
-                            WindUI:Notify({Title="Skin Changer", Content="Erro: ID não encontrado como Outfit ou Bundle.", Duration=4, Icon = "alert-circle"})
+                            WindUI:Notify({Title="Skin Changer", Content="Erro: ID não encontrado no banco de dados do Roblox.", Duration=5, Icon = "alert-circle"})
                         end
                     end
                 end)
+            elseif #idStr > 0 then
+                -- Se o ID contém letras, avisa sobre o código do CAC
+                WindUI:Notify({
+                    Title = "Skin Changer",
+                    Content = "Isso parece um 'Outfit Code' de jogo (como no CAC). O cheat precisa do ID NUMÉRICO oficial (apenas números).",
+                    Duration = 8,
+                    Icon = "info"
+                })
             else
-                WindUI:Notify({Title="Skin Changer", Content="ID Inválido!", Duration=3, Icon = "alert-circle"})
+                WindUI:Notify({Title="Skin Changer", Content="Por favor, insira um ID!", Duration=3, Icon = "alert-circle"})
             end
         end
     })
