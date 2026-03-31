@@ -1723,47 +1723,53 @@ local success, err = pcall(function()
             local id = tonumber(idStr)
             
             if id then
-                WindUI:Notify({Title="Skin Changer", Content="Analisando ID: "..id, Duration=3, Icon = "search"})
+                WindUI:Notify({Title="Skin Changer", Content="Limpando personagem e injetando ID: "..id, Duration=3, Icon = "refresh-ccw"})
                 pcall(function()
                     local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                    if hum then
+                    local char = LocalPlayer.Character
+                    if hum and char then
+                        -- 1. LIMPEZA MANUAL (Igual à função de copiar outfit)
+                        for _, i in pairs(char:GetChildren()) do 
+                            if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then 
+                                i:Destroy() 
+                            end 
+                        end
+                        if char:FindFirstChild("Head") then
+                            for _, v in pairs(char.Head:GetChildren()) do if v:IsA("Decal") or v:IsA("SpecialMesh") then v:Destroy() end end
+                        end
+
+                        -- 2. INJEÇÃO DO ID
                         local description = nil
-                        
-                        -- Tenta identificar o tipo de item via MarketplaceService
                         local successM, info = pcall(function() return MarketplaceService:GetProductInfo(id) end)
                         
                         if successM and info then
                             local assetType = info.AssetTypeId
-                            description = hum:GetAppliedDescription()
                             
-                            -- Função para forçar a textura (Geralmente ignora bloqueios de games)
-                            local function forceAsset(className, property, id)
-                                local char = LocalPlayer.Character
-                                if char then
-                                    local item = char:FindFirstChildOfClass(className) or Instance.new(className, char)
-                                    item[property] = "rbxassetid://" .. id
-                                end
-                            end
-
+                            -- Pega a descrição base (limpa) para evitar conflitos
+                            description = game:GetService("Players"):GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+                            
                             if assetType == 2 then -- T-Shirt (Camiseta)
                                 description.GraphicTShirt = id
-                                forceAsset("ShirtGraphic", "Graphic", id)
-                                WindUI:Notify({Title="Skin Changer", Content="Forçando Camiseta (T-Shirt)...", Duration=2})
+                                local g = Instance.new("ShirtGraphic", char)
+                                g.Graphic = "rbxassetid://" .. id
+                                WindUI:Notify({Title="Skin Changer", Content="Injetando Camiseta...", Duration=2})
                             elseif assetType == 11 then -- Shirt (Camisa)
                                 description.Shirt = id
-                                forceAsset("Shirt", "ShirtTemplate", id)
-                                WindUI:Notify({Title="Skin Changer", Content="Forçando Camisa...", Duration=2})
+                                local s = Instance.new("Shirt", char)
+                                s.ShirtTemplate = "rbxassetid://" .. id
+                                WindUI:Notify({Title="Skin Changer", Content="Injetando Camisa...", Duration=2})
                             elseif assetType == 12 then -- Pants (Calça)
                                 description.Pants = id
-                                forceAsset("Pants", "PantsTemplate", id)
-                                WindUI:Notify({Title="Skin Changer", Content="Forçando Calça...", Duration=2})
+                                local p = Instance.new("Pants", char)
+                                p.PantsTemplate = "rbxassetid://" .. id
+                                WindUI:Notify({Title="Skin Changer", Content="Injetando Calça...", Duration=2})
                             elseif assetType == 8 or (assetType >= 41 and assetType <= 47) then -- Hat / Acessório
                                 local currentAccs = description:GetAccessories(false)
                                 table.insert(currentAccs, {AssetId = id, AccessoryType = Enum.AccessoryType.Unknown})
                                 description:SetAccessories(currentAccs, false)
-                                WindUI:Notify({Title="Skin Changer", Content="Adicionando Acessório...", Duration=2})
+                                WindUI:Notify({Title="Skin Changer", Content="Injetando Acessório...", Duration=2})
                             else
-                                -- Fallback para Bundles/Outfits
+                                -- Fallback para Bundles/Outfits com os itens limpos
                                 local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
                                 if sO and dO then description = dO else
                                     local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
@@ -1774,22 +1780,16 @@ local success, err = pcall(function()
                         
                         if description then
                             hum:ApplyDescription(description)
-                            WindUI:Notify({Title="Skin Changer", Content="Aplicado com sucesso!", Duration=3, Icon = "check-circle"})
+                            WindUI:Notify({Title="Skin Changer", Content="Injetado com sucesso!", Duration=3, Icon = "check-circle"})
                         else
-                            WindUI:Notify({Title="Skin Changer", Content="Erro: Não foi possível identificar o ID.", Duration=5, Icon = "alert-circle"})
+                            WindUI:Notify({Title="Skin Changer", Content="Erro ao identificar item.", Duration=5, Icon = "alert-circle"})
                         end
                     end
                 end)
             elseif #idStr > 0 then
-                -- Se o ID contém letras, avisa sobre o código do CAC
-                WindUI:Notify({
-                    Title = "Skin Changer",
-                    Content = "Isso parece um 'Outfit Code' de jogo (como no CAC). O cheat precisa do ID NUMÉRICO oficial (apenas números).",
-                    Duration = 8,
-                    Icon = "info"
-                })
+                WindUI:Notify({Title = "Skin Changer", Content = "Use IDs numéricos!", Duration = 5, Icon = "info"})
             else
-                WindUI:Notify({Title="Skin Changer", Content="Por favor, insira um ID!", Duration=3, Icon = "alert-circle"})
+                WindUI:Notify({Title="Skin Changer", Content="Digite um ID!", Duration=3, Icon = "alert-circle"})
             end
         end
     })
