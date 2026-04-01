@@ -1,18 +1,15 @@
+-- Aguarda o jogo real carregar (PlaceId = 0 significa DataModel 'Ugc' temporário do Rivals/CrossExperience)
+repeat task.wait(0.2) until game.PlaceId ~= 0
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- Espera o DataModel ter Players disponível (Rivals usa um DataModel 'Ugc' temporário)
 local Players
 do
-    local attempts = 0
-    repeat
-        task.wait(0.5)
-        attempts = attempts + 1
-        local ok, svc = pcall(function() return game:GetService("Players") end)
-        if ok and svc and svc.ClassName == "Players" then
-            Players = svc
-        end
-    until Players or attempts > 20
-    if not Players then return end -- falhou mesmo assim, aborta
+    local ok, svc = pcall(function() return game:GetService("Players") end)
+    if ok and svc and svc.ClassName == "Players" then
+        Players = svc
+    else
+        return -- Ainda falhou, aborta sem mostrar erro
+    end
 end
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -1852,38 +1849,47 @@ local success, err = pcall(function()
                         -- Advanced Chams via Highlight (sem spam de material por frame)
                         -- O estado é gerenciado fora do RenderStepped pelo watcher abaixo
 
-                        -- Skeleton ESP (corrigido: inclui pernas + conexões corretas)
+                        -- Skeleton ESP (suporte R6, R15 e rigs customizados como Rivals)
                         if _G.EternalState.SkeletonESP then
                             local skColor = _G.EternalState.SkeletonColor
-                            local function drawBone(bone, partA, partB)
-                                if partA and partB then
-                                    local pA, vA = Camera:WorldToViewportPoint(partA.Position)
-                                    local pB, vB = Camera:WorldToViewportPoint(partB.Position)
-                                    if vA and vB then
-                                        Bones[bone].From = Vector2.new(pA.X, pA.Y)
-                                        Bones[bone].To = Vector2.new(pB.X, pB.Y)
-                                        Bones[bone].Color = skColor
-                                        Bones[bone].Visible = true
-                                        return
-                                    end
+                            -- Busca parte por múltiplos nomes (suporte a rigs custom)
+                            local function findPart(names)
+                                for _, n in ipairs(names) do
+                                    local p = char:FindFirstChild(n)
+                                    if p and p:IsA("BasePart") then return p end
                                 end
-                                Bones[bone].Visible = false
+                                return nil
                             end
-                            -- Pega as partes do personagem (suporte R6 e R15)
-                            local headPart    = char:FindFirstChild("Head")
-                            local upperTorso  = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-                            local lowerTorso  = char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso")
-                            local rUpperArm   = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
-                            local lUpperArm   = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm")
-                            local rUpperLeg   = char:FindFirstChild("RightUpperLeg") or char:FindFirstChild("Right Leg")
-                            local lUpperLeg   = char:FindFirstChild("LeftUpperLeg") or char:FindFirstChild("Left Leg")
-                            -- Desenha os ossos
-                            drawBone("Head",  headPart,   upperTorso)   -- Pescoço
-                            drawBone("Spine", upperTorso, lowerTorso)   -- Coluna
-                            drawBone("RArm",  upperTorso, rUpperArm)    -- Braço direito
-                            drawBone("LArm",  upperTorso, lUpperArm)    -- Braço esquerdo
-                            drawBone("RLeg",  lowerTorso, rUpperLeg)    -- Perna direita
-                            drawBone("LLeg",  lowerTorso, lUpperLeg)    -- Perna esquerda
+                            local function drawBone(bone, partA, partB)
+                                if not partA or not partB then Bones[bone].Visible = false; return end
+                                local ok, pA, vA, pB, vB = pcall(function()
+                                    local a, va = Camera:WorldToViewportPoint(partA.Position)
+                                    local b, vb = Camera:WorldToViewportPoint(partB.Position)
+                                    return a, va, b, vb
+                                end)
+                                if ok and vA and vB then
+                                    Bones[bone].From = Vector2.new(pA.X, pA.Y)
+                                    Bones[bone].To   = Vector2.new(pB.X, pB.Y)
+                                    Bones[bone].Color   = skColor
+                                    Bones[bone].Visible = true
+                                else
+                                    Bones[bone].Visible = false
+                                end
+                            end
+                            -- Resolve partes com fallbacks para rigs customizados (Rivals incluso)
+                            local headPart   = findPart({"Head"})
+                            local upperTorso = findPart({"UpperTorso", "Torso", "HumanoidRootPart"})
+                            local lowerTorso = findPart({"LowerTorso", "Torso", "HumanoidRootPart"})
+                            local rUpperArm  = findPart({"RightUpperArm", "Right Arm", "RightArm"})
+                            local lUpperArm  = findPart({"LeftUpperArm",  "Left Arm",  "LeftArm"})
+                            local rUpperLeg  = findPart({"RightUpperLeg", "Right Leg", "RightLeg"})
+                            local lUpperLeg  = findPart({"LeftUpperLeg",  "Left Leg",  "LeftLeg"})
+                            drawBone("Head",  headPart,   upperTorso)
+                            drawBone("Spine", upperTorso, lowerTorso)
+                            drawBone("RArm",  upperTorso, rUpperArm)
+                            drawBone("LArm",  upperTorso, lUpperArm)
+                            drawBone("RLeg",  lowerTorso, rUpperLeg)
+                            drawBone("LLeg",  lowerTorso, lUpperLeg)
                         else
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
