@@ -1,16 +1,17 @@
--- Rivals / CrossExperience: o DataModel temporário se chama "Ugc" e tem PlaceId = 0.
--- Se estivermos nele, abortamos IMEDIATAMENTE — o exploit vai re-injetar no jogo real.
-if game.Name == "Ugc" or game.PlaceId == 0 then return end
-if not game:IsLoaded() then game.Loaded:Wait() end
+-- Detecta e cala erros no DataModel "Ugc" (Asset Loader)
+local success_init, Players = pcall(function()
+    -- Se estiver no carregador (PlaceId = 0 ou nome Ugc), para silenciosamente.
+    -- O exploit deve re-executar no DataModel real.
+    if game.PlaceId == 0 or game.Name == "Ugc" then return nil end
+    return game:GetService("Players")
+end)
 
-local Players
-do
-    local ok, svc = pcall(function() return game:GetService("Players") end)
-    if not ok or not svc or svc.ClassName ~= "Players" then return end
-    Players = svc
-end
+if not success_init or not Players then return end
+if not game:IsLoaded() then pcall(function() game.Loaded:Wait() end) end
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local WindUI = nil
+pcall(function() WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))() end)
+if not WindUI then return end
 
 local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
@@ -26,7 +27,6 @@ local success, err = pcall(function()
     })
 
     -- Services
-    -- Players já foi resolvido acima com retry logic
     local RunService = game:GetService("RunService")
     local UserInputService = game:GetService("UserInputService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1847,47 +1847,59 @@ local success, err = pcall(function()
                         -- Advanced Chams via Highlight (sem spam de material por frame)
                         -- O estado é gerenciado fora do RenderStepped pelo watcher abaixo
 
-                        -- Skeleton ESP (suporte R6, R15 e rigs customizados como Rivals)
+                        -- Skeleton ESP (Otimizado para Rivals e R6/R15)
                         if _G.EternalState.SkeletonESP then
                             local skColor = _G.EternalState.SkeletonColor
-                            -- Busca parte por múltiplos nomes (suporte a rigs custom)
-                            local function findPart(names)
+                            
+                            local function find(names)
                                 for _, n in ipairs(names) do
                                     local p = char:FindFirstChild(n)
                                     if p and p:IsA("BasePart") then return p end
                                 end
                                 return nil
                             end
-                            local function drawBone(bone, partA, partB)
-                                if not partA or not partB then Bones[bone].Visible = false; return end
-                                local ok, pA, vA, pB, vB = pcall(function()
-                                    local a, va = Camera:WorldToViewportPoint(partA.Position)
-                                    local b, vb = Camera:WorldToViewportPoint(partB.Position)
-                                    return a, va, b, vb
-                                end)
-                                if ok and vA and vB then
-                                    Bones[bone].From = Vector2.new(pA.X, pA.Y)
-                                    Bones[bone].To   = Vector2.new(pB.X, pB.Y)
-                                    Bones[bone].Color   = skColor
-                                    Bones[bone].Visible = true
+
+                            local function bone(id, pA, pB)
+                                if not pA or not pB then Bones[id].Visible = false; return end
+                                local ok, a, va = pcall(function() return Camera:WorldToViewportPoint(pA.Position) end)
+                                local ok2, b, vb = pcall(function() return Camera:WorldToViewportPoint(pB.Position) end)
+                                
+                                if ok and ok2 and va and vb then
+                                    Bones[id].From = Vector2.new(a.X, a.Y)
+                                    Bones[id].To = Vector2.new(b.X, b.Y)
+                                    Bones[id].Color = skColor
+                                    Bones[id].Visible = true
                                 else
-                                    Bones[bone].Visible = false
+                                    Bones[id].Visible = false
                                 end
                             end
-                            -- Resolve partes com fallbacks para rigs customizados (Rivals incluso)
-                            local headPart   = findPart({"Head"})
-                            local upperTorso = findPart({"UpperTorso", "Torso", "HumanoidRootPart"})
-                            local lowerTorso = findPart({"LowerTorso", "Torso", "HumanoidRootPart"})
-                            local rUpperArm  = findPart({"RightUpperArm", "Right Arm", "RightArm"})
-                            local lUpperArm  = findPart({"LeftUpperArm",  "Left Arm",  "LeftArm"})
-                            local rUpperLeg  = findPart({"RightUpperLeg", "Right Leg", "RightLeg"})
-                            local lUpperLeg  = findPart({"LeftUpperLeg",  "Left Leg",  "LeftLeg"})
-                            drawBone("Head",  headPart,   upperTorso)
-                            drawBone("Spine", upperTorso, lowerTorso)
-                            drawBone("RArm",  upperTorso, rUpperArm)
-                            drawBone("LArm",  upperTorso, lUpperArm)
-                            drawBone("RLeg",  lowerTorso, rUpperLeg)
-                            drawBone("LLeg",  lowerTorso, lUpperLeg)
+
+                            -- Parts (R6/R15/Custom)
+                            local Head = find({"Head"})
+                            local Neck = find({"UpperTorso", "Torso"})
+                            local Hips = find({"LowerTorso", "HumanoidRootPart", "Torso"})
+                            
+                            local R_Arm = find({"RightUpperArm", "Right Arm", "RightHand"})
+                            local L_Arm = find({"LeftUpperArm", "Left Arm", "LeftHand"})
+                            local R_Leg = find({"RightUpperLeg", "Right Leg", "RightFoot"})
+                            local L_Leg = find({"LeftUpperLeg", "Left Leg", "LeftFoot"})
+                            
+                            local R_LowArm = find({"RightLowerArm", "RightHand"})
+                            local L_LowArm = find({"LeftLowerArm", "LeftHand"})
+                            local R_LowLeg = find({"RightLowerLeg", "RightFoot"})
+                            local L_LowLeg = find({"LeftLowerLeg", "LeftFoot"})
+
+                            -- Draw
+                            bone("Head", Head, Neck)
+                            bone("Spine", Neck, Hips)
+                            bone("RArm", Neck, R_Arm)
+                            bone("LArm", Neck, L_Arm)
+                            bone("RLeg", Hips, R_Leg)
+                            bone("LLeg", Hips, L_Leg)
+                            
+                            -- Extra (R15 joints)
+                            if R_LowArm then bone("RArmExtra", R_Arm, R_LowArm) end
+                            if L_LowArm then bone("LArmExtra", L_Arm, L_LowArm) end
                         else
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
@@ -2003,5 +2015,9 @@ local success, err = pcall(function()
 end)
 
 if not success then
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
+    pcall(function()
+        if not err:find("Players is not a valid member") then
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 10})
+        end
+    end)
 end
