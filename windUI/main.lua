@@ -1,15 +1,13 @@
--- Aguarda o jogo real carregar (PlaceId = 0 significa DataModel 'Ugc' temporário do Rivals/CrossExperience)
-repeat task.wait(0.2) until game.PlaceId ~= 0
+-- Rivals / CrossExperience: o DataModel temporário se chama "Ugc" e tem PlaceId = 0.
+-- Se estivermos nele, abortamos IMEDIATAMENTE — o exploit vai re-injetar no jogo real.
+if game.Name == "Ugc" or game.PlaceId == 0 then return end
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players
 do
     local ok, svc = pcall(function() return game:GetService("Players") end)
-    if ok and svc and svc.ClassName == "Players" then
-        Players = svc
-    else
-        return -- Ainda falhou, aborta sem mostrar erro
-    end
+    if not ok or not svc or svc.ClassName ~= "Players" then return end
+    Players = svc
 end
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
