@@ -1,6 +1,19 @@
 if not game:IsLoaded() then game.Loaded:Wait() end
-local playersExist, _ = pcall(function() return game:GetService("Players") end)
-if not playersExist then return end
+
+-- Espera o DataModel ter Players disponível (Rivals usa um DataModel 'Ugc' temporário)
+local Players
+do
+    local attempts = 0
+    repeat
+        task.wait(0.5)
+        attempts = attempts + 1
+        local ok, svc = pcall(function() return game:GetService("Players") end)
+        if ok and svc and svc.ClassName == "Players" then
+            Players = svc
+        end
+    until Players or attempts > 20
+    if not Players then return end -- falhou mesmo assim, aborta
+end
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -18,7 +31,7 @@ local success, err = pcall(function()
     })
 
     -- Services
-    local Players = game:GetService("Players")
+    -- Players já foi resolvido acima com retry logic
     local RunService = game:GetService("RunService")
     local UserInputService = game:GetService("UserInputService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1836,33 +1849,41 @@ local success, err = pcall(function()
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
                         Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((localPos - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.EternalState.DistESP
                         
-                        -- Advanced Chams (Material Override)
-                        if _G.EternalState.Chams then
-                            for _, part in pairs(char:GetDescendants()) do
-                                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                                    pcall(function() 
-                                        part.Material = Enum.Material[_G.EternalState.ChamsMat]
-                                        part.Color = _G.EternalState.ChamsColor
-                                    end)
-                                end
-                            end
-                        end
+                        -- Advanced Chams via Highlight (sem spam de material por frame)
+                        -- O estado é gerenciado fora do RenderStepped pelo watcher abaixo
 
-                        -- Skeleton ESP
-                        if _G.EternalState.SkeletonESP and head then
-                            local neckP, nV = Camera:WorldToViewportPoint(head.Position - Vector3.new(0, 0.5, 0))
-                            local pelvisP, pV = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 1, 0))
-                            if nV and pV then
-                                Bones.Spine.From = Vector2.new(pos.X, rootTop.Y); Bones.Spine.To = Vector2.new(pelvisP.X, pelvisP.Y); Bones.Spine.Visible = _G.EternalState.SkeletonESP; Bones.Spine.Color = _G.EternalState.SkeletonColor
-                                Bones.Head.From = Vector2.new(neckP.X, neckP.Y); Bones.Head.To = Vector2.new(pos.X, rootTop.Y); Bones.Head.Visible = _G.EternalState.SkeletonESP; Bones.Head.Color = _G.EternalState.SkeletonColor
-                            else
-                                Bones.Spine.Visible = false; Bones.Head.Visible = false
+                        -- Skeleton ESP (corrigido: inclui pernas + conexões corretas)
+                        if _G.EternalState.SkeletonESP then
+                            local skColor = _G.EternalState.SkeletonColor
+                            local function drawBone(bone, partA, partB)
+                                if partA and partB then
+                                    local pA, vA = Camera:WorldToViewportPoint(partA.Position)
+                                    local pB, vB = Camera:WorldToViewportPoint(partB.Position)
+                                    if vA and vB then
+                                        Bones[bone].From = Vector2.new(pA.X, pA.Y)
+                                        Bones[bone].To = Vector2.new(pB.X, pB.Y)
+                                        Bones[bone].Color = skColor
+                                        Bones[bone].Visible = true
+                                        return
+                                    end
+                                end
+                                Bones[bone].Visible = false
                             end
-                            -- Arms/Legs conceptual (simplified R6 for speed)
-                            local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightHand")
-                            local lArm = char:FindFirstChild("Left Arm") or char:FindFirstChild("LeftHand")
-                            if rArm then local rap, rv = Camera:WorldToViewportPoint(rArm.Position); if rv then Bones.RArm.From = Vector2.new(pos.X, rootTop.Y); Bones.RArm.To = Vector2.new(rap.X, rap.Y); Bones.RArm.Visible = _G.EternalState.SkeletonESP; Bones.RArm.Color = _G.EternalState.SkeletonColor else Bones.RArm.Visible = false end else Bones.RArm.Visible = false end
-                            if lArm then local lap, lv = Camera:WorldToViewportPoint(lArm.Position); if lv then Bones.LArm.From = Vector2.new(pos.X, rootTop.Y); Bones.LArm.To = Vector2.new(lap.X, lap.Y); Bones.LArm.Visible = _G.EternalState.SkeletonESP; Bones.LArm.Color = _G.EternalState.SkeletonColor else Bones.LArm.Visible = false end else Bones.LArm.Visible = false end
+                            -- Pega as partes do personagem (suporte R6 e R15)
+                            local headPart    = char:FindFirstChild("Head")
+                            local upperTorso  = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+                            local lowerTorso  = char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso")
+                            local rUpperArm   = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
+                            local lUpperArm   = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm")
+                            local rUpperLeg   = char:FindFirstChild("RightUpperLeg") or char:FindFirstChild("Right Leg")
+                            local lUpperLeg   = char:FindFirstChild("LeftUpperLeg") or char:FindFirstChild("Left Leg")
+                            -- Desenha os ossos
+                            drawBone("Head",  headPart,   upperTorso)   -- Pescoço
+                            drawBone("Spine", upperTorso, lowerTorso)   -- Coluna
+                            drawBone("RArm",  upperTorso, rUpperArm)    -- Braço direito
+                            drawBone("LArm",  upperTorso, lUpperArm)    -- Braço esquerdo
+                            drawBone("RLeg",  lowerTorso, rUpperLeg)    -- Perna direita
+                            drawBone("LLeg",  lowerTorso, lUpperLeg)    -- Perna esquerda
                         else
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
@@ -1879,6 +1900,63 @@ local success, err = pcall(function()
         end
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
+        
+        -- CHAMS SYSTEM via Highlight (persistente, sem spam de material por frame)
+        -- Usa um loop separado que apenas adiciona/remove Highlight quando o estado muda
+        local chamsApplied = {}
+        local lastChamsState = false
+        local lastChamsColor = Color3.new(0,0,0)
+        
+        RunService.Heartbeat:Connect(function()
+            local chamsOn = _G.EternalState.Chams
+            local chamsColor = _G.EternalState.ChamsColor
+            
+            -- Remove chams se desativado
+            if not chamsOn then
+                for char, hl in pairs(chamsApplied) do
+                    pcall(function() hl:Destroy() end)
+                    chamsApplied[char] = nil
+                end
+                lastChamsState = false
+                return
+            end
+            
+            -- Aplica ou atualiza chams para cada jogador
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer then
+                    local char = p.Character or workspace:FindFirstChild(p.Name)
+                    if char then
+                        local existing = chamsApplied[char]
+                        if not existing or not existing.Parent then
+                            -- Cria novo Highlight
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "EternalChams"
+                            hl.FillColor = chamsColor
+                            hl.OutlineColor = chamsColor
+                            hl.FillTransparency = 0.35
+                            hl.OutlineTransparency = 0
+                            hl.Adornee = char
+                            hl.Parent = char
+                            chamsApplied[char] = hl
+                        else
+                            -- Atualiza cor se mudou
+                            if existing.FillColor ~= chamsColor then
+                                existing.FillColor = chamsColor
+                                existing.OutlineColor = chamsColor
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- Remove chams de personagens que saíram
+            for char, hl in pairs(chamsApplied) do
+                if not char or not char.Parent then
+                    pcall(function() hl:Destroy() end)
+                    chamsApplied[char] = nil
+                end
+            end
+        end)
         
         -- PROJECTILE ESP (Looking for common physical projectiles)
         local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
