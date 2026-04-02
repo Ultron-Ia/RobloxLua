@@ -40,10 +40,15 @@ local success, err = pcall(function()
         AimPart = "Head",
         AimFOV = 100,
         AimSmooth = 3,
+        AimSnapLines = false,
+        AimTargetDot = false,
         
         BoxESP = false,
         NameESP = false,
         DistESP = false,
+        HealthBar = false,
+        ArmorBar = false,
+        ToolESP = false,
         SkeletonESP = false,
         SkeletonColor = Color3.fromRGB(255, 255, 255),
         ProjESP = false,
@@ -58,6 +63,27 @@ local success, err = pcall(function()
         Spinbot = false,
         SpinSpeed = 50,
         
+        OrbitEnabled = false,
+        OrbitSpeed = 30,
+        OrbitRadius = 10,
+        OrbitHeight = 5,
+        
+        AtmoDensity = 0,
+        AtmoGlare = 0,
+        AtmoHaze = 0,
+        Exposure = 0,
+        ClockTime = 12,
+        
+        BladeBallAutoParry = false,
+        ParryDist = 20,
+        
+        Gravity = 196.2,
+        Tickrate = 60,
+        Desync = false,
+        
+        Headless = false,
+        Korblox = false,
+        
         TargetPlayer = "None"
     }
 
@@ -67,6 +93,7 @@ local success, err = pcall(function()
         Aimbot = Window:Tab({ Title = "Aimbot", Icon = "crosshair" }),
         Visuals = Window:Tab({ Title = "Visuals", Icon = "eye" }),
         Local = Window:Tab({ Title = "Local", Icon = "user" }),
+        Advanced = Window:Tab({ Title = "Advanced", Icon = "zap" }),
         Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
     }
 
@@ -1686,11 +1713,16 @@ local success, err = pcall(function()
     Tabs.Aimbot:Section({ Title = "Aimbot Settings" })
     Tabs.Aimbot:Slider({Title = "FOV Size", Value = {Default = 100, Min = 10, Max = 800}, Step = 1, Callback = function(v) _G.EternalState.AimFOV = v end})
     Tabs.Aimbot:Slider({Title = "Smoothness (Cam)", Value = {Default = 3, Min = 1, Max = 20}, Step = 0.1, Callback = function(v) _G.EternalState.AimSmooth = v end})
+    Tabs.Aimbot:Toggle({Title = "Draw Snap Lines", Value = false, Callback = function(v) _G.EternalState.AimSnapLines = v end})
+    Tabs.Aimbot:Toggle({Title = "Draw Target Dot", Value = false, Callback = function(v) _G.EternalState.AimTargetDot = v end})
 
     -- POPULATE VISUALS
     Tabs.Visuals:Section({ Title = "2D ESP" })
     Tabs.Visuals:Toggle({Title = "Boxes", Value = false, Callback = function(v) _G.EternalState.BoxESP = v end})
     Tabs.Visuals:Toggle({Title = "Names", Value = false, Callback = function(v) _G.EternalState.NameESP = v end})
+    Tabs.Visuals:Toggle({Title = "Health Bars", Value = false, Callback = function(v) _G.EternalState.HealthBar = v end})
+    Tabs.Visuals:Toggle({Title = "Armor Bars", Value = false, Callback = function(v) _G.EternalState.ArmorBar = v end})
+    Tabs.Visuals:Toggle({Title = "Tool ESP", Value = false, Callback = function(v) _G.EternalState.ToolESP = v end})
     Tabs.Visuals:Toggle({Title = "Distance", Value = false, Callback = function(v) _G.EternalState.DistESP = v end})
     Tabs.Visuals:Toggle({Title = "Skeleton Esp", Value = false, Callback = function(v) _G.EternalState.SkeletonESP = v end})
     Tabs.Visuals:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1), Callback = function(v) _G.EternalState.SkeletonColor = v end})
@@ -1710,6 +1742,63 @@ local success, err = pcall(function()
     Tabs.Local:Section({ Title = "Anti-Hit (CS:GO Style)" })
     Tabs.Local:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.EternalState.Spinbot = v end})
     Tabs.Local:Slider({Title = "Spin Speed", Value = {Default = 50, Min = 10, Max = 200}, Step = 1, Callback = function(v) _G.EternalState.SpinSpeed = v end})
+
+    -- POPULATE ADVANCED
+    Tabs.Advanced:Section({ Title = "Physics & Exploits" })
+    Tabs.Advanced:Toggle({Title = "Orbit Target", Value = false, Callback = function(v) _G.EternalState.OrbitEnabled = v end})
+    Tabs.Advanced:Slider({Title = "Orbit Speed", Value = {Default = 30, Min = 5, Max = 100}, Step = 1, Callback = function(v) _G.EternalState.OrbitSpeed = v end})
+    Tabs.Advanced:Slider({Title = "Orbit Radius", Value = {Default = 10, Min = 2, Max = 50}, Step = 1, Callback = function(v) _G.EternalState.OrbitRadius = v end})
+    Tabs.Advanced:Slider({Title = "Orbit Height", Value = {Default = 5, Min = -20, Max = 20}, Step = 1, Callback = function(v) _G.EternalState.OrbitHeight = v end})
+    
+    Tabs.Advanced:Section({ Title = "World & Lighting" })
+    Tabs.Advanced:Slider({Title = "Atmosphere Density", Value = {Default = 0, Min = 0, Max = 1}, Step = 0.01, Callback = function(v) 
+        _G.EternalState.AtmoDensity = v
+        local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+        if atmo then atmo.Density = v end
+    end})
+    Tabs.Advanced:Slider({Title = "Atmosphere Glare", Value = {Default = 0, Min = 0, Max = 10}, Step = 0.1, Callback = function(v) 
+        _G.EternalState.AtmoGlare = v
+        local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+        if atmo then atmo.Glare = v end
+    end})
+    Tabs.Advanced:Slider({Title = "Atmosphere Haze", Value = {Default = 0, Min = 0, Max = 10}, Step = 0.1, Callback = function(v) 
+        _G.EternalState.AtmoHaze = v
+        local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+        if atmo then atmo.Haze = v end
+    end})
+    Tabs.Advanced:Slider({Title = "Exposure", Value = {Default = 0, Min = -5, Max = 5}, Step = 0.1, Callback = function(v) 
+        _G.EternalState.Exposure = v
+        game:GetService("Lighting").ExposureCompensation = v
+    end})
+    Tabs.Advanced:Slider({Title = "Clock Time", Value = {Default = 12, Min = 0, Max = 24}, Step = 0.1, Callback = function(v) 
+        _G.EternalState.ClockTime = v
+        game:GetService("Lighting").ClockTime = v
+    end})
+
+    Tabs.Advanced:Section({ Title = "BladeBall Hub" })
+    Tabs.Advanced:Toggle({Title = "Auto Parry", Value = false, Callback = function(v) _G.EternalState.BladeBallAutoParry = v end})
+    Tabs.Advanced:Slider({Title = "Parry Distance", Value = {Default = 20, Min = 5, Max = 100}, Step = 1, Callback = function(v) _G.EternalState.ParryDist = v end})
+
+    Tabs.Advanced:Section({ Title = "Movement & Physics" })
+    Tabs.Advanced:Slider({Title = "Gravity", Value = {Default = 196.2, Min = 0, Max = 1000}, Step = 1, Callback = function(v) 
+        _G.EternalState.Gravity = v
+        workspace.Gravity = v
+    end})
+    Tabs.Advanced:Toggle({Title = "Desync (Position Jitter)", Value = false, Callback = function(v) _G.EternalState.Desync = v end})
+    
+    Tabs.Advanced:Section({ Title = "Exploits & Spoofs" })
+    Tabs.Advanced:Toggle({Title = "Headless (Local)", Value = false, Callback = function(v) 
+        _G.EternalState.Headless = v 
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+            LocalPlayer.Character.Head.Transparency = v and 1 or 0
+        end
+    end})
+    Tabs.Advanced:Toggle({Title = "Korblox (Local)", Value = false, Callback = function(v) 
+        _G.EternalState.Korblox = v 
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("RightLowerLeg") then
+            LocalPlayer.Character.RightLowerLeg.Transparency = v and 1 or 0
+        end
+    end})
 
     -- SETTINGS
     WindUI:Notify({Title="Eternal", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
@@ -1771,19 +1860,58 @@ local success, err = pcall(function()
     end)
 
 
-    -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
+    -- MAIN LOOP (Camera Aimbot, Spinbot, Orbit, Local)
     task.spawn(function()
         local spinAngle = 0
+        local orbitAngle = 0
+        
+        local SnapLine = Drawing.new("Line")
+        SnapLine.Visible = false
+        SnapLine.Color = Color3.new(1, 1, 1)
+        SnapLine.Thickness = 1
+        
+        local TargetDot = Drawing.new("Circle")
+        TargetDot.Visible = false
+        TargetDot.Color = Color3.new(1, 0, 0)
+        TargetDot.Radius = 4
+        TargetDot.Filled = true
+
         RunService.RenderStepped:Connect(function()
+            local targetPos, targetPlayer = GetClosestTarget()
+            
             -- Camera Aimbot
             if _G.EternalState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                local targetPos, targetPlayer = GetClosestTarget()
                 if targetPos then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) end
+            end
+            
+            -- Snap Lines & Target Dot
+            if targetPos and (_G.EternalState.AimSnapLines or _G.EternalState.AimTargetDot) then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
+                if onScreen then
+                    if _G.EternalState.AimSnapLines then
+                        SnapLine.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                        SnapLine.To = Vector2.new(screenPos.X, screenPos.Y)
+                        SnapLine.Visible = true
+                    else SnapLine.Visible = false end
+                    
+                    if _G.EternalState.AimTargetDot then
+                        TargetDot.Position = Vector2.new(screenPos.X, screenPos.Y)
+                        TargetDot.Visible = true
+                    else TargetDot.Visible = false end
+                else
+                    SnapLine.Visible = false
+                    TargetDot.Visible = false
+                end
+            else
+                SnapLine.Visible = false
+                TargetDot.Visible = false
             end
             
             -- Local Features
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                 local hum = LocalPlayer.Character.Humanoid
+                local hrp = LocalPlayer.Character.HumanoidRootPart
+                
                 hum.WalkSpeed = _G.EternalState.WalkSpeed
                 hum.JumpPower = _G.EternalState.JumpPower
                 if _G.EternalState.NoClip then 
@@ -1791,14 +1919,54 @@ local success, err = pcall(function()
                 end
                 
                 -- Spinbot
-                if _G.EternalState.Spinbot and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                if _G.EternalState.Spinbot and hrp then
                     spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed)
-                    local hrp = LocalPlayer.Character.HumanoidRootPart
-                    -- Spin keeping position
                     hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
+                end
+                
+                -- Orbit
+                if _G.EternalState.OrbitEnabled and hrp then
+                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                        orbitAngle = orbitAngle + math.rad(_G.EternalState.OrbitSpeed / 10)
+                        local targetHRP = t.Character.HumanoidRootPart
+                        local offset = Vector3.new(math.cos(orbitAngle) * _G.EternalState.OrbitRadius, _G.EternalState.OrbitHeight, math.sin(orbitAngle) * _G.EternalState.OrbitRadius)
+                        hrp.CFrame = targetHRP.CFrame * CFrame.new(offset)
+                    end
+                end
+
+                -- Desync
+                if _G.EternalState.Desync and hrp then
+                    local oldCF = hrp.CFrame
+                    hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-10,10), 0, math.random(-10,10))
+                    RunService.RenderStepped:Wait()
+                    hrp.CFrame = oldCF
                 end
             end
         end)
+    end)
+
+    -- BLADE BALL AUTO PARRY
+    task.spawn(function()
+        while task.wait() do
+            if _G.EternalState.BladeBallAutoParry then
+                pcall(function()
+                    local balls = workspace:FindFirstChild("Balls")
+                    if balls then
+                        for _, ball in pairs(balls:GetChildren()) do
+                            if ball:GetAttribute("target") == LocalPlayer.Name then
+                                local dist = (ball.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                                if dist <= _G.EternalState.ParryDist then
+                                    keypress(Enum.KeyCode.F)
+                                    task.wait(0.1)
+                                    keyrelease(Enum.KeyCode.F)
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
     end)
 
     -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
@@ -1813,12 +1981,20 @@ local success, err = pcall(function()
             local Box = Drawing.new("Square"); Box.Visible = false; Box.Color = Color3.new(1,0,0); Box.Thickness = 1; Box.Filled = false
             local Name = Drawing.new("Text"); Name.Visible = false; Name.Color = Color3.new(1,1,1); Name.Size = 14; Name.Center = true; Name.Outline = true
             local Dist = Drawing.new("Text"); Dist.Visible = false; Dist.Color = Color3.new(0.8,0.8,0.8); Dist.Size = 13; Dist.Center = true; Dist.Outline = true
+            local Tool = Drawing.new("Text"); Tool.Visible = false; Tool.Color = Color3.new(1,1,0.5); Tool.Size = 13; Tool.Center = true; Tool.Outline = true
+            
+            local HealthBarBg = Drawing.new("Square"); HealthBarBg.Visible = false; HealthBarBg.Color = Color3.new(0,0,0); HealthBarBg.Thickness = 1; HealthBarBg.Filled = true
+            local HealthBar = Drawing.new("Square"); HealthBar.Visible = false; HealthBar.Color = Color3.new(0,1,0); HealthBar.Thickness = 1; HealthBar.Filled = true
+
+            local ArmorBarBg = Drawing.new("Square"); ArmorBarBg.Visible = false; ArmorBarBg.Color = Color3.new(0,0,0); ArmorBarBg.Thickness = 1; ArmorBarBg.Filled = true
+            local ArmorBar = Drawing.new("Square"); ArmorBar.Visible = false; ArmorBar.Color = Color3.new(0,0.5,1); ArmorBar.Thickness = 1; ArmorBar.Filled = true
             
             -- Skeleton lines
             local Bones = { Head = GetLine(), Spine = GetLine(), LArm = GetLine(), RArm = GetLine(), LLeg = GetLine(), RLeg = GetLine() }
             
             local function cleanup() 
-                Box:Remove(); Name:Remove(); Dist:Remove()
+                Box:Remove(); Name:Remove(); Dist:Remove(); Tool:Remove()
+                HealthBarBg:Remove(); HealthBar:Remove(); ArmorBarBg:Remove(); ArmorBar:Remove()
                 for _, l in pairs(Bones) do l:Remove() end
             end
 
@@ -1842,8 +2018,45 @@ local success, err = pcall(function()
                         Name.Position = Vector2.new(pos.X, rootTop.Y - 16); Name.Text = p.Name; Name.Visible = _G.EternalState.NameESP
                         
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
-                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((localPos - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.EternalState.DistESP
+                        local distanceValue = math.floor((localPos - root.Position).Magnitude)
+                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. distanceValue .. "m]"; Dist.Visible = _G.EternalState.DistESP
                         
+                        -- Health Bar
+                        if _G.EternalState.HealthBar then
+                            local hum = char:FindFirstChildOfClass("Humanoid")
+                            local healthPercent = hum.Health / hum.MaxHealth
+                            HealthBarBg.Size = Vector2.new(2, sizeY)
+                            HealthBarBg.Position = Vector2.new(pos.X - sizeX / 2 - 5, rootTop.Y)
+                            HealthBarBg.Visible = true
+                            
+                            HealthBar.Size = Vector2.new(2, sizeY * healthPercent)
+                            HealthBar.Position = Vector2.new(pos.X - sizeX / 2 - 5, rootTop.Y + (sizeY * (1 - healthPercent)))
+                            HealthBar.Color = Color3.fromHSV(healthPercent * 0.3, 1, 1) -- Red to Green
+                            HealthBar.Visible = true
+                        else HealthBarBg.Visible = false; HealthBar.Visible = false end
+
+                        -- Armor Bar (Using 'Armor' attribute common in many games)
+                        if _G.EternalState.ArmorBar then
+                            local armor = char:GetAttribute("Armor") or (char:FindFirstChild("Armor") and char.Armor.Value) or 0
+                            local maxArmor = char:GetAttribute("MaxArmor") or (char:FindFirstChild("MaxArmor") and char.MaxArmor.Value) or 100
+                            local armorPercent = math.clamp(armor / maxArmor, 0, 1)
+                            ArmorBarBg.Size = Vector2.new(2, sizeY)
+                            ArmorBarBg.Position = Vector2.new(pos.X + sizeX / 2 + 3, rootTop.Y)
+                            ArmorBarBg.Visible = true
+                            
+                            ArmorBar.Size = Vector2.new(2, sizeY * armorPercent)
+                            ArmorBar.Position = Vector2.new(pos.X + sizeX / 2 + 3, rootTop.Y + (sizeY * (1 - armorPercent)))
+                            ArmorBar.Visible = true
+                        else ArmorBarBg.Visible = false; ArmorBar.Visible = false end
+
+                        -- Tool ESP
+                        if _G.EternalState.ToolESP then
+                            local tool = char:FindFirstChildOfClass("Tool")
+                            Tool.Visible = true
+                            Tool.Text = tool and tool.Name or "[Empty]"
+                            Tool.Position = Vector2.new(pos.X, rootBottom.Y + 15)
+                        else Tool.Visible = false end
+
                         -- Advanced Chams via Highlight (sem spam de material por frame)
                         -- O estado é gerenciado fora do RenderStepped pelo watcher abaixo
 
@@ -1905,11 +2118,15 @@ local success, err = pcall(function()
                         end
 
                     else
-                        Box.Visible = false; Name.Visible = false; Dist.Visible = false
+                        Box.Visible = false; Name.Visible = false; Dist.Visible = false; Tool.Visible = false
+                        HealthBarBg.Visible = false; HealthBar.Visible = false
+                        ArmorBarBg.Visible = false; ArmorBar.Visible = false
                         for _, l in pairs(Bones) do l.Visible = false end
                     end
                 else
-                    Box.Visible = false; Name.Visible = false; Dist.Visible = false
+                    Box.Visible = false; Name.Visible = false; Dist.Visible = false; Tool.Visible = false
+                    HealthBarBg.Visible = false; HealthBar.Visible = false
+                    ArmorBarBg.Visible = false; ArmorBar.Visible = false
                     for _, l in pairs(Bones) do l.Visible = false end
                 end
             end)
