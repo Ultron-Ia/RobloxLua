@@ -957,29 +957,35 @@ local success, err = pcall(function()
                     local found = 0
                     for _, obj in pairs(workspace:GetDescendants()) do
                         local name = obj.Name:lower()
-                        local isEggCandidate = name:find("egg") or name:find("ovo") or name:find("easter")
+                        local isEggCandidate = name:find("egg") or name:find("ovo")
                         
-                        if isEggCandidate and (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model")) then
-                            -- STRICT FILTER: Collectible eggs always have a ProximityPrompt
-                            local hasPrompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
+                        if isEggCandidate and (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
+                            -- ULTRA STRICT FILTER
+                            local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
+                            local isSmall = obj.Size.Magnitude < 5 -- Collectibles are tiny
                             
-                            -- Ignore large map decorations (Size check)
-                            local isSmall = true
-                            if obj:IsA("BasePart") then isSmall = obj.Size.Magnitude < 12 end
-                            
-                            if hasPrompt or (isEggCandidate and isSmall and not obj:FindFirstChild("Model")) then
+                            -- Check if it's actually collectible (ActionText check)
+                            local isCollectible = false
+                            if prompt then
+                                local text = prompt.ActionText:lower()
+                                if text:find("collect") or text:find("pegar") or text:find("egg") or text:find("ovo") then
+                                    isCollectible = true
+                                end
+                            end
+
+                            if isCollectible and isSmall then
                                 local hl = Instance.new("Highlight")
                                 hl.Name = "EggESP_HL"
-                                hl.FillColor = Color3.fromRGB(255, 0, 0) -- Bright Red for Collectibles
+                                hl.FillColor = Color3.fromRGB(255, 0, 0) -- RED ONLY
                                 hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                                hl.FillTransparency = 0.4
+                                hl.FillTransparency = 0.2
                                 hl.Parent = obj
                                 table.insert(eggHighlights, hl)
                                 found = found + 1
                             end
                         end
                     end
-                    WindUI:Notify({Title = "🥚 Egg Scan", Content = "Encontrados " .. found .. " ovos colecionáveis!", Duration = 3, Icon = "search"})
+                    WindUI:Notify({Title = "🥚 Egg Scan", Content = "Filtrados " .. found .. " ovos REAIS!", Duration = 3, Icon = "search"})
                 end
 
                 BTab:Toggle({Title = "Egg ESP (Highlight)", Default = _G.EternalState.EggESP or false, Callback = function(v)
@@ -993,9 +999,15 @@ local success, err = pcall(function()
                     local foundEgg = nil
                     for _, obj in pairs(workspace:GetDescendants()) do
                         local name = obj.Name:lower()
-                        if (name:find("egg") or name:find("ovo")) and (obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))) then
-                            foundEgg = obj
-                            break
+                        local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
+                        
+                        if (name:find("egg") or name:find("ovo")) and prompt then
+                            local text = prompt.ActionText:lower()
+                            local isSmall = obj.Size.Magnitude < 5
+                            if (text:find("collect") or text:find("pegar")) and isSmall then
+                                foundEgg = obj
+                                break
+                            end
                         end
                     end
                     
