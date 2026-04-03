@@ -58,8 +58,42 @@ local success, err = pcall(function()
         SpinSpeed = 50,
         
         TargetPlayer = "None",
-        SkinID = "0"
+        SkinID = "0",
+        
+        -- Settings & Appearance
+        Watermark = false,
+        Theme = "Dark",
+        AccentColor = Color3.fromRGB(0, 150, 255),
+        Transparency = 0,
+        MenuKeybind = Enum.KeyCode.Insert
     }
+
+    -- CONFIG SYSTEM ---------------------------------------
+    local HttpService = game:GetService("HttpService")
+    local EternalFolder = "EternalHub"
+    local ConfigFile = "EternalHub/config.json"
+
+    local function SaveConfig()
+        if not isfolder(EternalFolder) then makefolder(EternalFolder) end
+        local data = HttpService:JSONEncode(_G.EternalState)
+        writefile(ConfigFile, data)
+        WindUI:Notify({Title="Settings", Content="Configuração salva com sucesso!", Duration=3, Icon = "save"})
+    end
+
+    local function LoadConfig()
+        if isfile(ConfigFile) then
+            local success, decoded = pcall(function() return HttpService:JSONDecode(readfile(ConfigFile)) end)
+            if success and decoded then
+                for k, v in pairs(decoded) do
+                    _G.EternalState[k] = v
+                end
+                WindUI:Notify({Title="Settings", Content="Configuração carregada!", Duration=3, Icon = "file-down"})
+                if _G.EternalState.Theme then WindUI:SetTheme(_G.EternalState.Theme) end
+            end
+        else
+            WindUI:Notify({Title="Settings", Content="Nenhum arquivo de config encontrado.", Duration=3, Icon = "alert-circle"})
+        end
+    end
 
     -- SHARED RGB CLOCK (Performance Optimized & Robust)
     sharedRGB = Color3.new(1,1,1)
@@ -2020,9 +2054,62 @@ local success, err = pcall(function()
     })
 
     -- SETTINGS POPULATION
-    Tabs.Settings:Section({ Title = "UI Customization" })
+    Tabs.Settings:Section({ Title = "Configuration System" })
     
-    -- Watermark Initialization
+    Tabs.Settings:Button({
+        Title = "💾 Save Current Config",
+        Desc = "Salva todas as suas configurações atuais no computador.",
+        Callback = function() SaveConfig() end
+    })
+
+    Tabs.Settings:Button({
+        Title = "📂 Load Saved Config",
+        Desc = "Carrega suas últimas configurações salvas.",
+        Callback = function() LoadConfig() end
+    })
+
+    Tabs.Settings:Button({
+        Title = "🗑️ Reset & Delete Config",
+        Desc = "Deleta o arquivo de configuração e volta ao padrão.",
+        Callback = function()
+            if isfile(ConfigFile) then delfile(ConfigFile) end
+            WindUI:Notify({Title="Settings", Content="Configuração resetada!", Duration=3, Icon = "trash-2"})
+        end
+    })
+
+    Tabs.Settings:Section({ Title = "Appearance & Visuals" })
+    
+    Tabs.Settings:Dropdown({
+        Title = "Menu Theme",
+        Values = {"Dark", "Light", "Rose", "Plant", "Indigo", "Sky", "Violet", "Amber"},
+        Value = _G.EternalState.Theme,
+        Callback = function(v)
+            _G.EternalState.Theme = v
+            WindUI:SetTheme(v)
+        end
+    })
+
+    Tabs.Settings:Slider({
+        Title = "Menu Transparency",
+        Value = {Default = 0, Min = 0, Max = 0.5},
+        Step = 0.05,
+        Callback = function(v)
+            _G.EternalState.Transparency = v
+            -- Note: Transparency implementation depends on library support or manual frame update
+            if Window.Transparency then Window.Transparency = (1 - v) end
+        end
+    })
+
+    Tabs.Settings:Keybind({
+        Title = "Menu Toggle Key",
+        Default = _G.EternalState.MenuKeybind,
+        Callback = function(v)
+            _G.EternalState.MenuKeybind = v
+            Window.ToggleKey = v
+        end
+    })
+
+    -- Watermark Logic (Persistent)
     local WatermarkGui = Instance.new("ScreenGui")
     WatermarkGui.Name = "EternalWatermark"
     WatermarkGui.IgnoreGuiInset = true
@@ -2060,7 +2147,7 @@ local success, err = pcall(function()
     RunService.RenderStepped:Connect(function(dt)
         if _G.EternalState.Watermark then
             fpsCount = math.floor(1/dt)
-            if tick() - lastUpdate > 0.5 then -- Update every half second for stability
+            if tick() - lastUpdate > 0.5 then
                 WatermarkText.Text = "ETERNAL | " .. LocalPlayer.Name .. " | FPS: " .. fpsCount
                 lastUpdate = tick()
             end
