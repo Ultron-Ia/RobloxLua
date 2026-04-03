@@ -2150,41 +2150,51 @@ local success, err = pcall(function()
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
         
-        -- CHAMS SYSTEM via Highlight (corrigido)
-        -- DepthMode = AlwaysOnTop -> chams aparecem ATRAVÉS das paredes
-        -- Usa eventos (CharacterAdded/PlayerRemoving) em vez de polling no Heartbeat
-        local chamsApplied = {} -- [player] = { hl = Highlight, charConn = RBXScriptConnection }
+        -- CHAMS SYSTEM via Highlight & Material Fallback
+        -- Container seguro no CoreGui para evitar deleções pelo jogo
+        local ChamsFolder = nil
+        pcall(function()
+            ChamsFolder = game:GetService("CoreGui"):FindFirstChild("Eternal_Chams") or Instance.new("Folder", game:GetService("CoreGui"))
+            ChamsFolder.Name = "Eternal_Chams"
+        end)
+        if not ChamsFolder then ChamsFolder = LocalPlayer:WaitForChild("PlayerGui") end
+
+        local chamsApplied = {} -- [player] = { hl = Highlight }
 
         local CHAMS_PRESETS = {
-            ["Neon"]       = { fill = 0.2,  outline = 0.0,  outlineColor = Color3.fromRGB(255,255,255) },
-            ["ForceField"] = { fill = 0.4,  outline = 0.3,  outlineColor = Color3.fromRGB(100,200,255) },
-            ["Glass"]      = { fill = 0.6,  outline = 0.0,  outlineColor = Color3.fromRGB(255,255,255) },
-            ["Plastic"]    = { fill = 0.0,  outline = 0.0,  outlineColor = Color3.fromRGB(0,  0,   0)  },
+            ["Neon"]       = { fill = 0.4,  outline = 0.0, mat = Enum.Material.Neon },
+            ["ForceField"] = { fill = 0.5,  outline = 0.2, mat = Enum.Material.ForceField },
+            ["Glass"]      = { fill = 0.7,  outline = 0.0, mat = Enum.Material.Glass },
+            ["Plastic"]    = { fill = 0.1,  outline = 0.0, mat = Enum.Material.SmoothPlastic },
         }
 
         local function applyHighlight(char, player)
-            -- Remove highlight antigo do personagem, se existir
-            local old = char:FindFirstChild("EternalChams")
-            if old then old:Destroy() end
-
             local preset = CHAMS_PRESETS[_G.EternalState.ChamsMat] or CHAMS_PRESETS["Neon"]
             local fillColor = _G.EternalState.ChamsColor
 
-            local hl = Instance.new("Highlight")
-            hl.Name              = "EternalChams"
+            -- Material Chams (Fallback robusto para paredes)
+            for _, part in pairs(char:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.Material = preset.mat
+                    -- O ForceField transparente é o que melhor brilha através das paredes
+                    if _G.EternalState.ChamsMat == "ForceField" then
+                        part.Transparency = 0.5
+                    end
+                end
+            end
+
+            -- Highlight Chams (Glow moderno)
+            local hl = ChamsFolder:FindFirstChild(player.Name.."_ESP") or Instance.new("Highlight")
+            hl.Name              = player.Name.."_ESP"
             hl.Adornee           = char
             hl.FillColor         = fillColor
             hl.FillTransparency  = preset.fill
-            hl.OutlineColor      = Color3.new(1,1,1) -- Force white outline for contrast
+            hl.OutlineColor      = Color3.new(1,1,1)
             hl.OutlineTransparency = preset.outline
             hl.Enabled           = true
             hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
-            hl.Parent            = char
-
-            if chamsApplied[player] then
-                local old_entry = chamsApplied[player]
-                if old_entry.hl and old_entry.hl.Parent then old_entry.hl:Destroy() end
-            end
+            hl.Parent            = ChamsFolder
+            
             chamsApplied[player] = { hl = hl }
         end
 
