@@ -1,17 +1,8 @@
--- Detecta e cala erros no DataModel "Ugc" (Asset Loader)
-local success_init, Players = pcall(function()
-    -- Se estiver no carregador (PlaceId = 0 ou nome Ugc), para silenciosamente.
-    -- O exploit deve re-executar no DataModel real.
-    if game.PlaceId == 0 or game.Name == "Ugc" then return nil end
-    return game:GetService("Players")
-end)
+if not game:IsLoaded() then game.Loaded:Wait() end
+local playersExist, _ = pcall(function() return game:GetService("Players") end)
+if not playersExist then return end
 
-if not success_init or not Players then return end
-if not game:IsLoaded() then pcall(function() game.Loaded:Wait() end) end
-
-local WindUI = nil
-pcall(function() WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))() end)
-if not WindUI then return end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
@@ -27,9 +18,11 @@ local success, err = pcall(function()
     })
 
     -- Services
+    local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local UserInputService = game:GetService("UserInputService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local MarketplaceService = game:GetService("MarketplaceService")
     local LocalPlayer = Players.LocalPlayer
     local Camera = workspace.CurrentCamera
 
@@ -40,15 +33,10 @@ local success, err = pcall(function()
         AimPart = "Head",
         AimFOV = 100,
         AimSmooth = 3,
-        AimSnapLines = false,
-        AimTargetDot = false,
         
         BoxESP = false,
         NameESP = false,
         DistESP = false,
-        HealthBar = false,
-        ArmorBar = false,
-        ToolESP = false,
         SkeletonESP = false,
         SkeletonColor = Color3.fromRGB(255, 255, 255),
         ProjESP = false,
@@ -63,28 +51,8 @@ local success, err = pcall(function()
         Spinbot = false,
         SpinSpeed = 50,
         
-        OrbitEnabled = false,
-        OrbitSpeed = 30,
-        OrbitRadius = 10,
-        OrbitHeight = 5,
-        
-        AtmoDensity = 0,
-        AtmoGlare = 0,
-        AtmoHaze = 0,
-        Exposure = 0,
-        ClockTime = 12,
-        
-        BladeBallAutoParry = false,
-        ParryDist = 20,
-        
-        Gravity = 196.2,
-        Tickrate = 60,
-        Desync = false,
-        
-        Headless = false,
-        Korblox = false,
-        
-        TargetPlayer = "None"
+        TargetPlayer = "None",
+        SkinID = "0"
     }
 
     -- Tabs
@@ -93,7 +61,6 @@ local success, err = pcall(function()
         Aimbot = Window:Tab({ Title = "Aimbot", Icon = "crosshair" }),
         Visuals = Window:Tab({ Title = "Visuals", Icon = "eye" }),
         Local = Window:Tab({ Title = "Local", Icon = "user" }),
-        Advanced = Window:Tab({ Title = "Advanced", Icon = "zap" }),
         Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
     }
 
@@ -1713,16 +1680,11 @@ local success, err = pcall(function()
     Tabs.Aimbot:Section({ Title = "Aimbot Settings" })
     Tabs.Aimbot:Slider({Title = "FOV Size", Value = {Default = 100, Min = 10, Max = 800}, Step = 1, Callback = function(v) _G.EternalState.AimFOV = v end})
     Tabs.Aimbot:Slider({Title = "Smoothness (Cam)", Value = {Default = 3, Min = 1, Max = 20}, Step = 0.1, Callback = function(v) _G.EternalState.AimSmooth = v end})
-    Tabs.Aimbot:Toggle({Title = "Draw Snap Lines", Value = false, Callback = function(v) _G.EternalState.AimSnapLines = v end})
-    Tabs.Aimbot:Toggle({Title = "Draw Target Dot", Value = false, Callback = function(v) _G.EternalState.AimTargetDot = v end})
 
     -- POPULATE VISUALS
     Tabs.Visuals:Section({ Title = "2D ESP" })
     Tabs.Visuals:Toggle({Title = "Boxes", Value = false, Callback = function(v) _G.EternalState.BoxESP = v end})
     Tabs.Visuals:Toggle({Title = "Names", Value = false, Callback = function(v) _G.EternalState.NameESP = v end})
-    Tabs.Visuals:Toggle({Title = "Health Bars", Value = false, Callback = function(v) _G.EternalState.HealthBar = v end})
-    Tabs.Visuals:Toggle({Title = "Armor Bars", Value = false, Callback = function(v) _G.EternalState.ArmorBar = v end})
-    Tabs.Visuals:Toggle({Title = "Tool ESP", Value = false, Callback = function(v) _G.EternalState.ToolESP = v end})
     Tabs.Visuals:Toggle({Title = "Distance", Value = false, Callback = function(v) _G.EternalState.DistESP = v end})
     Tabs.Visuals:Toggle({Title = "Skeleton Esp", Value = false, Callback = function(v) _G.EternalState.SkeletonESP = v end})
     Tabs.Visuals:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1), Callback = function(v) _G.EternalState.SkeletonColor = v end})
@@ -1743,62 +1705,88 @@ local success, err = pcall(function()
     Tabs.Local:Toggle({Title = "Spinbot (360)", Value = false, Callback = function(v) _G.EternalState.Spinbot = v end})
     Tabs.Local:Slider({Title = "Spin Speed", Value = {Default = 50, Min = 10, Max = 200}, Step = 1, Callback = function(v) _G.EternalState.SpinSpeed = v end})
 
-    -- POPULATE ADVANCED
-    Tabs.Advanced:Section({ Title = "Physics & Exploits" })
-    Tabs.Advanced:Toggle({Title = "Orbit Target", Value = false, Callback = function(v) _G.EternalState.OrbitEnabled = v end})
-    Tabs.Advanced:Slider({Title = "Orbit Speed", Value = {Default = 30, Min = 5, Max = 100}, Step = 1, Callback = function(v) _G.EternalState.OrbitSpeed = v end})
-    Tabs.Advanced:Slider({Title = "Orbit Radius", Value = {Default = 10, Min = 2, Max = 50}, Step = 1, Callback = function(v) _G.EternalState.OrbitRadius = v end})
-    Tabs.Advanced:Slider({Title = "Orbit Height", Value = {Default = 5, Min = -20, Max = 20}, Step = 1, Callback = function(v) _G.EternalState.OrbitHeight = v end})
-    
-    Tabs.Advanced:Section({ Title = "World & Lighting" })
-    Tabs.Advanced:Slider({Title = "Atmosphere Density", Value = {Default = 0, Min = 0, Max = 1}, Step = 0.01, Callback = function(v) 
-        _G.EternalState.AtmoDensity = v
-        local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
-        if atmo then atmo.Density = v end
-    end})
-    Tabs.Advanced:Slider({Title = "Atmosphere Glare", Value = {Default = 0, Min = 0, Max = 10}, Step = 0.1, Callback = function(v) 
-        _G.EternalState.AtmoGlare = v
-        local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
-        if atmo then atmo.Glare = v end
-    end})
-    Tabs.Advanced:Slider({Title = "Atmosphere Haze", Value = {Default = 0, Min = 0, Max = 10}, Step = 0.1, Callback = function(v) 
-        _G.EternalState.AtmoHaze = v
-        local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
-        if atmo then atmo.Haze = v end
-    end})
-    Tabs.Advanced:Slider({Title = "Exposure", Value = {Default = 0, Min = -5, Max = 5}, Step = 0.1, Callback = function(v) 
-        _G.EternalState.Exposure = v
-        game:GetService("Lighting").ExposureCompensation = v
-    end})
-    Tabs.Advanced:Slider({Title = "Clock Time", Value = {Default = 12, Min = 0, Max = 24}, Step = 0.1, Callback = function(v) 
-        _G.EternalState.ClockTime = v
-        game:GetService("Lighting").ClockTime = v
-    end})
-
-    Tabs.Advanced:Section({ Title = "BladeBall Hub" })
-    Tabs.Advanced:Toggle({Title = "Auto Parry", Value = false, Callback = function(v) _G.EternalState.BladeBallAutoParry = v end})
-    Tabs.Advanced:Slider({Title = "Parry Distance", Value = {Default = 20, Min = 5, Max = 100}, Step = 1, Callback = function(v) _G.EternalState.ParryDist = v end})
-
-    Tabs.Advanced:Section({ Title = "Movement & Physics" })
-    Tabs.Advanced:Slider({Title = "Gravity", Value = {Default = 196.2, Min = 0, Max = 1000}, Step = 1, Callback = function(v) 
-        _G.EternalState.Gravity = v
-        workspace.Gravity = v
-    end})
-    Tabs.Advanced:Toggle({Title = "Desync (Position Jitter)", Value = false, Callback = function(v) _G.EternalState.Desync = v end})
-    
-    Tabs.Advanced:Section({ Title = "Exploits & Spoofs" })
-    Tabs.Advanced:Toggle({Title = "Headless (Local)", Value = false, Callback = function(v) 
-        _G.EternalState.Headless = v 
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-            LocalPlayer.Character.Head.Transparency = v and 1 or 0
+    Tabs.Local:Section({ Title = "Skin Changer" })
+    Tabs.Local:Input({
+        Title = "Outfit/Skin ID",
+        Desc = "Insira o ID da skin/outfit do Roblox",
+        Value = "0",
+        Placeholder = "ID aqui...",
+        Callback = function(v)
+            _G.EternalState.SkinID = v
         end
-    end})
-    Tabs.Advanced:Toggle({Title = "Korblox (Local)", Value = false, Callback = function(v) 
-        _G.EternalState.Korblox = v 
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("RightLowerLeg") then
-            LocalPlayer.Character.RightLowerLeg.Transparency = v and 1 or 0
+    })
+    Tabs.Local:Button({
+        Title = "Apply Skin",
+        Desc = "Aplica a skin, bundle ou item (ID) ao seu personagem",
+        Callback = function()
+            local idStr = _G.EternalState.SkinID:gsub("%s+", "") -- Remove espaços
+            local id = tonumber(idStr)
+            
+            if id then
+                WindUI:Notify({Title="Skin Changer", Content="Limpando e buscando objeto: "..id, Duration=3, Icon = "refresh-ccw"})
+                pcall(function()
+                    local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    local char = LocalPlayer.Character
+                    if hum and char then
+                        -- 1. LIMPEZA MANUAL (Estilo Brookhaven)
+                        for _, i in pairs(char:GetChildren()) do 
+                            if i:IsA("Shirt") or i:IsA("Pants") or i:IsA("Accessory") or i:IsA("Hat") or i:IsA("ShirtGraphic") or i:IsA("BodyColors") or i:IsA("CharacterMesh") then 
+                                i:Destroy() 
+                            end 
+                        end
+                        if char:FindFirstChild("Head") then
+                            for _, v in pairs(char.Head:GetChildren()) do if v:IsA("Decal") or v:IsA("SpecialMesh") then v:Destroy() end end
+                        end
+
+                        -- 2. TENTA INJETAR VIA GetObjects (Mais robusto para roupas individuais)
+                        local objSuccess, objects = pcall(function() return game:GetObjects("rbxassetid://" .. id) end)
+                        
+                        if objSuccess and objects and #objects > 0 then
+                            for _, obj in pairs(objects) do
+                                pcall(function() obj.Parent = char end)
+                            end
+                            WindUI:Notify({Title="Skin Changer", Content="Objeto injetado com sucesso!", Duration=3, Icon = "check-circle"})
+                        else
+                            -- 3. FALLBACK PARA OUTFITS/BUNDLES (API Oficial)
+                            local description = nil
+                            local sO, dO = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromOutfitId(id) end)
+                            if sO and dO then description = dO else
+                                local sB, dB = pcall(function() return game:GetService("Players"):GetHumanoidDescriptionFromBundleId(id) end)
+                                if sB and dB then description = dB end
+                            end
+                            
+                            if description then
+                                hum:ApplyDescription(description)
+                                WindUI:Notify({Title="Skin Changer", Content="Traje aplicado via API!", Duration=3, Icon = "check-circle"})
+                            else
+                                WindUI:Notify({Title="Skin Changer", Content="Erro: ID não identificado.", Duration=5, Icon = "alert-circle"})
+                            end
+                        end
+                    end
+                end)
+            elseif #idStr > 0 then
+                WindUI:Notify({Title = "Skin Changer", Content = "Use IDs numéricos!", Duration = 5, Icon = "info"})
+            else
+                WindUI:Notify({Title="Skin Changer", Content="Digite um ID!", Duration=3, Icon = "alert-circle"})
+            end
         end
-    end})
+    })
+
+    Tabs.Local:Button({
+        Title = "Reset Skin",
+        Desc = "Volta o seu personagem para a skin original do Roblox",
+        Callback = function()
+            WindUI:Notify({Title="Skin Changer", Content="Resetando a skin...", Duration=3, Icon = "refresh-ccw"})
+            pcall(function()
+                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    local desc = game:GetService("Players"):GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+                    hum:ApplyDescription(desc)
+                    WindUI:Notify({Title="Skin Changer", Content="Skin resetada!", Duration=3, Icon = "check"})
+                end
+            end)
+        end
+    })
 
     -- SETTINGS
     WindUI:Notify({Title="Eternal", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
@@ -1860,58 +1848,19 @@ local success, err = pcall(function()
     end)
 
 
-    -- MAIN LOOP (Camera Aimbot, Spinbot, Orbit, Local)
+    -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
     task.spawn(function()
         local spinAngle = 0
-        local orbitAngle = 0
-        
-        local SnapLine = Drawing.new("Line")
-        SnapLine.Visible = false
-        SnapLine.Color = Color3.new(1, 1, 1)
-        SnapLine.Thickness = 1
-        
-        local TargetDot = Drawing.new("Circle")
-        TargetDot.Visible = false
-        TargetDot.Color = Color3.new(1, 0, 0)
-        TargetDot.Radius = 4
-        TargetDot.Filled = true
-
         RunService.RenderStepped:Connect(function()
-            local targetPos, targetPlayer = GetClosestTarget()
-            
             -- Camera Aimbot
             if _G.EternalState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+                local targetPos, targetPlayer = GetClosestTarget()
                 if targetPos then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) end
-            end
-            
-            -- Snap Lines & Target Dot
-            if targetPos and (_G.EternalState.AimSnapLines or _G.EternalState.AimTargetDot) then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
-                if onScreen then
-                    if _G.EternalState.AimSnapLines then
-                        SnapLine.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                        SnapLine.To = Vector2.new(screenPos.X, screenPos.Y)
-                        SnapLine.Visible = true
-                    else SnapLine.Visible = false end
-                    
-                    if _G.EternalState.AimTargetDot then
-                        TargetDot.Position = Vector2.new(screenPos.X, screenPos.Y)
-                        TargetDot.Visible = true
-                    else TargetDot.Visible = false end
-                else
-                    SnapLine.Visible = false
-                    TargetDot.Visible = false
-                end
-            else
-                SnapLine.Visible = false
-                TargetDot.Visible = false
             end
             
             -- Local Features
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                 local hum = LocalPlayer.Character.Humanoid
-                local hrp = LocalPlayer.Character.HumanoidRootPart
-                
                 hum.WalkSpeed = _G.EternalState.WalkSpeed
                 hum.JumpPower = _G.EternalState.JumpPower
                 if _G.EternalState.NoClip then 
@@ -1919,54 +1868,14 @@ local success, err = pcall(function()
                 end
                 
                 -- Spinbot
-                if _G.EternalState.Spinbot and hrp then
+                if _G.EternalState.Spinbot and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed)
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    -- Spin keeping position
                     hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
-                end
-                
-                -- Orbit
-                if _G.EternalState.OrbitEnabled and hrp then
-                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                        orbitAngle = orbitAngle + math.rad(_G.EternalState.OrbitSpeed / 10)
-                        local targetHRP = t.Character.HumanoidRootPart
-                        local offset = Vector3.new(math.cos(orbitAngle) * _G.EternalState.OrbitRadius, _G.EternalState.OrbitHeight, math.sin(orbitAngle) * _G.EternalState.OrbitRadius)
-                        hrp.CFrame = targetHRP.CFrame * CFrame.new(offset)
-                    end
-                end
-
-                -- Desync
-                if _G.EternalState.Desync and hrp then
-                    local oldCF = hrp.CFrame
-                    hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-10,10), 0, math.random(-10,10))
-                    RunService.RenderStepped:Wait()
-                    hrp.CFrame = oldCF
                 end
             end
         end)
-    end)
-
-    -- BLADE BALL AUTO PARRY
-    task.spawn(function()
-        while task.wait() do
-            if _G.EternalState.BladeBallAutoParry then
-                pcall(function()
-                    local balls = workspace:FindFirstChild("Balls")
-                    if balls then
-                        for _, ball in pairs(balls:GetChildren()) do
-                            if ball:GetAttribute("target") == LocalPlayer.Name then
-                                local dist = (ball.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                                if dist <= _G.EternalState.ParryDist then
-                                    keypress(Enum.KeyCode.F)
-                                    task.wait(0.1)
-                                    keyrelease(Enum.KeyCode.F)
-                                end
-                            end
-                        end
-                    end
-                end)
-            end
-        end
     end)
 
     -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
@@ -1981,27 +1890,12 @@ local success, err = pcall(function()
             local Box = Drawing.new("Square"); Box.Visible = false; Box.Color = Color3.new(1,0,0); Box.Thickness = 1; Box.Filled = false
             local Name = Drawing.new("Text"); Name.Visible = false; Name.Color = Color3.new(1,1,1); Name.Size = 14; Name.Center = true; Name.Outline = true
             local Dist = Drawing.new("Text"); Dist.Visible = false; Dist.Color = Color3.new(0.8,0.8,0.8); Dist.Size = 13; Dist.Center = true; Dist.Outline = true
-            local Tool = Drawing.new("Text"); Tool.Visible = false; Tool.Color = Color3.new(1,1,0.5); Tool.Size = 13; Tool.Center = true; Tool.Outline = true
             
-            local HealthBarBg = Drawing.new("Square"); HealthBarBg.Visible = false; HealthBarBg.Color = Color3.new(0,0,0); HealthBarBg.Thickness = 1; HealthBarBg.Filled = true
-            local HealthBar = Drawing.new("Square"); HealthBar.Visible = false; HealthBar.Color = Color3.new(0,1,0); HealthBar.Thickness = 1; HealthBar.Filled = true
-
-            local ArmorBarBg = Drawing.new("Square"); ArmorBarBg.Visible = false; ArmorBarBg.Color = Color3.new(0,0,0); ArmorBarBg.Thickness = 1; ArmorBarBg.Filled = true
-            local ArmorBar = Drawing.new("Square"); ArmorBar.Visible = false; ArmorBar.Color = Color3.new(0,0.5,1); ArmorBar.Thickness = 1; ArmorBar.Filled = true
-            
-            -- Skeleton lines: dynamic pool so we can support full R15 (up to 16 bones)
-            local Bones = {}
-            local function GetLine()
-                local l = Drawing.new("Line"); l.Visible = false; l.Thickness = 1.5; return l
-            end
-            local function GetBone(id)
-                if not Bones[id] then Bones[id] = GetLine() end
-                return Bones[id]
-            end
+            -- Skeleton lines
+            local Bones = { Head = GetLine(), Spine = GetLine(), LArm = GetLine(), RArm = GetLine(), LLeg = GetLine(), RLeg = GetLine() }
             
             local function cleanup() 
-                Box:Remove(); Name:Remove(); Dist:Remove(); Tool:Remove()
-                HealthBarBg:Remove(); HealthBar:Remove(); ArmorBarBg:Remove(); ArmorBar:Remove()
+                Box:Remove(); Name:Remove(); Dist:Remove()
                 for _, l in pairs(Bones) do l:Remove() end
             end
 
@@ -2025,235 +1919,51 @@ local success, err = pcall(function()
                         Name.Position = Vector2.new(pos.X, rootTop.Y - 16); Name.Text = p.Name; Name.Visible = _G.EternalState.NameESP
                         
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
-                        local distanceValue = math.floor((localPos - root.Position).Magnitude)
-                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. distanceValue .. "m]"; Dist.Visible = _G.EternalState.DistESP
+                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((localPos - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.EternalState.DistESP
                         
-                        -- Health Bar
-                        if _G.EternalState.HealthBar then
-                            local hum = char:FindFirstChildOfClass("Humanoid")
-                            local healthPercent = hum.Health / hum.MaxHealth
-                            HealthBarBg.Size = Vector2.new(2, sizeY)
-                            HealthBarBg.Position = Vector2.new(pos.X - sizeX / 2 - 5, rootTop.Y)
-                            HealthBarBg.Visible = true
-                            
-                            HealthBar.Size = Vector2.new(2, sizeY * healthPercent)
-                            HealthBar.Position = Vector2.new(pos.X - sizeX / 2 - 5, rootTop.Y + (sizeY * (1 - healthPercent)))
-                            HealthBar.Color = Color3.fromHSV(healthPercent * 0.3, 1, 1) -- Red to Green
-                            HealthBar.Visible = true
-                        else HealthBarBg.Visible = false; HealthBar.Visible = false end
-
-                        -- Armor Bar (Using 'Armor' attribute common in many games)
-                        if _G.EternalState.ArmorBar then
-                            local armor = char:GetAttribute("Armor") or (char:FindFirstChild("Armor") and char.Armor.Value) or 0
-                            local maxArmor = char:GetAttribute("MaxArmor") or (char:FindFirstChild("MaxArmor") and char.MaxArmor.Value) or 100
-                            local armorPercent = math.clamp(armor / maxArmor, 0, 1)
-                            ArmorBarBg.Size = Vector2.new(2, sizeY)
-                            ArmorBarBg.Position = Vector2.new(pos.X + sizeX / 2 + 3, rootTop.Y)
-                            ArmorBarBg.Visible = true
-                            
-                            ArmorBar.Size = Vector2.new(2, sizeY * armorPercent)
-                            ArmorBar.Position = Vector2.new(pos.X + sizeX / 2 + 3, rootTop.Y + (sizeY * (1 - armorPercent)))
-                            ArmorBar.Visible = true
-                        else ArmorBarBg.Visible = false; ArmorBar.Visible = false end
-
-                        -- Tool ESP
-                        if _G.EternalState.ToolESP then
-                            local tool = char:FindFirstChildOfClass("Tool")
-                            Tool.Visible = true
-                            Tool.Text = tool and tool.Name or "[Empty]"
-                            Tool.Position = Vector2.new(pos.X, rootBottom.Y + 15)
-                        else Tool.Visible = false end
-
-                        -- Advanced Chams via Highlight (sem spam de material por frame)
-                        -- O estado é gerenciado fora do RenderStepped pelo watcher abaixo
-
-                        -- Skeleton ESP (Fixed R6/R15 Hybrid - Brookhaven compatible)
-                        if _G.EternalState.SkeletonESP then
-                            local skColor = _G.EternalState.SkeletonColor
-
-                            local function drawBone(id, pA, pB)
-                                local bone = GetBone(id)
-                                if not pA or not pB then bone.Visible = false return end
-                                local sA, vA = Camera:WorldToViewportPoint(pA.Position)
-                                local sB, vB = Camera:WorldToViewportPoint(pB.Position)
-                                if vA and vB and sA.Z > 0 and sB.Z > 0 then
-                                    bone.Visible = true
-                                    bone.From = Vector2.new(sA.X, sA.Y)
-                                    bone.To = Vector2.new(sB.X, sB.Y)
-                                    bone.Color = skColor
-                                else
-                                    bone.Visible = false
+                        -- Advanced Chams (Material Override)
+                        if _G.EternalState.Chams then
+                            for _, part in pairs(char:GetDescendants()) do
+                                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                                    pcall(function() 
+                                        part.Material = Enum.Material[_G.EternalState.ChamsMat]
+                                        part.Color = _G.EternalState.ChamsColor
+                                    end)
                                 end
                             end
-
-                            local isR15 = char:FindFirstChild("UpperTorso") ~= nil
-                            
-                            if isR15 then
-                                -- R15 Bone Map
-                                local parts = {
-                                    Head = char:FindFirstChild("Head"),
-                                    UpperTorso = char:FindFirstChild("UpperTorso"),
-                                    LowerTorso = char:FindFirstChild("LowerTorso"),
-                                    RUA = char:FindFirstChild("RightUpperArm"), RLA = char:FindFirstChild("RightLowerArm"), RH = char:FindFirstChild("RightHand"),
-                                    LUA = char:FindFirstChild("LeftUpperArm"), LLA = char:FindFirstChild("LeftLowerArm"), LH = char:FindFirstChild("LeftHand"),
-                                    RUL = char:FindFirstChild("RightUpperLeg"), RLL = char:FindFirstChild("RightLowerLeg"), RF = char:FindFirstChild("RightFoot"),
-                                    LUL = char:FindFirstChild("LeftUpperLeg"), LLL = char:FindFirstChild("LeftLowerLeg"), LF = char:FindFirstChild("LeftFoot")
-                                }
-                                drawBone("H_UT", parts.Head, parts.UpperTorso)
-                                drawBone("UT_LT", parts.UpperTorso, parts.LowerTorso)
-                                -- Arms
-                                drawBone("UT_RUA", parts.UpperTorso, parts.RUA); drawBone("RUA_RLA", parts.RUA, parts.RLA); drawBone("RLA_RH", parts.RLA, parts.RH)
-                                drawBone("UT_LUA", parts.UpperTorso, parts.LUA); drawBone("LUA_LLA", parts.LUA, parts.LLA); drawBone("LLA_LH", parts.LLA, parts.LH)
-                                -- Legs
-                                drawBone("LT_RUL", parts.LowerTorso, parts.RUL); drawBone("RUL_RLL", parts.RUL, parts.RLL); drawBone("RLL_RF", parts.RLL, parts.RF)
-                                drawBone("LT_LUL", parts.LowerTorso, parts.LUL); drawBone("LUL_LLL", parts.LUL, parts.LLL); drawBone("LLL_LF", parts.LLL, parts.LF)
-                            else
-                                -- R6 Bone Map
-                                local parts = {
-                                    Head = char:FindFirstChild("Head"),
-                                    Torso = char:FindFirstChild("Torso"),
-                                    RA = char:FindFirstChild("Right Arm"),
-                                    LA = char:FindFirstChild("Left Arm"),
-                                    RL = char:FindFirstChild("Right Leg"),
-                                    LL = char:FindFirstChild("Left Leg")
-                                }
-                                drawBone("H_T", parts.Head, parts.Torso)
-                                drawBone("T_RA", parts.Torso, parts.RA)
-                                drawBone("T_LA", parts.Torso, parts.LA)
-                                drawBone("T_RL", parts.Torso, parts.RL)
-                                drawBone("T_LL", parts.Torso, parts.LL)
-                                -- Kill unused bones from dynamic pool
-                                local unused = {"UT_LT", "UT_RUA", "RUA_RLA", "RLA_RH", "UT_LUA", "LUA_LLA", "LLA_LH", "LT_RUL", "RUL_RLL", "RLL_RF", "LT_LUL", "LUL_LLL", "LLL_LF"}
-                                for _, id in ipairs(unused) do if Bones[id] then Bones[id].Visible = false end end
-                            end
-                        else
-                            for _, l in pairs(Bones) do l.Visible = false end
                         end
+
+                        -- Skeleton ESP
+                        if _G.EternalState.SkeletonESP and head then
+                            local neckP, nV = Camera:WorldToViewportPoint(head.Position - Vector3.new(0, 0.5, 0))
+                            local pelvisP, pV = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 1, 0))
+                            if nV and pV then
+                                Bones.Spine.From = Vector2.new(pos.X, rootTop.Y); Bones.Spine.To = Vector2.new(pelvisP.X, pelvisP.Y); Bones.Spine.Visible = _G.EternalState.SkeletonESP; Bones.Spine.Color = _G.EternalState.SkeletonColor
+                                Bones.Head.From = Vector2.new(neckP.X, neckP.Y); Bones.Head.To = Vector2.new(pos.X, rootTop.Y); Bones.Head.Visible = _G.EternalState.SkeletonESP; Bones.Head.Color = _G.EternalState.SkeletonColor
+                            else
+                                Bones.Spine.Visible = false; Bones.Head.Visible = false
+                            end
+                            -- Arms/Legs conceptual (simplified R6 for speed)
+                            local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightHand")
+                            local lArm = char:FindFirstChild("Left Arm") or char:FindFirstChild("LeftHand")
+                            if rArm then local rap, rv = Camera:WorldToViewportPoint(rArm.Position); if rv then Bones.RArm.From = Vector2.new(pos.X, rootTop.Y); Bones.RArm.To = Vector2.new(rap.X, rap.Y); Bones.RArm.Visible = _G.EternalState.SkeletonESP; Bones.RArm.Color = _G.EternalState.SkeletonColor else Bones.RArm.Visible = false end else Bones.RArm.Visible = false end
+                            if lArm then local lap, lv = Camera:WorldToViewportPoint(lArm.Position); if lv then Bones.LArm.From = Vector2.new(pos.X, rootTop.Y); Bones.LArm.To = Vector2.new(lap.X, lap.Y); Bones.LArm.Visible = _G.EternalState.SkeletonESP; Bones.LArm.Color = _G.EternalState.SkeletonColor else Bones.LArm.Visible = false end else Bones.LArm.Visible = false end
                         else
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
 
                     else
-                        Box.Visible = false; Name.Visible = false; Dist.Visible = false; Tool.Visible = false
-                        HealthBarBg.Visible = false; HealthBar.Visible = false
-                        ArmorBarBg.Visible = false; ArmorBar.Visible = false
+                        Box.Visible = false; Name.Visible = false; Dist.Visible = false
                         for _, l in pairs(Bones) do l.Visible = false end
                     end
                 else
-                    Box.Visible = false; Name.Visible = false; Dist.Visible = false; Tool.Visible = false
-                    HealthBarBg.Visible = false; HealthBar.Visible = false
-                    ArmorBarBg.Visible = false; ArmorBar.Visible = false
+                    Box.Visible = false; Name.Visible = false; Dist.Visible = false
                     for _, l in pairs(Bones) do l.Visible = false end
                 end
             end)
         end
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
-        
-        -- CHAMS SYSTEM via Highlight (corrigido)
-        -- DepthMode = AlwaysOnTop -> chams aparecem ATRAVÉS das paredes
-        -- Usa eventos (CharacterAdded/PlayerRemoving) em vez de polling no Heartbeat
-        local chamsApplied = {} -- [player] = { hl = Highlight, charConn = RBXScriptConnection }
-
-        local CHAMS_PRESETS = {
-            ["Neon"]       = { fill = 0.2,  outline = 0.0,  outlineColor = Color3.fromRGB(255,255,255) },
-            ["ForceField"] = { fill = 0.4,  outline = 0.3,  outlineColor = Color3.fromRGB(100,200,255) },
-            ["Glass"]      = { fill = 0.6,  outline = 0.0,  outlineColor = Color3.fromRGB(255,255,255) },
-            ["Plastic"]    = { fill = 0.0,  outline = 0.0,  outlineColor = Color3.fromRGB(0,  0,   0)  },
-        }
-
-        local function applyHighlight(char, player)
-            -- Remove highlight antigo do personagem, se existir
-            local old = char:FindFirstChild("EternalChams")
-            if old then old:Destroy() end
-
-            local preset = CHAMS_PRESETS[_G.EternalState.ChamsMat] or CHAMS_PRESETS["Neon"]
-            local fillColor = _G.EternalState.ChamsColor
-
-            local hl = Instance.new("Highlight")
-            hl.Name              = "EternalChams"
-            hl.Adornee           = char
-            hl.FillColor         = fillColor
-            hl.FillTransparency  = preset.fill
-            hl.OutlineColor      = Color3.new(1,1,1) -- Force white outline for contrast
-            hl.OutlineTransparency = preset.outline
-            hl.Enabled           = true
-            hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
-            hl.Parent            = char
-
-            if chamsApplied[player] then
-                local old_entry = chamsApplied[player]
-                if old_entry.hl and old_entry.hl.Parent then old_entry.hl:Destroy() end
-            end
-            chamsApplied[player] = { hl = hl }
-        end
-
-        local function removeChams(player)
-            local entry = chamsApplied[player]
-            if entry then
-                pcall(function()
-                    if entry.hl and entry.hl.Parent then entry.hl:Destroy() end
-                end)
-                chamsApplied[player] = nil
-            end
-        end
-
-        local function setupPlayerChams(player)
-            -- Aplica no personagem atual
-            if player.Character and _G.EternalState.Chams then
-                applyHighlight(player.Character, player)
-            end
-            -- Reaplicar ao respawnar
-            player.CharacterAdded:Connect(function(newChar)
-                task.wait(0.1) -- aguarda o personagem carregar
-                if _G.EternalState.Chams then
-                    applyHighlight(newChar, player)
-                end
-            end)
-        end
-
-        -- Inicializar para jogadores já no servidor
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then setupPlayerChams(p) end
-        end
-        Players.PlayerAdded:Connect(function(p)
-            if p ~= LocalPlayer then setupPlayerChams(p) end
-        end)
-        Players.PlayerRemoving:Connect(function(p)
-            removeChams(p)
-        end)
-
-        -- Heartbeat apenas para: toggle ON/OFF, atualizar cor/preset quando mudam
-        local lastChamsOn    = false
-        local lastChamsColor = Color3.new(0, 0, 0)
-        local lastChamsMat   = ""
-
-        RunService.Heartbeat:Connect(function()
-            local chamsOn    = _G.EternalState.Chams
-            local chamsColor = _G.EternalState.ChamsColor
-            local chamsMat   = _G.EternalState.ChamsMat
-
-            -- Se mudou de estado, cor ou material -> reaplicar todos
-            local changed = (chamsOn ~= lastChamsOn) or
-                            (chamsOn and chamsColor ~= lastChamsColor) or
-                            (chamsOn and chamsMat   ~= lastChamsMat)
-
-            if not changed then return end
-            lastChamsOn    = chamsOn
-            lastChamsColor = chamsColor
-            lastChamsMat   = chamsMat
-
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then
-                    if chamsOn then
-                        local char = p.Character or workspace:FindFirstChild(p.Name)
-                        if char then applyHighlight(char, p) end
-                    else
-                        removeChams(p)
-                    end
-                end
-            end
-        end)
         
         -- PROJECTILE ESP (Looking for common physical projectiles)
         local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
@@ -2296,9 +2006,5 @@ local success, err = pcall(function()
 end)
 
 if not success then
-    pcall(function()
-        if not err:find("Players is not a valid member") then
-            game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 10})
-        end
-    end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
 end
