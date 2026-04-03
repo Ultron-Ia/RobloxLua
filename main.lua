@@ -75,7 +75,17 @@ local success, err = pcall(function()
 
     local function SaveConfig()
         if not isfolder(EternalFolder) then makefolder(EternalFolder) end
-        local data = HttpService:JSONEncode(_G.EternalState)
+        local copy = {}
+        for k, v in pairs(_G.EternalState) do
+            if typeof(v) == "Color3" then
+                copy[k] = {R = v.R, G = v.G, B = v.B}
+            elseif typeof(v) == "EnumItem" then
+                copy[k] = tostring(v)
+            else
+                copy[k] = v
+            end
+        end
+        local data = HttpService:JSONEncode(copy)
         writefile(ConfigFile, data)
         WindUI:Notify({Title="Settings", Content="Configuração salva com sucesso!", Duration=3, Icon = "save"})
     end
@@ -85,7 +95,11 @@ local success, err = pcall(function()
             local success, decoded = pcall(function() return HttpService:JSONDecode(readfile(ConfigFile)) end)
             if success and decoded then
                 for k, v in pairs(decoded) do
-                    _G.EternalState[k] = v
+                    if type(v) == "table" and v.R and v.G and v.B then
+                        _G.EternalState[k] = Color3.new(v.R, v.G, v.B)
+                    else
+                        _G.EternalState[k] = v
+                    end
                 end
                 WindUI:Notify({Title="Settings", Content="Configuração carregada!", Duration=3, Icon = "file-down"})
                 if _G.EternalState.Theme then WindUI:SetTheme(_G.EternalState.Theme) end
