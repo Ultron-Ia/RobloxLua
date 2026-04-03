@@ -2019,7 +2019,63 @@ local success, err = pcall(function()
         end
     })
 
-    -- SETTINGS
+    -- SETTINGS POPULATION
+    Tabs.Settings:Section({ Title = "UI Customization" })
+    
+    -- Watermark Initialization
+    local WatermarkGui = Instance.new("ScreenGui")
+    WatermarkGui.Name = "EternalWatermark"
+    WatermarkGui.IgnoreGuiInset = true
+    WatermarkGui.ResetOnSpawn = false
+    WatermarkGui.Enabled = false
+    WatermarkGui.Parent = (game:GetService("CoreGui") or LocalPlayer:FindFirstChild("PlayerGui"))
+
+    local WatermarkFrame = Instance.new("Frame", WatermarkGui)
+    WatermarkFrame.Size = UDim2.new(0, 240, 0, 28)
+    WatermarkFrame.Position = UDim2.new(0.5, -120, 0, 10)
+    WatermarkFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    WatermarkFrame.BackgroundTransparency = 0.3
+    WatermarkFrame.BorderSizePixel = 0
+    
+    local Corner = Instance.new("UICorner", WatermarkFrame)
+    Corner.CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", WatermarkFrame)
+    Stroke.Color = Color3.fromRGB(255, 255, 255)
+    Stroke.Transparency = 0.8
+    Stroke.Thickness = 1
+
+    local WatermarkText = Instance.new("TextLabel", WatermarkFrame)
+    WatermarkText.Size = UDim2.new(1, -10, 1, 0)
+    WatermarkText.Position = UDim2.new(0, 5, 0, 0)
+    WatermarkText.BackgroundTransparency = 1
+    WatermarkText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    WatermarkText.TextSize = 13
+    WatermarkText.Font = Enum.Font.GothamMedium
+    WatermarkText.Text = "ETERNAL | " .. LocalPlayer.Name .. " | FPS: 0"
+
+    -- FPS Logic
+    local lastUpdate = 0
+    local fpsCount = 0
+    RunService.RenderStepped:Connect(function(dt)
+        if _G.EternalState.Watermark then
+            fpsCount = math.floor(1/dt)
+            if tick() - lastUpdate > 0.5 then -- Update every half second for stability
+                WatermarkText.Text = "ETERNAL | " .. LocalPlayer.Name .. " | FPS: " .. fpsCount
+                lastUpdate = tick()
+            end
+        end
+    end)
+
+    Tabs.Settings:Toggle({
+        Title = "Enable Watermark (Waterproof)",
+        Value = _G.EternalState.Watermark or false,
+        Callback = function(v)
+            _G.EternalState.Watermark = v
+            WatermarkGui.Enabled = v
+        end
+    })
+
     WindUI:Notify({Title="Eternal", Content="Configurações carregadas!", Duration=3, Icon = "settings"})
 
     -- CHEAT CORE ==========================================
