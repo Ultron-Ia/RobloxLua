@@ -166,16 +166,21 @@ local success, err = pcall(function()
             local function ScanEggs()
                 ClearEggESP()
                 local found = 0
+                -- Deteccao aprimorada: procura por TouchInterest ou ProximityPrompt em modelos/parts relacionados a ovos
                 for _, obj in pairs(workspace:GetDescendants()) do
                     local name = obj.Name:lower()
-                    if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model") then
-                        if name:find("egg") or name:find("ovo") or name:find("easter") or name:find("token") then
+                    if (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
+                        -- Apenas conta se for o "corpo" coletavel (tem interacao fisica ou prompt)
+                        if (name:find("egg") or name:find("ovo") or name:find("easter") or name:find("token")) and 
+                           (obj:FindFirstChildOfClass("TouchInterest") or obj:FindFirstChildOfClass("ProximityPrompt")) then
+                            
                             if not obj:FindFirstChild("EggESP_HL") then
                                 local hl = Instance.new("Highlight")
                                 hl.Name = "EggESP_HL"
                                 hl.FillColor = Color3.fromRGB(255, 220, 0)
                                 hl.OutlineColor = Color3.fromRGB(255, 100, 200)
                                 hl.FillTransparency = 0.2
+                                hl.Adornee = obj
                                 hl.Parent = obj
                                 table.insert(eggHighlights, hl)
                                 found = found + 1
@@ -186,21 +191,22 @@ local success, err = pcall(function()
                 return found
             end
 
-            -- Toggle ESP contínuo
-            local eggESPLoop = nil
+            -- Toggle ESP continuo (Loop Seguro)
             BTab:Toggle({Title = "🥚 Egg ESP (Highlight)", Default = false, Callback = function(v)
                 eggESPActive = v
                 if v then
                     local count = ScanEggs()
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos encontrados!", Duration=4, Icon = "search"})
-                    eggESPLoop = RunService.Heartbeat:Connect(function()
-                        -- Re-scan a cada ~3 segundos para pegar ovos novos
-                        task.wait(3)
-                        if eggESPActive then ScanEggs() end
+                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos oficiais!", Duration=4, Icon = "search"})
+                    
+                    -- Task Spawn eh mais seguro que Heartbeat para isso
+                    task.spawn(function()
+                        while eggESPActive do
+                            task.wait(5) -- Verifica novos ovos a cada 5 segundos
+                            if eggESPActive then ScanEggs() end
+                        end
                     end)
                 else
                     ClearEggESP()
-                    if eggESPLoop then eggESPLoop:Disconnect(); eggESPLoop = nil end
                     WindUI:Notify({Title="🥚 Egg ESP", Content="ESP desativado.", Duration=2, Icon = "eye-off"})
                 end
             end})
