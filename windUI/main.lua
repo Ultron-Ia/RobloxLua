@@ -179,7 +179,7 @@ local success, err = pcall(function()
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
                 
                 -- ============================================
-                -- EASTER EVENT 2024
+                -- EASTER EVENT 2024 (FORÇADO NO TOPO)
                 -- ============================================
                 BTab:Section({ Title = "🥚 Easter Egg Hunt Event" })
                 
@@ -201,32 +201,24 @@ local success, err = pcall(function()
                     end
                     
                     if #eggs == 0 then
-                        WindUI:Notify({Title="Egg Hunt", Content="Nenhum ovo encontrado no momento!", Duration=3, Icon = "search"})
+                        WindUI:Notify({Title="Egg Hunt", Content="Nenhum ovo encontrado!", Duration=3, Icon = "search"})
                         return
                     end
                     
-                    WindUI:Notify({Title="Egg Hunt", Content="Iniciando coleta de "..#eggs.." ovos...", Duration=3, Icon = "map-pin"})
-                    
                     task.spawn(function()
                         for i, egg in ipairs(eggs) do
-                            if not _G.EternalState.NoClip then 
-                                WindUI:Notify({Title="Aviso", Content="Ativando NoClip temporário para segurança...", Duration=2})
-                                _G.EternalState.NoClip = true
-                            end
-                            
                             local pos = egg:IsA("Model") and (egg.PrimaryPart and egg.PrimaryPart.CFrame or egg:GetModelCFrame()) or egg.CFrame
                             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = pos
-                                task.wait(0.6) -- Delay seguro para o servidor registrar
+                                task.wait(0.5)
                             end
                         end
-                        WindUI:Notify({Title="Egg Hunt", Content="Coleta finalizada!", Duration=3, Icon = "check"})
                     end)
                 end})
 
                 BTab:Section({ Title = "Target Player Control" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
-                BTab:Button({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
+                BTab:Button({Title = "Refresh List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
             
                 BTab:Section({ Title = "Target Actions" })
                 BTab:Button({Title = "Teleport To Target", Callback = function()
