@@ -2067,75 +2067,68 @@ local success, err = pcall(function()
                         -- Advanced Chams via Highlight (sem spam de material por frame)
                         -- O estado é gerenciado fora do RenderStepped pelo watcher abaixo
 
-                        -- Skeleton ESP (Full R6/R15/Custom - matches C++ Givenchy skeleton)
+                        -- Skeleton ESP (Fixed R6/R15 Hybrid - Brookhaven compatible)
                         if _G.EternalState.SkeletonESP then
                             local skColor = _G.EternalState.SkeletonColor
 
-                            local function findPart(names)
-                                for _, n in ipairs(names) do
-                                    local part = char:FindFirstChild(n)
-                                    if part and part:IsA("BasePart") then return part end
-                                end
-                                return nil
-                            end
-
-                            local function drawBone(id, partA, partB)
+                            local function drawBone(id, pA, pB)
                                 local bone = GetBone(id)
-                                if not partA or not partB then
-                                    bone.Visible = false
-                                    return
-                                end
-                                local ok1, sA = pcall(function() return Camera:WorldToViewportPoint(partA.Position) end)
-                                local ok2, sB = pcall(function() return Camera:WorldToViewportPoint(partB.Position) end)
-                                if ok1 and ok2 and sA.Z > 0 and sB.Z > 0 then
-                                    bone.From    = Vector2.new(sA.X, sA.Y)
-                                    bone.To      = Vector2.new(sB.X, sB.Y)
-                                    bone.Color   = skColor
-                                    bone.Thickness = 1.5
+                                if not pA or not pB then bone.Visible = false return end
+                                local sA, vA = Camera:WorldToViewportPoint(pA.Position)
+                                local sB, vB = Camera:WorldToViewportPoint(pB.Position)
+                                if vA and vB and sA.Z > 0 and sB.Z > 0 then
                                     bone.Visible = true
+                                    bone.From = Vector2.new(sA.X, sA.Y)
+                                    bone.To = Vector2.new(sB.X, sB.Y)
+                                    bone.Color = skColor
                                 else
                                     bone.Visible = false
                                 end
                             end
 
-                            -- Find all relevant parts (compatible with R6, R15 and custom rigs)
-                            local pHead       = findPart({"Head"})
-                            local pUpperTorso = findPart({"UpperTorso", "Torso"})
-                            local pLowerTorso = findPart({"LowerTorso", "HumanoidRootPart", "Torso"})
-
-                            local pRUpperArm  = findPart({"RightUpperArm",  "Right Arm"})
-                            local pLUpperArm  = findPart({"LeftUpperArm",   "Left Arm"})
-                            local pRLowerArm  = findPart({"RightLowerArm"})
-                            local pLLowerArm  = findPart({"LeftLowerArm"})
-                            local pRHand      = findPart({"RightHand",  "Right Arm"})
-                            local pLHand      = findPart({"LeftHand",   "Left Arm"})
-
-                            local pRUpperLeg  = findPart({"RightUpperLeg", "Right Leg"})
-                            local pLUpperLeg  = findPart({"LeftUpperLeg",  "Left Leg"})
-                            local pRLowerLeg  = findPart({"RightLowerLeg"})
-                            local pLLowerLeg  = findPart({"LeftLowerLeg"})
-                            local pRFoot      = findPart({"RightFoot", "Right Leg"})
-                            local pLFoot      = findPart({"LeftFoot",  "Left Leg"})
-
-                            -- Core skeleton (same as C++ project)
-                            drawBone("Head",      pHead,      pUpperTorso)  -- head -> upper torso (neck)
-                            drawBone("Spine",     pUpperTorso, pLowerTorso) -- upper torso -> lower torso
-
-                            -- Arms
-                            drawBone("RUpperArm", pUpperTorso, pRUpperArm)  -- torso -> right upper arm
-                            drawBone("LUpperArm", pUpperTorso, pLUpperArm)  -- torso -> left upper arm
-                            drawBone("RLowerArm", pRUpperArm,  pRLowerArm)  -- right upper arm -> right lower arm
-                            drawBone("LLowerArm", pLUpperArm,  pLLowerArm)  -- left upper arm -> left lower arm
-                            drawBone("RHand",     pRLowerArm,  pRHand)      -- right lower arm -> right hand
-                            drawBone("LHand",     pLLowerArm,  pLHand)      -- left lower arm -> left hand
-
-                            -- Legs
-                            drawBone("RUpperLeg", pLowerTorso, pRUpperLeg)  -- hips -> right upper leg
-                            drawBone("LUpperLeg", pLowerTorso, pLUpperLeg)  -- hips -> left upper leg
-                            drawBone("RLowerLeg", pRUpperLeg,  pRLowerLeg)  -- right upper leg -> right lower leg
-                            drawBone("LLowerLeg", pLUpperLeg,  pLLowerLeg)  -- left upper leg -> left lower leg
-                            drawBone("RFoot",     pRLowerLeg,  pRFoot)      -- right lower leg -> right foot
-                            drawBone("LFoot",     pLLowerLeg,  pLFoot)      -- left lower leg -> left foot
+                            local isR15 = char:FindFirstChild("UpperTorso") ~= nil
+                            
+                            if isR15 then
+                                -- R15 Bone Map
+                                local parts = {
+                                    Head = char:FindFirstChild("Head"),
+                                    UpperTorso = char:FindFirstChild("UpperTorso"),
+                                    LowerTorso = char:FindFirstChild("LowerTorso"),
+                                    RUA = char:FindFirstChild("RightUpperArm"), RLA = char:FindFirstChild("RightLowerArm"), RH = char:FindFirstChild("RightHand"),
+                                    LUA = char:FindFirstChild("LeftUpperArm"), LLA = char:FindFirstChild("LeftLowerArm"), LH = char:FindFirstChild("LeftHand"),
+                                    RUL = char:FindFirstChild("RightUpperLeg"), RLL = char:FindFirstChild("RightLowerLeg"), RF = char:FindFirstChild("RightFoot"),
+                                    LUL = char:FindFirstChild("LeftUpperLeg"), LLL = char:FindFirstChild("LeftLowerLeg"), LF = char:FindFirstChild("LeftFoot")
+                                }
+                                drawBone("H_UT", parts.Head, parts.UpperTorso)
+                                drawBone("UT_LT", parts.UpperTorso, parts.LowerTorso)
+                                -- Arms
+                                drawBone("UT_RUA", parts.UpperTorso, parts.RUA); drawBone("RUA_RLA", parts.RUA, parts.RLA); drawBone("RLA_RH", parts.RLA, parts.RH)
+                                drawBone("UT_LUA", parts.UpperTorso, parts.LUA); drawBone("LUA_LLA", parts.LUA, parts.LLA); drawBone("LLA_LH", parts.LLA, parts.LH)
+                                -- Legs
+                                drawBone("LT_RUL", parts.LowerTorso, parts.RUL); drawBone("RUL_RLL", parts.RUL, parts.RLL); drawBone("RLL_RF", parts.RLL, parts.RF)
+                                drawBone("LT_LUL", parts.LowerTorso, parts.LUL); drawBone("LUL_LLL", parts.LUL, parts.LLL); drawBone("LLL_LF", parts.LLL, parts.LF)
+                            else
+                                -- R6 Bone Map
+                                local parts = {
+                                    Head = char:FindFirstChild("Head"),
+                                    Torso = char:FindFirstChild("Torso"),
+                                    RA = char:FindFirstChild("Right Arm"),
+                                    LA = char:FindFirstChild("Left Arm"),
+                                    RL = char:FindFirstChild("Right Leg"),
+                                    LL = char:FindFirstChild("Left Leg")
+                                }
+                                drawBone("H_T", parts.Head, parts.Torso)
+                                drawBone("T_RA", parts.Torso, parts.RA)
+                                drawBone("T_LA", parts.Torso, parts.LA)
+                                drawBone("T_RL", parts.Torso, parts.RL)
+                                drawBone("T_LL", parts.Torso, parts.LL)
+                                -- Kill unused bones from dynamic pool
+                                local unused = {"UT_LT", "UT_RUA", "RUA_RLA", "RLA_RH", "UT_LUA", "LUA_LLA", "LLA_LH", "LT_RUL", "RUL_RLL", "RLL_RF", "LT_LUL", "LUL_LLL", "LLL_LF"}
+                                for _, id in ipairs(unused) do if Bones[id] then Bones[id].Visible = false end end
+                            end
+                        else
+                            for _, l in pairs(Bones) do l.Visible = false end
+                        end
                         else
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
@@ -2182,9 +2175,9 @@ local success, err = pcall(function()
             hl.Adornee           = char
             hl.FillColor         = fillColor
             hl.FillTransparency  = preset.fill
-            hl.OutlineColor      = preset.outlineColor
+            hl.OutlineColor      = Color3.new(1,1,1) -- Force white outline for contrast
             hl.OutlineTransparency = preset.outline
-            -- DepthMode = AlwaysOnTop: chams visíveis ATRAVÉS das paredes (wallhack)
+            hl.Enabled           = true
             hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
             hl.Parent            = char
 
