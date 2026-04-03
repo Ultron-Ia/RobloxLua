@@ -256,7 +256,6 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="⚡ Collect", Content="Finalizado! Visitou " .. collected .. " locais de ovos.", Duration=4, Icon = "check-circle"})
                 end)
             end})
-            end})
 
             -- Mostrar contagem de progresso (lê o HUD)
             BTab:Button({Title = "📊 Ver Progresso (HUD)", Callback = function()
