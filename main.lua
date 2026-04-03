@@ -147,13 +147,6 @@ local success, err = pcall(function()
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
                 BTab:Button({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
             
-                BTab:Section({ Title = "Target Actions" })
-                BTab:Button({Title = "Teleport To Target", Callback = function()
-                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
-                end
-            end})
 
 -- ============================================
             -- EGG HUNT EVENT
@@ -247,6 +240,18 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="📊 Progresso", Content="HUD não encontrado automaticamente.", Duration=3, Icon = "info"})
                 end)
             end})
+
+
+
+                BTab:Section({ Title = "Target Actions" })
+                BTab:Button({Title = "Teleport To Target", Callback = function()
+                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
+                end
+            end})
+
+
 
 
                 BTab:Button({Title = "Copy Outfit", Callback = function()
@@ -2019,34 +2024,57 @@ local success, err = pcall(function()
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
                         Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((localPos - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.EternalState.DistESP
                         
-                        -- Advanced Chams (Material Override)
-                        if _G.EternalState.Chams then
-                            for _, part in pairs(char:GetDescendants()) do
-                                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                                    pcall(function() 
-                                        part.Material = Enum.Material[_G.EternalState.ChamsMat]
-                                        part.Color = _G.EternalState.ChamsColor
-                                    end)
+                        -- Chams (Note: Otimizado fora do loop para evitar lag)
+
+                        -- Skeleton ESP (Corrigido para Brookhaven/R15 e R6)
+                        if _G.EternalState.SkeletonESP then
+                            local skColor = _G.EternalState.SkeletonColor
+                            local function drawBone(id, pA, pB)
+                                local bone = GetBone(id) -- Puxa do pool dinâmico
+                                if not pA or not pB then bone.Visible = false return end
+                                local sA, vA = Camera:WorldToViewportPoint(pA.Position)
+                                local sB, vB = Camera:WorldToViewportPoint(pB.Position)
+                                if vA and vB and sA.Z > 0 and sB.Z > 0 then
+                                    bone.Visible = true
+                                    bone.From = Vector2.new(sA.X, sA.Y)
+                                    bone.To = Vector2.new(sB.X, sB.Y)
+                                    bone.Color = skColor
+                                else
+                                    bone.Visible = false
                                 end
                             end
-                        end
-
-                        -- Skeleton ESP
-                        if _G.EternalState.SkeletonESP and head then
-                            local neckP, nV = Camera:WorldToViewportPoint(head.Position - Vector3.new(0, 0.5, 0))
-                            local pelvisP, pV = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 1, 0))
-                            if nV and pV then
-                                Bones.Spine.From = Vector2.new(pos.X, rootTop.Y); Bones.Spine.To = Vector2.new(pelvisP.X, pelvisP.Y); Bones.Spine.Visible = _G.EternalState.SkeletonESP; Bones.Spine.Color = _G.EternalState.SkeletonColor
-                                Bones.Head.From = Vector2.new(neckP.X, neckP.Y); Bones.Head.To = Vector2.new(pos.X, rootTop.Y); Bones.Head.Visible = _G.EternalState.SkeletonESP; Bones.Head.Color = _G.EternalState.SkeletonColor
+                            local isR15 = char:FindFirstChild("UpperTorso") ~= nil
+                            
+                            if isR15 then
+                                -- Mapeamento R15 (Braços, Pernas e Tronco Superior/Lower)
+                                local parts = {
+                                    Head = char:FindFirstChild("Head"),
+                                    UpperTorso = char:FindFirstChild("UpperTorso"),
+                                    LowerTorso = char:FindFirstChild("LowerTorso"),
+                                    RUA = char:FindFirstChild("RightUpperArm"), RLA = char:FindFirstChild("RightLowerArm"), RH = char:FindFirstChild("RightHand"),
+                                    LUA = char:FindFirstChild("LeftUpperArm"), LLA = char:FindFirstChild("LeftLowerArm"), LH = char:FindFirstChild("LeftHand"),
+                                    RUL = char:FindFirstChild("RightUpperLeg"), RLL = char:FindFirstChild("RightLowerLeg"), RF = char:FindFirstChild("RightFoot"),
+                                    LUL = char:FindFirstChild("LeftUpperLeg"), LLL = char:FindFirstChild("LeftLowerLeg"), LF = char:FindFirstChild("LeftFoot")
+                                }
+                                drawBone("H_UT", parts.Head, parts.UpperTorso)
+                                drawBone("UT_LT", parts.UpperTorso, parts.LowerTorso)
+                                drawBone("UT_RUA", parts.UpperTorso, parts.RUA); drawBone("RUA_RLA", parts.RUA, parts.RLA); drawBone("RLA_RH", parts.RLA, parts.RH)
+                                drawBone("UT_LUA", parts.UpperTorso, parts.LUA); drawBone("LUA_LLA", parts.LUA, parts.LLA); drawBone("LLA_LH", parts.LLA, parts.LH)
+                                drawBone("LT_RUL", parts.LowerTorso, parts.RUL); drawBone("RUL_RLL", parts.RUL, parts.RLL); drawBone("RLL_RF", parts.RLL, parts.RF)
+                                drawBone("LT_LUL", parts.LowerTorso, parts.LUL); drawBone("LUL_LLL", parts.LUL, parts.LLL); drawBone("LLL_LF", parts.LLL, parts.LF)
                             else
-                                Bones.Spine.Visible = false; Bones.Head.Visible = false
+                                -- Mapeamento R6 (Padrão)
+                                local parts = {
+                                    Head = char:FindFirstChild("Head"), Torso = char:FindFirstChild("Torso"),
+                                    RA = char:FindFirstChild("Right Arm"), LA = char:FindFirstChild("Left Arm"),
+                                    RL = char:FindFirstChild("Right Leg"), LL = char:FindFirstChild("Left Leg")
+                                }
+                                drawBone("H_T", parts.Head, parts.Torso)
+                                drawBone("T_RA", parts.Torso, parts.RA); drawBone("T_LA", parts.Torso, parts.LA)
+                                drawBone("T_RL", parts.Torso, parts.RL); drawBone("T_LL", parts.Torso, parts.LL)
                             end
-                            -- Arms/Legs conceptual (simplified R6 for speed)
-                            local rArm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightHand")
-                            local lArm = char:FindFirstChild("Left Arm") or char:FindFirstChild("LeftHand")
-                            if rArm then local rap, rv = Camera:WorldToViewportPoint(rArm.Position); if rv then Bones.RArm.From = Vector2.new(pos.X, rootTop.Y); Bones.RArm.To = Vector2.new(rap.X, rap.Y); Bones.RArm.Visible = _G.EternalState.SkeletonESP; Bones.RArm.Color = _G.EternalState.SkeletonColor else Bones.RArm.Visible = false end else Bones.RArm.Visible = false end
-                            if lArm then local lap, lv = Camera:WorldToViewportPoint(lArm.Position); if lv then Bones.LArm.From = Vector2.new(pos.X, rootTop.Y); Bones.LArm.To = Vector2.new(lap.X, lap.Y); Bones.LArm.Visible = _G.EternalState.SkeletonESP; Bones.LArm.Color = _G.EternalState.SkeletonColor else Bones.LArm.Visible = false end else Bones.LArm.Visible = false end
                         else
+                            -- Esconde as linhas se o Skeleton estiver OFF
                             for _, l in pairs(Bones) do l.Visible = false end
                         end
 
@@ -2062,6 +2090,51 @@ local success, err = pcall(function()
         end
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
+        
+        -- CHAMS SYSTEM via Highlight (Corrigido e Otimizado)
+        local chamsApplied = {} 
+
+        local CHAMS_PRESETS = {
+            ["Neon"]       = { fill = 0.2,  outline = 0.0 },
+            ["ForceField"] = { fill = 0.4,  outline = 0.3 },
+            ["Glass"]      = { fill = 0.6,  outline = 0.0 },
+            ["Plastic"]    = { fill = 0.0,  outline = 0.0 },
+        }
+
+        local function applyHighlight(char, player)
+            local old = char:FindFirstChild("EternalChams")
+            if old then old:Destroy() end
+
+            local preset = CHAMS_PRESETS[_G.EternalState.ChamsMat] or CHAMS_PRESETS["Neon"]
+            local hl = Instance.new("Highlight")
+            hl.Name              = "EternalChams"
+            hl.Adornee           = char
+            hl.FillColor         = _G.EternalState.ChamsColor
+            hl.FillTransparency  = preset.fill
+            hl.OutlineColor      = Color3.new(1,1,1)
+            hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop -- Visualização através das paredes
+            hl.Parent            = char
+            chamsApplied[player] = { hl = hl }
+        end
+
+        local function removeChams(player)
+            if chamsApplied[player] and chamsApplied[player].hl then
+                pcall(function() chamsApplied[player].hl:Destroy() end)
+                chamsApplied[player] = nil
+            end
+        end
+
+        RunService.Heartbeat:Connect(function()
+            if _G.EternalState.Chams then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        if not chamsApplied[p] then applyHighlight(p.Character, p) end
+                    end
+                end
+            else
+                for p, _ in pairs(chamsApplied) do removeChams(p) end
+            end
+        end)
         
         -- PROJECTILE ESP (Looking for common physical projectiles)
         local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
