@@ -61,13 +61,13 @@ local success, err = pcall(function()
         SkinID = "0"
     }
 
-    -- SHARED RGB CLOCK (Performance Optimized)
-    local sharedRGB = Color3.new(1,1,1)
+    -- SHARED RGB CLOCK (Performance Optimized & Robust)
+    sharedRGB = Color3.new(1,1,1)
     task.spawn(function()
         while true do
             task.wait()
-            local speed = _G.EternalState.RGBSpeed or 3
-            sharedRGB = Color3.fromHSV(tick() * (speed/15) % 1, 0.8, 1)
+            local speed = (_G.EternalState and _G.EternalState.RGBSpeed) or 3
+            sharedRGB = Color3.fromHSV((tick() * (speed/20)) % 1, 0.8, 1)
         end
     end)
 
@@ -2070,6 +2070,8 @@ local success, err = pcall(function()
                 if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
                     local root = char.HumanoidRootPart
                     local head = char:FindFirstChild("Head")
+                    local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                    
                     if onScreen and pos.Z > 0 then
                         -- Viewport Calculations (Restored)
                         local rootTop = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
@@ -2080,7 +2082,11 @@ local success, err = pcall(function()
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
                         local distance = math.floor((localPos - root.Position).Magnitude)
                         local hum = char:FindFirstChildOfClass("Humanoid")
-                        local hpRatio = hum and (hum.Health / hum.MaxHealth) or 1
+                        
+                        -- Protect against division by zero
+                        local hp = (hum and hum.Health) or 0
+                        local maxHp = (hum and hum.MaxHealth) or 100
+                        local hpRatio = math.clamp(hp / math.max(maxHp, 1), 0, 1)
                         
                         -- Color logic (Fixed Order)
                         local isR15 = char:FindFirstChild("UpperTorso") ~= nil
@@ -2088,11 +2094,17 @@ local success, err = pcall(function()
                         
                         Box.Size = Vector2.new(sizeX, sizeY)
                         Box.Position = Vector2.new(pos.X - sizeX / 2, rootTop.Y)
-                        Box.Visible = _G.EternalState.BoxESP and _G.EternalState.BoxStyle == "Full"
+                        
+                        -- Box Style Logic (More Robust Detection)
+                        local currentStyle = _G.EternalState.BoxStyle
+                        local isFull = currentStyle == "Full" or currentStyle == 1
+                        local isCorners = currentStyle == "Corners" or currentStyle == 2
+                        
+                        Box.Visible = _G.EternalState.BoxESP and isFull
                         Box.Color = mainColor
                         
                         -- Corner Box Logic
-                        local cornersVisible = _G.EternalState.BoxESP and _G.EternalState.BoxStyle == "Corners"
+                        local cornersVisible = _G.EternalState.BoxESP and isCorners
                         if cornersVisible then
                             local x, y, w, h = pos.X - sizeX / 2, rootTop.Y, sizeX, sizeY
                             local lineLen = w / 4
