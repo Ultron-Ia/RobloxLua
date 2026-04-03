@@ -2000,8 +2000,17 @@ local success, err = pcall(function()
             local Name = Drawing.new("Text"); Name.Visible = false; Name.Color = Color3.new(1,1,1); Name.Size = 14; Name.Center = true; Name.Outline = true
             local Dist = Drawing.new("Text"); Dist.Visible = false; Dist.Color = Color3.new(0.8,0.8,0.8); Dist.Size = 13; Dist.Center = true; Dist.Outline = true
             
-            -- Skeleton lines
-            local Bones = { Head = GetLine(), Spine = GetLine(), LArm = GetLine(), RArm = GetLine(), LLeg = GetLine(), RLeg = GetLine() }
+            -- Skeleton lines (Dynamic Pool)
+            local Bones = {}
+            local function GetBone(id)
+                if not Bones[id] then 
+                    local l = Drawing.new("Line")
+                    l.Visible = false
+                    l.Thickness = 1.5
+                    Bones[id] = l
+                end
+                return Bones[id]
+            end
             
             local function cleanup() 
                 Box:Remove(); Name:Remove(); Dist:Remove()
