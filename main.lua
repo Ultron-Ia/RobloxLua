@@ -1107,134 +1107,6 @@ local success, err = pcall(function()
                     end
                 end})
 
-                STab:Button({Title = "🧲 Fling Target", Callback = function()
-                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                        pcall(function()
-                            local bv = Instance.new("BodyVelocity")
-                            bv.Velocity = Vector3.new(math.random(-300,300), 9999, math.random(-300,300))
-                            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                            bv.Parent = t.Character.HumanoidRootPart
-                            task.delay(0.5, function() bv:Destroy() end)
-                        end)
-                        WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.EternalState.TargetPlayer, Duration=3, Icon = "arrow-up"})
-                    end
-                end})
-
-                STab:Button({Title = "☢️ Explode Target", Callback = function()
-                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                        local exp = Instance.new("Explosion")
-                        exp.Position = t.Character.HumanoidRootPart.Position
-                        exp.BlastRadius = 20; exp.BlastPressure = 5000000
-                        exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
-                        WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.EternalState.TargetPlayer, Duration=3, Icon = "flame"})
-                    end
-                end})
-
-                -- Freeze
-                local sailorFreezeLoop = nil
-                STab:Toggle({Title = "🔒 Freeze Target (Loop)", Value = false, Callback = function(v)
-                    if v then
-                        local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                            local frozenCF = t.Character.HumanoidRootPart.CFrame
-                            sailorFreezeLoop = RunService.Heartbeat:Connect(function()
-                                local tgt = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                                if tgt and tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart") then
-                                    pcall(function()
-                                        tgt.Character.HumanoidRootPart.CFrame = frozenCF
-                                        tgt.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-                                    end)
-                                    if tgt.Character:FindFirstChildOfClass("Humanoid") then
-                                        tgt.Character.Humanoid.WalkSpeed = 0
-                                        tgt.Character.Humanoid.JumpPower = 0
-                                    end
-                                end
-                            end)
-                        end
-                    else
-                        if sailorFreezeLoop then sailorFreezeLoop:Disconnect(); sailorFreezeLoop = nil end
-                        local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                        if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
-                            t.Character.Humanoid.WalkSpeed = 16
-                            t.Character.Humanoid.JumpPower = 50
-                        end
-                    end
-                end})
-
-                -- Loop Kill
-                local sailorLoopKill = nil
-                STab:Toggle({Title = "🔁 Loop Kill Target", Value = false, Callback = function(v)
-                    if v then
-                        sailorLoopKill = RunService.Heartbeat:Connect(function()
-                            local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                            if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
-                                t.Character.Humanoid.Health = 0
-                            end
-                        end)
-                    else
-                        if sailorLoopKill then sailorLoopKill:Disconnect(); sailorLoopKill = nil end
-                    end
-                end})
-
-                -- Jail
-                STab:Button({Title = "🔒 Jail Target", Callback = function()
-                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                        local pos = t.Character.HumanoidRootPart.Position
-                        local walls = {
-                            {CFrame.new(pos + Vector3.new(4, 2, 0)),  Vector3.new(0.5, 6, 8)},
-                            {CFrame.new(pos + Vector3.new(-4, 2, 0)), Vector3.new(0.5, 6, 8)},
-                            {CFrame.new(pos + Vector3.new(0, 2, 4)),  Vector3.new(8, 6, 0.5)},
-                            {CFrame.new(pos + Vector3.new(0, 2, -4)), Vector3.new(8, 6, 0.5)},
-                            {CFrame.new(pos + Vector3.new(0, 5, 0)),  Vector3.new(8, 0.5, 8)},
-                        }
-                        for _, wd in pairs(walls) do
-                            local part = Instance.new("Part")
-                            part.Anchored = true; part.CanCollide = true
-                            part.Size = wd[2]; part.CFrame = wd[1]
-                            part.BrickColor = BrickColor.new("Hot pink")
-                            part.Material = Enum.Material.Neon
-                            part.Transparency = 0.4; part.Name = "SailorJail"
-                            part.Parent = workspace
-                            game:GetService("Debris"):AddItem(part, 30)
-                        end
-                        WindUI:Notify({Title="🔒 Jail", Content=_G.EternalState.TargetPlayer .. " jailed!", Duration=4, Icon = "lock"})
-                    end
-                end})
-
-                -- ── Horror Commands ───────────────────────────────
-                STab:Section({ Title = "🎃 Horror Commands" })
-
-                STab:Button({Title = "🪄 Backrooms (Banish)", Callback = function()
-                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                        pcall(function() t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999) end)
-                        pcall(function()
-                            local lighting = game:GetService("Lighting")
-                            local ob, oa = lighting.Brightness, lighting.Ambient
-                            lighting.Brightness = 0.05
-                            lighting.Ambient = Color3.fromRGB(20, 15, 10)
-                            lighting.FogColor = Color3.fromRGB(210, 200, 170)
-                            lighting.FogEnd = 60; lighting.FogStart = 5
-                            task.delay(8, function()
-                                lighting.Brightness = ob; lighting.Ambient = oa
-                                lighting.FogEnd = 100000; lighting.FogStart = 0
-                            end)
-                        end)
-                        WindUI:Notify({Title="🪄 Backrooms", Content=_G.EternalState.TargetPlayer .. " banished!", Duration=5, Icon = "ghost"})
-                    end
-                end})
-
-                local function SailorJumpscare(icon, flashR, flashG, flashB, text, delay_)
-                    ElephantScare(icon, flashR, flashG, flashB, text, delay_)
-                end
-
-                STab:Button({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) WindUI:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2, Icon = "eye"}) end})
-                STab:Button({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2, Icon = "skull"}) end})
-                STab:Button({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2, Icon = "ghost"}) end})
-                STab:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2, Icon = "ghost"}) end})
 
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
@@ -1311,6 +1183,132 @@ local success, err = pcall(function()
             STab:Button({Title = "Refresh List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
             
             STab:Section({ Title = "Interactions" })
+            -- MOVED: Horror & Troll Commands
+            STab:Button({Title = "🧲 Fling Target", Callback = function()
+                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    pcall(function()
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Velocity = Vector3.new(math.random(-300,300), 9999, math.random(-300,300))
+                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        bv.Parent = t.Character.HumanoidRootPart
+                        task.delay(0.5, function() bv:Destroy() end)
+                    end)
+                    WindUI:Notify({Title="🧲 Fling", Content="Flung " .. _G.EternalState.TargetPlayer, Duration=3, Icon = "arrow-up"})
+                end
+            end})
+
+            STab:Button({Title = "☢️ Explode Target", Callback = function()
+                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local exp = Instance.new("Explosion")
+                    exp.Position = t.Character.HumanoidRootPart.Position
+                    exp.BlastRadius = 20; exp.BlastPressure = 5000000
+                    exp.DestroyJointRadiusPercent = 0; exp.Parent = workspace
+                    WindUI:Notify({Title="☢️ Explode", Content="Exploded " .. _G.EternalState.TargetPlayer, Duration=3, Icon = "flame"})
+                end
+            end})
+
+            local sailorFreezeLoop = nil
+            STab:Toggle({Title = "🔒 Freeze Target (Loop)", Value = false, Callback = function(v)
+                if v then
+                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                        local frozenCF = t.Character.HumanoidRootPart.CFrame
+                        sailorFreezeLoop = RunService.Heartbeat:Connect(function()
+                            local tgt = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                            if tgt and tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart") then
+                                pcall(function()
+                                    tgt.Character.HumanoidRootPart.CFrame = frozenCF
+                                    tgt.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                                end)
+                                if tgt.Character:FindFirstChildOfClass("Humanoid") then
+                                    tgt.Character.Humanoid.WalkSpeed = 0
+                                    tgt.Character.Humanoid.JumpPower = 0
+                                end
+                            end
+                        end)
+                    end
+                else
+                    if sailorFreezeLoop then sailorFreezeLoop:Disconnect(); sailorFreezeLoop = nil end
+                    local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                    if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                        t.Character.Humanoid.WalkSpeed = 16
+                        t.Character.Humanoid.JumpPower = 50
+                    end
+                end
+            end})
+
+            local sailorLoopKill = nil
+            STab:Toggle({Title = "🔁 Loop Kill Target", Value = false, Callback = function(v)
+                if v then
+                    sailorLoopKill = RunService.Heartbeat:Connect(function()
+                        local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                        if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
+                            t.Character.Humanoid.Health = 0
+                        end
+                    end)
+                else
+                    if sailorLoopKill then sailorLoopKill:Disconnect(); sailorLoopKill = nil end
+                end
+            end})
+
+            STab:Button({Title = "🔒 Jail Target", Callback = function()
+                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    local pos = t.Character.HumanoidRootPart.Position
+                    local walls = {
+                        {CFrame.new(pos + Vector3.new(4, 2, 0)),  Vector3.new(0.5, 6, 8)},
+                        {CFrame.new(pos + Vector3.new(-4, 2, 0)), Vector3.new(0.5, 6, 8)},
+                        {CFrame.new(pos + Vector3.new(0, 2, 4)),  Vector3.new(8, 6, 0.5)},
+                        {CFrame.new(pos + Vector3.new(0, 2, -4)), Vector3.new(8, 6, 0.5)},
+                        {CFrame.new(pos + Vector3.new(0, 5, 0)),  Vector3.new(8, 0.5, 8)},
+                    }
+                    for _, wd in pairs(walls) do
+                        local part = Instance.new("Part")
+                        part.Anchored = true; part.CanCollide = true
+                        part.Size = wd[2]; part.CFrame = wd[1]
+                        part.BrickColor = BrickColor.new("Hot pink")
+                        part.Material = Enum.Material.Neon
+                        part.Transparency = 0.4; part.Name = "SailorJail"
+                        part.Parent = workspace
+                        game:GetService("Debris"):AddItem(part, 30)
+                    end
+                    WindUI:Notify({Title="🔒 Jail", Content=_G.EternalState.TargetPlayer .. " jailed!", Duration=4, Icon = "lock"})
+                end
+            end})
+
+            STab:Section({ Title = "🎃 Horror Commands" })
+
+            STab:Button({Title = "🪄 Backrooms (Banish)", Callback = function()
+                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                    pcall(function() t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999) end)
+                    pcall(function()
+                        local lighting = game:GetService("Lighting")
+                        local ob, oa = lighting.Brightness, lighting.Ambient
+                        lighting.Brightness = 0.05
+                        lighting.Ambient = Color3.fromRGB(20, 15, 10)
+                        lighting.FogColor = Color3.fromRGB(210, 200, 170)
+                        lighting.FogEnd = 60; lighting.FogStart = 5
+                        task.delay(8, function()
+                            lighting.Brightness = ob; lighting.Ambient = oa
+                            lighting.FogEnd = 100000; lighting.FogStart = 0
+                        end)
+                    end)
+                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.EternalState.TargetPlayer .. " banished!", Duration=5, Icon = "ghost"})
+                end
+            end})
+
+            local function SailorJumpscare(icon, flashR, flashG, flashB, text, delay_)
+                ElephantScare(icon, flashR, flashG, flashB, text, delay_)
+            end
+
+            STab:Button({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) WindUI:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2, Icon = "eye"}) end})
+            STab:Button({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2, Icon = "skull"}) end})
+            STab:Button({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2, Icon = "ghost"}) end})
+            STab:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2, Icon = "ghost"}) end})
+
             STab:Button({Title = "Teleport To Player", Callback = function()
                 local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
@@ -2072,15 +2070,20 @@ local success, err = pcall(function()
                 if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
                     local root = char.HumanoidRootPart
                     local head = char:FindFirstChild("Head")
-                    local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
-                    
                     if onScreen and pos.Z > 0 then
+                        -- Viewport Calculations (Restored)
+                        local rootTop = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
+                        local rootBottom = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
+                        local sizeY = math.abs(rootBottom.Y - rootTop.Y)
+                        local sizeX = sizeY * 0.6
+                        
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
                         local distance = math.floor((localPos - root.Position).Magnitude)
                         local hum = char:FindFirstChildOfClass("Humanoid")
                         local hpRatio = hum and (hum.Health / hum.MaxHealth) or 1
                         
-                        -- Color logic
+                        -- Color logic (Fixed Order)
+                        local isR15 = char:FindFirstChild("UpperTorso") ~= nil
                         local mainColor = _G.EternalState.RGBEsp and sharedRGB or (isR15 and Color3.new(1,0,0) or Color3.new(1,1,1))
                         
                         Box.Size = Vector2.new(sizeX, sizeY)
