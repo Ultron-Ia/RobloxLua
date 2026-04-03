@@ -154,6 +154,101 @@ local success, err = pcall(function()
                     LocalPlayer.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
                 end
             end})
+
+-- ============================================
+            -- EGG HUNT EVENT
+            -- ============================================
+            BTab:Section({ Title = "🥚 Egg Hunt Event" })
+
+            local eggESPActive = false
+            local eggHighlights = {}
+
+            local function ClearEggESP()
+                for _, hl in pairs(eggHighlights) do
+                    pcall(function() hl:Destroy() end)
+                end
+                eggHighlights = {}
+            end
+
+            local function ScanEggs()
+                ClearEggESP()
+                local found = 0
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    local name = obj.Name:lower()
+                    if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model") then
+                        if name:find("egg") or name:find("ovo") or name:find("easter") or name:find("token") then
+                            if not obj:FindFirstChild("EggESP_HL") then
+                                local hl = Instance.new("Highlight")
+                                hl.Name = "EggESP_HL"
+                                hl.FillColor = Color3.fromRGB(255, 220, 0)
+                                hl.OutlineColor = Color3.fromRGB(255, 100, 200)
+                                hl.FillTransparency = 0.2
+                                hl.Parent = obj
+                                table.insert(eggHighlights, hl)
+                                found = found + 1
+                            end
+                        end
+                    end
+                end
+                return found
+            end
+
+            -- Toggle ESP contínuo
+            local eggESPLoop = nil
+            BTab:Toggle({Title = "🥚 Egg ESP (Highlight)", Default = false, Callback = function(v)
+                eggESPActive = v
+                if v then
+                    local count = ScanEggs()
+                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos encontrados!", Duration=4, Icon = "search"})
+                    eggESPLoop = RunService.Heartbeat:Connect(function()
+                        -- Re-scan a cada ~3 segundos para pegar ovos novos
+                        task.wait(3)
+                        if eggESPActive then ScanEggs() end
+                    end)
+                else
+                    ClearEggESP()
+                    if eggESPLoop then eggESPLoop:Disconnect(); eggESPLoop = nil end
+                    WindUI:Notify({Title="🥚 Egg ESP", Content="ESP desativado.", Duration=2, Icon = "eye-off"})
+                end
+            end})
+
+            -- Scan manual
+            BTab:Button({Title = "🔍 Scan Ovos Agora", Callback = function()
+                local count = ScanEggs()
+                WindUI:Notify({Title="🔍 Scan", Content="Encontrados: " .. count .. " ovos no mapa!", Duration=5, Icon = "map-pin"})
+            end})
+
+            -- Auto Collect (TP para cada ovo)
+            BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos)", Callback = function()
+                local collected = 0
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    local name = obj.Name:lower()
+                    if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and 
+                    (name:find("egg") or name:find("ovo") or name:find("easter")) then
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 3, 0)
+                            task.wait(0.4) -- Espera trigger de coleta
+                            collected = collected + 1
+                        end
+                    end
+                end
+                WindUI:Notify({Title="⚡ Collect", Content="Visitou " .. collected .. " ovos!", Duration=4, Icon = "check-circle"})
+            end})
+
+            -- Mostrar contagem de progresso (lê o HUD)
+            BTab:Button({Title = "📊 Ver Progresso (HUD)", Callback = function()
+                pcall(function()
+                    for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                        if gui:IsA("TextLabel") and (gui.Text:find("/") or gui.Text:find("ovo") or gui.Text:find("egg")) then
+                            WindUI:Notify({Title="📊 Progresso", Content="HUD: " .. gui.Text, Duration=6, Icon = "bar-chart"})
+                            return
+                        end
+                    end
+                    WindUI:Notify({Title="📊 Progresso", Content="HUD não encontrado automaticamente.", Duration=3, Icon = "info"})
+                end)
+            end})
+
+
                 BTab:Button({Title = "Copy Outfit", Callback = function()
                 local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                 if t and t.Character and LocalPlayer.Character then
@@ -1530,98 +1625,7 @@ local success, err = pcall(function()
             end})
 
 
-            -- ============================================
-            -- EGG HUNT EVENT
-            -- ============================================
-            BTab:Section({ Title = "🥚 Egg Hunt Event" })
-
-            local eggESPActive = false
-            local eggHighlights = {}
-
-            local function ClearEggESP()
-                for _, hl in pairs(eggHighlights) do
-                    pcall(function() hl:Destroy() end)
-                end
-                eggHighlights = {}
-            end
-
-            local function ScanEggs()
-                ClearEggESP()
-                local found = 0
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    local name = obj.Name:lower()
-                    if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model") then
-                        if name:find("egg") or name:find("ovo") or name:find("easter") or name:find("token") then
-                            if not obj:FindFirstChild("EggESP_HL") then
-                                local hl = Instance.new("Highlight")
-                                hl.Name = "EggESP_HL"
-                                hl.FillColor = Color3.fromRGB(255, 220, 0)
-                                hl.OutlineColor = Color3.fromRGB(255, 100, 200)
-                                hl.FillTransparency = 0.2
-                                hl.Parent = obj
-                                table.insert(eggHighlights, hl)
-                                found = found + 1
-                            end
-                        end
-                    end
-                end
-                return found
-            end
-
-            -- Toggle ESP contínuo
-            local eggESPLoop = nil
-            BTab:Toggle({Title = "🥚 Egg ESP (Highlight)", Default = false, Callback = function(v)
-                eggESPActive = v
-                if v then
-                    local count = ScanEggs()
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos encontrados!", Duration=4, Icon = "search"})
-                    eggESPLoop = RunService.Heartbeat:Connect(function()
-                        -- Re-scan a cada ~3 segundos para pegar ovos novos
-                        task.wait(3)
-                        if eggESPActive then ScanEggs() end
-                    end)
-                else
-                    ClearEggESP()
-                    if eggESPLoop then eggESPLoop:Disconnect(); eggESPLoop = nil end
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="ESP desativado.", Duration=2, Icon = "eye-off"})
-                end
-            end})
-
-            -- Scan manual
-            BTab:Button({Title = "🔍 Scan Ovos Agora", Callback = function()
-                local count = ScanEggs()
-                WindUI:Notify({Title="🔍 Scan", Content="Encontrados: " .. count .. " ovos no mapa!", Duration=5, Icon = "map-pin"})
-            end})
-
-            -- Auto Collect (TP para cada ovo)
-            BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos)", Callback = function()
-                local collected = 0
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    local name = obj.Name:lower()
-                    if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and 
-                    (name:find("egg") or name:find("ovo") or name:find("easter")) then
-                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 3, 0)
-                            task.wait(0.4) -- Espera trigger de coleta
-                            collected = collected + 1
-                        end
-                    end
-                end
-                WindUI:Notify({Title="⚡ Collect", Content="Visitou " .. collected .. " ovos!", Duration=4, Icon = "check-circle"})
-            end})
-
-            -- Mostrar contagem de progresso (lê o HUD)
-            BTab:Button({Title = "📊 Ver Progresso (HUD)", Callback = function()
-                pcall(function()
-                    for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
-                        if gui:IsA("TextLabel") and (gui.Text:find("/") or gui.Text:find("ovo") or gui.Text:find("egg")) then
-                            WindUI:Notify({Title="📊 Progresso", Content="HUD: " .. gui.Text, Duration=6, Icon = "bar-chart"})
-                            return
-                        end
-                    end
-                    WindUI:Notify({Title="📊 Progresso", Content="HUD não encontrado automaticamente.", Duration=3, Icon = "info"})
-                end)
-            end})
+            
 
             -- ============================================
             -- RO-VIBES & SALÃO DE FESTAS
