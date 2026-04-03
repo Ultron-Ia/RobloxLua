@@ -94,6 +94,7 @@ local success, err = pcall(function()
         Visuals = Window:Tab({ Title = "Visuals", Icon = "eye" }),
         Local = Window:Tab({ Title = "Local", Icon = "user" }),
         Advanced = Window:Tab({ Title = "Advanced", Icon = "zap" }),
+        Easter = Window:Tab({ Title = "Easter Event", Icon = "egg" }),
         Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
     }
 
@@ -178,44 +179,6 @@ local success, err = pcall(function()
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
                 
-                -- ============================================
-                -- EASTER EVENT 2024 (FORÇADO NO TOPO)
-                -- ============================================
-                BTab:Section({ Title = "🥚 Easter Egg Hunt Event" })
-                
-                BTab:Toggle({Title = "Egg ESP (Highlight)", Default = false, Callback = function(v)
-                    _G.EternalState.EggESP = v
-                    if not v then
-                        for _, obj in pairs(workspace:GetDescendants()) do
-                            if obj:FindFirstChild("Eternal_EggESP") then obj.Eternal_EggESP:Destroy() end
-                        end
-                    end
-                end})
-
-                BTab:Button({Title = "🚀 Teleport to All Eggs (Auto-Collect)", Callback = function()
-                    local eggs = {}
-                    for _, obj in pairs(workspace:GetDescendants()) do
-                        if obj.Name:lower():find("egg") and (obj:IsA("BasePart") or obj:IsA("Model")) then
-                            table.insert(eggs, obj)
-                        end
-                    end
-                    
-                    if #eggs == 0 then
-                        WindUI:Notify({Title="Egg Hunt", Content="Nenhum ovo encontrado!", Duration=3, Icon = "search"})
-                        return
-                    end
-                    
-                    task.spawn(function()
-                        for i, egg in ipairs(eggs) do
-                            local pos = egg:IsA("Model") and (egg.PrimaryPart and egg.PrimaryPart.CFrame or egg:GetModelCFrame()) or egg.CFrame
-                            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = pos
-                                task.wait(0.5)
-                            end
-                        end
-                    end)
-                end})
-
                 BTab:Section({ Title = "Target Player Control" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
                 BTab:Button({Title = "Refresh List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
@@ -2383,6 +2346,47 @@ local success, err = pcall(function()
             end)
         end
     end)
+
+    -- ============================================
+    -- EASTER EVENT CONTENT (DEDICATED TAB)
+    -- ============================================
+    Tabs.Easter:Section({ Title = "🥚 Easter Egg Hunt Event" })
+    
+    Tabs.Easter:Toggle({Title = "Egg ESP (Highlight)", Default = false, Callback = function(v)
+        _G.EternalState.EggESP = v
+        if not v then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:FindFirstChild("Eternal_EggESP") then obj.Eternal_EggESP:Destroy() end
+            end
+        end
+    end})
+
+    Tabs.Easter:Button({Title = "🚀 Teleport to All Eggs (Auto-Collect)", Callback = function()
+        local eggs = {}
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name:lower():find("egg") and (obj:IsA("BasePart") or obj:IsA("Model")) then
+                table.insert(eggs, obj)
+            end
+        end
+        
+        if #eggs == 0 then
+            WindUI:Notify({Title="Egg Hunt", Content="Nenhum ovo encontrado!", Duration=3, Icon = "search"})
+            return
+        end
+        
+        WindUI:Notify({Title="Egg Hunt", Content="Iniciando coleta de "..#eggs.." ovos...", Duration=3, Icon = "map-pin"})
+        
+        task.spawn(function()
+            for i, egg in ipairs(eggs) do
+                local pos = egg:IsA("Model") and (egg.PrimaryPart and egg.PrimaryPart.CFrame or egg:GetModelCFrame()) or egg.CFrame
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = pos
+                    task.wait(0.6)
+                end
+            end
+            WindUI:Notify({Title="Egg Hunt", Content="Coleta finalizada!", Duration=3, Icon = "check"})
+        end)
+    end})
 
     Window:SelectTab(1)
     WindUI:Notify({Title = "Eternal EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "zap"})
