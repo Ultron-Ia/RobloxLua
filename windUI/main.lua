@@ -94,7 +94,6 @@ local success, err = pcall(function()
         Visuals = Window:Tab({ Title = "Visuals", Icon = "eye" }),
         Local = Window:Tab({ Title = "Local", Icon = "user" }),
         Advanced = Window:Tab({ Title = "Advanced", Icon = "zap" }),
-        Easter = Window:Tab({ Title = "Easter Event", Icon = "egg" }),
         Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
     }
 
@@ -178,10 +177,8 @@ local success, err = pcall(function()
             elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
-                
-                BTab:Section({ Title = "Target Player Control" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
-                BTab:Button({Title = "Refresh List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
+                BTab:Button({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
             
                 BTab:Section({ Title = "Target Actions" })
                 BTab:Button({Title = "Teleport To Target", Callback = function()
@@ -2153,51 +2150,41 @@ local success, err = pcall(function()
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
         
-        -- CHAMS SYSTEM via Highlight & Material Fallback
-        -- Container seguro no CoreGui para evitar deleções pelo jogo
-        local ChamsFolder = nil
-        pcall(function()
-            ChamsFolder = game:GetService("CoreGui"):FindFirstChild("Eternal_Chams") or Instance.new("Folder", game:GetService("CoreGui"))
-            ChamsFolder.Name = "Eternal_Chams"
-        end)
-        if not ChamsFolder then ChamsFolder = LocalPlayer:WaitForChild("PlayerGui") end
-
-        local chamsApplied = {} -- [player] = { hl = Highlight }
+        -- CHAMS SYSTEM via Highlight (corrigido)
+        -- DepthMode = AlwaysOnTop -> chams aparecem ATRAVÉS das paredes
+        -- Usa eventos (CharacterAdded/PlayerRemoving) em vez de polling no Heartbeat
+        local chamsApplied = {} -- [player] = { hl = Highlight, charConn = RBXScriptConnection }
 
         local CHAMS_PRESETS = {
-            ["Neon"]       = { fill = 0.4,  outline = 0.0, mat = Enum.Material.Neon },
-            ["ForceField"] = { fill = 0.5,  outline = 0.2, mat = Enum.Material.ForceField },
-            ["Glass"]      = { fill = 0.7,  outline = 0.0, mat = Enum.Material.Glass },
-            ["Plastic"]    = { fill = 0.1,  outline = 0.0, mat = Enum.Material.SmoothPlastic },
+            ["Neon"]       = { fill = 0.2,  outline = 0.0,  outlineColor = Color3.fromRGB(255,255,255) },
+            ["ForceField"] = { fill = 0.4,  outline = 0.3,  outlineColor = Color3.fromRGB(100,200,255) },
+            ["Glass"]      = { fill = 0.6,  outline = 0.0,  outlineColor = Color3.fromRGB(255,255,255) },
+            ["Plastic"]    = { fill = 0.0,  outline = 0.0,  outlineColor = Color3.fromRGB(0,  0,   0)  },
         }
 
         local function applyHighlight(char, player)
+            -- Remove highlight antigo do personagem, se existir
+            local old = char:FindFirstChild("EternalChams")
+            if old then old:Destroy() end
+
             local preset = CHAMS_PRESETS[_G.EternalState.ChamsMat] or CHAMS_PRESETS["Neon"]
             local fillColor = _G.EternalState.ChamsColor
 
-            -- Material Chams (Fallback robusto para paredes)
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.Material = preset.mat
-                    -- O ForceField transparente é o que melhor brilha através das paredes
-                    if _G.EternalState.ChamsMat == "ForceField" then
-                        part.Transparency = 0.5
-                    end
-                end
-            end
-
-            -- Highlight Chams (Glow moderno)
-            local hl = ChamsFolder:FindFirstChild(player.Name.."_ESP") or Instance.new("Highlight")
-            hl.Name              = player.Name.."_ESP"
+            local hl = Instance.new("Highlight")
+            hl.Name              = "EternalChams"
             hl.Adornee           = char
             hl.FillColor         = fillColor
             hl.FillTransparency  = preset.fill
-            hl.OutlineColor      = Color3.new(1,1,1)
+            hl.OutlineColor      = Color3.new(1,1,1) -- Force white outline for contrast
             hl.OutlineTransparency = preset.outline
             hl.Enabled           = true
             hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
-            hl.Parent            = ChamsFolder
-            
+            hl.Parent            = char
+
+            if chamsApplied[player] then
+                local old_entry = chamsApplied[player]
+                if old_entry.hl and old_entry.hl.Parent then old_entry.hl:Destroy() end
+            end
             chamsApplied[player] = { hl = hl }
         end
 
@@ -2268,49 +2255,6 @@ local success, err = pcall(function()
             end
         end)
         
-        -- EGG ESP SCANNER
-        RunService.RenderStepped:Connect(function()
-            if _G.EternalState.EggESP then
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if obj.Name:lower():find("egg") and (obj:IsA("BasePart") or obj:IsA("Model")) and not obj:IsDescendantOf(LocalPlayer.Character) then
-                        if not obj:FindFirstChild("Eternal_EggESP") then
-                            local hl = Instance.new("Highlight")
-                            hl.Name = "Eternal_EggESP"
-                            hl.FillColor = Color3.fromRGB(255, 100, 255)
-                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                            hl.FillTransparency = 0.4
-                            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                            hl.Parent = obj
-                            
-                            -- Texto de distância (opcional)
-                            local tag = Drawing.new("Text")
-                            tag.Color = Color3.fromRGB(255, 255, 255)
-                            tag.Size = 14
-                            tag.Outline = true
-                            tag.Center = true
-                            
-                            task.spawn(function()
-                                while obj and obj.Parent and _G.EternalState.EggESP do
-                                    local pos = obj:IsA("Model") and (obj.PrimaryPart and obj.PrimaryPart.Position or obj:GetModelCFrame().Position) or obj.Position
-                                    local screen, on = Camera:WorldToViewportPoint(pos)
-                                    if on then
-                                        local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - pos).Magnitude)
-                                        tag.Position = Vector2.new(screen.X, screen.Y - 20)
-                                        tag.Text = "🥚 Egg [" .. dist .. "m]"
-                                        tag.Visible = true
-                                    else
-                                        tag.Visible = false
-                                    end
-                                    task.wait()
-                                end
-                                tag:Remove()
-                            end)
-                        end
-                    end
-                end
-            end
-        end)
-
         -- PROJECTILE ESP (Looking for common physical projectiles)
         local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
         RunService.RenderStepped:Connect(function()
@@ -2346,47 +2290,6 @@ local success, err = pcall(function()
             end)
         end
     end)
-
-    -- ============================================
-    -- EASTER EVENT CONTENT (DEDICATED TAB)
-    -- ============================================
-    Tabs.Easter:Section({ Title = "🥚 Easter Egg Hunt Event" })
-    
-    Tabs.Easter:Toggle({Title = "Egg ESP (Highlight)", Default = false, Callback = function(v)
-        _G.EternalState.EggESP = v
-        if not v then
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:FindFirstChild("Eternal_EggESP") then obj.Eternal_EggESP:Destroy() end
-            end
-        end
-    end})
-
-    Tabs.Easter:Button({Title = "🚀 Teleport to All Eggs (Auto-Collect)", Callback = function()
-        local eggs = {}
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name:lower():find("egg") and (obj:IsA("BasePart") or obj:IsA("Model")) then
-                table.insert(eggs, obj)
-            end
-        end
-        
-        if #eggs == 0 then
-            WindUI:Notify({Title="Egg Hunt", Content="Nenhum ovo encontrado!", Duration=3, Icon = "search"})
-            return
-        end
-        
-        WindUI:Notify({Title="Egg Hunt", Content="Iniciando coleta de "..#eggs.." ovos...", Duration=3, Icon = "map-pin"})
-        
-        task.spawn(function()
-            for i, egg in ipairs(eggs) do
-                local pos = egg:IsA("Model") and (egg.PrimaryPart and egg.PrimaryPart.CFrame or egg:GetModelCFrame()) or egg.CFrame
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = pos
-                    task.wait(0.6)
-                end
-            end
-            WindUI:Notify({Title="Egg Hunt", Content="Coleta finalizada!", Duration=3, Icon = "check"})
-        end)
-    end})
 
     Window:SelectTab(1)
     WindUI:Notify({Title = "Eternal EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "zap"})
