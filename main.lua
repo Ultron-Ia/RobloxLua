@@ -936,6 +936,88 @@ local success, err = pcall(function()
             -- Jumpscare: Backrooms
                 BTab:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() ElephantScare("🟨", 210, 190, 130, "Level 0 — The Backrooms", 1.5) WindUI:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2, Icon = "ghost"}) end})
 
+                -- ============================================
+                -- 🥚 EGG HUNT EVENT (REFINED)
+                -- ============================================
+                BTab:Section({ Title = "🥚 Egg Hunt Event" })
+
+                local eggESPActive = false
+                local eggHighlights = {}
+
+                local function ClearEggESP()
+                    for _, hl in pairs(eggHighlights) do pcall(function() hl:Destroy() end) end
+                    eggHighlights = {}
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj.Name == "EggESP_HL" then pcall(function() obj:Destroy() end) end
+                    end
+                end
+
+                local function ScanEggs()
+                    ClearEggESP()
+                    local found = 0
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        local name = obj.Name:lower()
+                        local isEggCandidate = name:find("egg") or name:find("ovo") or name:find("easter")
+                        
+                        if isEggCandidate and (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model")) then
+                            -- STRICT FILTER: Collectible eggs always have a ProximityPrompt
+                            local hasPrompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
+                            
+                            -- Ignore large map decorations (Size check)
+                            local isSmall = true
+                            if obj:IsA("BasePart") then isSmall = obj.Size.Magnitude < 12 end
+                            
+                            if hasPrompt or (isEggCandidate and isSmall and not obj:FindFirstChild("Model")) then
+                                local hl = Instance.new("Highlight")
+                                hl.Name = "EggESP_HL"
+                                hl.FillColor = Color3.fromRGB(255, 0, 0) -- Bright Red for Collectibles
+                                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                                hl.FillTransparency = 0.4
+                                hl.Parent = obj
+                                table.insert(eggHighlights, hl)
+                                found = found + 1
+                            end
+                        end
+                    end
+                    WindUI:Notify({Title = "🥚 Egg Scan", Content = "Encontrados " .. found .. " ovos colecionáveis!", Duration = 3, Icon = "search"})
+                end
+
+                BTab:Toggle({Title = "Egg ESP (Highlight)", Default = _G.EternalState.EggESP or false, Callback = function(v)
+                    _G.EternalState.EggESP = v
+                    if v then ScanEggs() else ClearEggESP() end
+                end})
+
+                BTab:Button({Title = "🔍 Scan Ovos Agora", Callback = function() ScanEggs() end})
+
+                BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos)", Callback = function()
+                    local foundEgg = nil
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        local name = obj.Name:lower()
+                        if (name:find("egg") or name:find("ovo")) and (obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))) then
+                            foundEgg = obj
+                            break
+                        end
+                    end
+                    
+                    if foundEgg and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = foundEgg:GetModelCFrame() or foundEgg.CFrame * CFrame.new(0, 2, 0)
+                        WindUI:Notify({Title = "🥚 Auto Collect", Content = "Teleportado para o ovo real!", Duration = 2, Icon = "zap"})
+                    else
+                        WindUI:Notify({Title = "🥚 Auto Collect", Content = "Nenhum ovo colecionável encontrado próximo.", Duration = 3, Icon = "alert-circle"})
+                    end
+                end})
+
+                BTab:Button({Title = "📊 Ver Progresso (HUD Notify)", Callback = function()
+                    local found = false
+                    for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+                        if gui:IsA("ScreenGui") and (gui.Name:lower():find("egg") or gui.Name:lower():find("event")) then
+                             WindUI:Notify({Title = "📊 Progresso", Content = "Verifique o contador oficial no canto da tela!", Duration = 4, Icon = "info"})
+                             found = true; break
+                        end
+                    end
+                    if not found then WindUI:Notify({Title = "📊 Progresso", Content = "HUD de evento não encontrado.", Duration = 3, Icon = "alert-circle"}) end
+                end})
+
             elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
                 BuiltHubs["PecaDeSailor"] = true
                 local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
