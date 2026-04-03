@@ -182,25 +182,23 @@ local success, err = pcall(function()
             local function ScanEggs()
                 ClearEggESP()
                 local found = 0
-                -- Deteccao aprimorada: procura por TouchInterest ou ProximityPrompt em modelos/parts relacionados a ovos
                 for _, obj in pairs(workspace:GetDescendants()) do
+                    -- Ignora ovos que estejam no seu personagem ou na GUI (falsos positivos)
+                    if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then continue end
+                    
                     local name = obj.Name:lower()
-                    if (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
-                        -- Apenas conta se for o "corpo" coletavel (tem interacao fisica ou prompt)
-                        if (name:find("egg") or name:find("ovo") or name:find("easter") or name:find("token")) and 
-                           (obj:FindFirstChildOfClass("TouchInterest") or obj:FindFirstChildOfClass("ProximityPrompt")) then
-                            
-                            if not obj:FindFirstChild("EggESP_HL") then
-                                local hl = Instance.new("Highlight")
-                                hl.Name = "EggESP_HL"
-                                hl.FillColor = Color3.fromRGB(255, 220, 0)
-                                hl.OutlineColor = Color3.fromRGB(255, 100, 200)
-                                hl.FillTransparency = 0.2
-                                hl.Adornee = obj
-                                hl.Parent = obj
-                                table.insert(eggHighlights, hl)
-                                found = found + 1
-                            end
+                    -- Em Brookhaven, ovos de evento sao geralmente MeshParts
+                    if (obj:IsA("MeshPart") or obj:IsA("BasePart")) and (name:find("egg") or name:find("ovo") or name:find("easter")) then
+                        if not obj:FindFirstChild("EggESP_HL") then
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "EggESP_HL"
+                            hl.FillColor = Color3.fromRGB(255, 220, 0)
+                            hl.OutlineColor = Color3.fromRGB(255, 100, 200)
+                            hl.FillTransparency = 0.2
+                            hl.Adornee = obj
+                            hl.Parent = obj
+                            table.insert(eggHighlights, hl)
+                            found = found + 1
                         end
                     end
                 end
@@ -212,12 +210,11 @@ local success, err = pcall(function()
                 eggESPActive = v
                 if v then
                     local count = ScanEggs()
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos oficiais!", Duration=4, Icon = "search"})
+                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos encontrados!", Duration=4, Icon = "search"})
                     
-                    -- Task Spawn eh mais seguro que Heartbeat para isso
                     task.spawn(function()
                         while eggESPActive do
-                            task.wait(5) -- Verifica novos ovos a cada 5 segundos
+                            task.wait(5)
                             if eggESPActive then ScanEggs() end
                         end
                     end)
@@ -236,18 +233,29 @@ local success, err = pcall(function()
             -- Auto Collect (TP para cada ovo)
             BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos)", Callback = function()
                 local collected = 0
+                local eggs = {}
+                
+                -- Primeiro mapeia todos os ovos validos
                 for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then continue end
                     local name = obj.Name:lower()
-                    if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and 
-                    (name:find("egg") or name:find("ovo") or name:find("easter")) then
-                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 3, 0)
-                            task.wait(0.4) -- Espera trigger de coleta
+                    if (obj:IsA("MeshPart") or obj:IsA("BasePart")) and (name:find("egg") or name:find("ovo") or name:find("easter")) then
+                        table.insert(eggs, obj)
+                    end
+                end
+                
+                -- Teleporta em sequencia
+                task.spawn(function()
+                    for _, egg in pairs(eggs) do
+                        if egg and egg.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = egg.CFrame
+                            task.wait(0.5) -- Tempo para o servidor registrar
                             collected = collected + 1
                         end
                     end
-                end
-                WindUI:Notify({Title="⚡ Collect", Content="Visitou " .. collected .. " ovos!", Duration=4, Icon = "check-circle"})
+                    WindUI:Notify({Title="⚡ Collect", Content="Finalizado! Visitou " .. collected .. " locais de ovos.", Duration=4, Icon = "check-circle"})
+                end)
+            end})
             end})
 
             -- Mostrar contagem de progresso (lê o HUD)
