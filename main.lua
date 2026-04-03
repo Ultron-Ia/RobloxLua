@@ -35,8 +35,10 @@ local success, err = pcall(function()
         AimSmooth = 3,
         
         BoxESP = false,
+        BoxStyle = "Full", -- "Full" or "Corners"
         NameESP = false,
         DistESP = false,
+        HealthBar = false, -- Left side
         SkeletonESP = false,
         SkeletonColor = Color3.fromRGB(255, 255, 255),
         ProjESP = false,
@@ -44,6 +46,10 @@ local success, err = pcall(function()
         Chams = false,
         ChamsMat = "Neon",
         ChamsColor = Color3.fromRGB(180, 100, 255),
+        
+        RGBEsp = false,
+        RGBChams = false,
+        RGBSpeed = 3,
         
         WalkSpeed = 16,
         JumpPower = 50,
@@ -54,6 +60,16 @@ local success, err = pcall(function()
         TargetPlayer = "None",
         SkinID = "0"
     }
+
+    -- SHARED RGB CLOCK (Performance Optimized)
+    local sharedRGB = Color3.new(1,1,1)
+    task.spawn(function()
+        while true do
+            task.wait()
+            local speed = _G.EternalState.RGBSpeed or 3
+            sharedRGB = Color3.fromHSV(tick() * (speed/15) % 1, 0.8, 1)
+        end
+    end)
 
     -- Tabs
     local Tabs = {
@@ -1793,8 +1809,10 @@ local success, err = pcall(function()
     -- POPULATE VISUALS
     Tabs.Visuals:Section({ Title = "2D ESP" })
     Tabs.Visuals:Toggle({Title = "Boxes", Value = false, Callback = function(v) _G.EternalState.BoxESP = v end})
+    Tabs.Visuals:Dropdown({Title = "Box Style", Values = {"Full", "Corners"}, Value = 1, Callback = function(v) _G.EternalState.BoxStyle = v end})
     Tabs.Visuals:Toggle({Title = "Names", Value = false, Callback = function(v) _G.EternalState.NameESP = v end})
     Tabs.Visuals:Toggle({Title = "Distance", Value = false, Callback = function(v) _G.EternalState.DistESP = v end})
+    Tabs.Visuals:Toggle({Title = "Health Bar", Value = false, Callback = function(v) _G.EternalState.HealthBar = v end})
     Tabs.Visuals:Toggle({Title = "Skeleton Esp", Value = false, Callback = function(v) _G.EternalState.SkeletonESP = v end})
     Tabs.Visuals:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1), Callback = function(v) _G.EternalState.SkeletonColor = v end})
     
@@ -1803,6 +1821,11 @@ local success, err = pcall(function()
     Tabs.Visuals:Dropdown({Title = "Chams Material", Values = {"Neon", "ForceField", "Glass", "Plastic"}, Value = 1, Callback = function(v) _G.EternalState.ChamsMat = v end})
     Tabs.Visuals:Colorpicker({Title = "Chams Color", Default = Color3.fromRGB(180, 100, 255), Callback = function(v) _G.EternalState.ChamsColor = v end})
     Tabs.Visuals:Toggle({Title = "Projectile ESP (Grenades)", Value = false, Callback = function(v) _G.EternalState.ProjESP = v end})
+
+    Tabs.Visuals:Section({ Title = "RGB Customization" })
+    Tabs.Visuals:Toggle({Title = "RGB ESP Mode", Value = false, Callback = function(v) _G.EternalState.RGBEsp = v end})
+    Tabs.Visuals:Toggle({Title = "RGB Chams Mode", Value = false, Callback = function(v) _G.EternalState.RGBChams = v end})
+    Tabs.Visuals:Slider({Title = "RGB Cycle Speed", Value = {Default = 3, Min = 1, Max = 10}, Step = 0.5, Callback = function(v) _G.EternalState.RGBSpeed = v end})
 
     -- POPULATE LOCAL
     Tabs.Local:Section({ Title = "Movement" })
@@ -2011,10 +2034,28 @@ local success, err = pcall(function()
                 end
                 return Bones[id]
             end
+
+            local function GetCorner()
+                local l = Drawing.new("Line"); l.Visible = false; l.Thickness = 1.5; return l
+            end
+
+            -- Health Bar
+            local HealthBarBG = Drawing.new("Square"); HealthBarBG.Visible = false; HealthBarBG.Filled = true; HealthBarBG.Color = Color3.fromRGB(0,0,0); HealthBarBG.Thickness = 0; HealthBarBG.Transparency = 0.5
+            local HealthBar = Drawing.new("Square"); HealthBar.Visible = false; HealthBar.Filled = true; HealthBar.Thickness = 0
+
+            -- Corner Box
+            local Corners = {
+                TL1 = GetCorner(), TL2 = GetCorner(),
+                TR1 = GetCorner(), TR2 = GetCorner(),
+                BL1 = GetCorner(), BL2 = GetCorner(),
+                BR1 = GetCorner(), BR2 = GetCorner()
+            }
             
             local function cleanup() 
                 Box:Remove(); Name:Remove(); Dist:Remove()
+                HealthBarBG:Remove(); HealthBar:Remove()
                 for _, l in pairs(Bones) do l:Remove() end
+                for _, l in pairs(Corners) do l:Remove() end
             end
 
             local conn; conn = RunService.RenderStepped:Connect(function()
@@ -2027,17 +2068,53 @@ local success, err = pcall(function()
                     local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
                     
                     if onScreen and pos.Z > 0 then
-                        -- Boxes & Text
-                        local rootTop = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
-                        local rootBottom = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
-                        local sizeY = math.abs(rootBottom.Y - rootTop.Y)
-                        local sizeX = sizeY * 0.6
-                        
-                        Box.Size = Vector2.new(sizeX, sizeY); Box.Position = Vector2.new(pos.X - sizeX / 2, rootTop.Y); Box.Visible = _G.EternalState.BoxESP
-                        Name.Position = Vector2.new(pos.X, rootTop.Y - 16); Name.Text = p.Name; Name.Visible = _G.EternalState.NameESP
-                        
                         local localPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
-                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. math.floor((localPos - root.Position).Magnitude) .. "m]"; Dist.Visible = _G.EternalState.DistESP
+                        local distance = math.floor((localPos - root.Position).Magnitude)
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        local hpRatio = hum and (hum.Health / hum.MaxHealth) or 1
+                        
+                        -- Color logic
+                        local mainColor = _G.EternalState.RGBEsp and sharedRGB or (isR15 and Color3.new(1,0,0) or Color3.new(1,1,1))
+                        
+                        Box.Size = Vector2.new(sizeX, sizeY)
+                        Box.Position = Vector2.new(pos.X - sizeX / 2, rootTop.Y)
+                        Box.Visible = _G.EternalState.BoxESP and _G.EternalState.BoxStyle == "Full"
+                        Box.Color = mainColor
+                        
+                        -- Corner Box Logic
+                        local cornersVisible = _G.EternalState.BoxESP and _G.EternalState.BoxStyle == "Corners"
+                        if cornersVisible then
+                            local x, y, w, h = pos.X - sizeX / 2, rootTop.Y, sizeX, sizeY
+                            local lineLen = w / 4
+                            
+                            Corners.TL1.From = Vector2.new(x, y); Corners.TL1.To = Vector2.new(x + lineLen, y)
+                            Corners.TL2.From = Vector2.new(x, y); Corners.TL2.To = Vector2.new(x, y + lineLen)
+                            Corners.TR1.From = Vector2.new(x + w, y); Corners.TR1.To = Vector2.new(x + w - lineLen, y)
+                            Corners.TR2.From = Vector2.new(x + w, y); Corners.TR2.To = Vector2.new(x + w, y + lineLen)
+                            Corners.BL1.From = Vector2.new(x, y + h); Corners.BL1.To = Vector2.new(x + lineLen, y + h)
+                            Corners.BL2.From = Vector2.new(x, y + h); Corners.BL2.To = Vector2.new(x, y + h - lineLen)
+                            Corners.BR1.From = Vector2.new(x + w, y + h); Corners.BR1.To = Vector2.new(x + w - lineLen, y + h)
+                            Corners.BR2.From = Vector2.new(x + w, y + h); Corners.BR2.To = Vector2.new(x + w, y + h - lineLen)
+                        end
+                        for _, l in pairs(Corners) do l.Visible = cornersVisible; l.Color = mainColor end
+
+                        -- Health Bar Logic (LEFT)
+                        if _G.EternalState.HealthBar then
+                            local barX = pos.X - sizeX / 2 - 6
+                            HealthBarBG.Size = Vector2.new(4, sizeY)
+                            HealthBarBG.Position = Vector2.new(barX, rootTop.Y)
+                            HealthBarBG.Visible = true
+                            
+                            HealthBar.Size = Vector2.new(2, sizeY * hpRatio)
+                            HealthBar.Position = Vector2.new(barX + 1, rootTop.Y + (sizeY * (1 - hpRatio)))
+                            HealthBar.Visible = true
+                            HealthBar.Color = _G.EternalState.RGBEsp and sharedRGB or Color3.new(1 - hpRatio, hpRatio, 0)
+                        else
+                            HealthBarBG.Visible = false; HealthBar.Visible = false
+                        end
+
+                        Name.Position = Vector2.new(pos.X, rootTop.Y - 16); Name.Text = p.Name; Name.Visible = _G.EternalState.NameESP; Name.Color = mainColor
+                        Dist.Position = Vector2.new(pos.X, rootBottom.Y + 2); Dist.Text = "[" .. distance .. "m]"; Dist.Visible = _G.EternalState.DistESP; Dist.Color = mainColor
                         
                         -- Chams (Note: Otimizado fora do loop para evitar lag)
 
@@ -2053,7 +2130,7 @@ local success, err = pcall(function()
                                     bone.Visible = true
                                     bone.From = Vector2.new(sA.X, sA.Y)
                                     bone.To = Vector2.new(sB.X, sB.Y)
-                                    bone.Color = skColor
+                                    bone.Color = _G.EternalState.RGBEsp and sharedRGB or skColor
                                 else
                                     bone.Visible = false
                                 end
@@ -2124,10 +2201,10 @@ local success, err = pcall(function()
             local hl = Instance.new("Highlight")
             hl.Name              = "EternalChams"
             hl.Adornee           = char
-            hl.FillColor         = _G.EternalState.ChamsColor
+            hl.FillColor         = _G.EternalState.RGBChams and sharedRGB or _G.EternalState.ChamsColor
             hl.FillTransparency  = preset.fill
             hl.OutlineColor      = Color3.new(1,1,1)
-            hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop -- Visualização através das paredes
+            hl.DepthMode         = Enum.HighlightDepthMode.AlwaysOnTop
             hl.Parent            = char
             chamsApplied[player] = { hl = hl }
         end
@@ -2143,7 +2220,14 @@ local success, err = pcall(function()
             if _G.EternalState.Chams then
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character then
-                        if not chamsApplied[p] then applyHighlight(p.Character, p) end
+                        if not chamsApplied[p] then 
+                            applyHighlight(p.Character, p) 
+                        else
+                            -- Update RGB real-time if enabled
+                            if _G.EternalState.RGBChams then
+                                chamsApplied[p].hl.FillColor = sharedRGB
+                            end
+                        end
                     end
                 end
             else
