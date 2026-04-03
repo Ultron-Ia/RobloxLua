@@ -20,6 +20,7 @@ namespace EternalUI
             this.scriptEditor = new FastColoredTextBoxNS.FastColoredTextBox();
             this.bottomPanel = new System.Windows.Forms.Panel();
             this.btnInject = new System.Windows.Forms.Button();
+            this.btnUnload = new System.Windows.Forms.Button();
             this.btnExecute = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.statusStrip = new System.Windows.Forms.StatusStrip();
@@ -82,6 +83,7 @@ namespace EternalUI
             // bottomPanel
             this.bottomPanel.BackColor = System.Drawing.Color.FromArgb(20, 20, 20);
             this.bottomPanel.Controls.Add(this.btnInject);
+            this.bottomPanel.Controls.Add(this.btnUnload);
             this.bottomPanel.Controls.Add(this.btnExecute);
             this.bottomPanel.Controls.Add(this.btnClear);
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
@@ -112,6 +114,19 @@ namespace EternalUI
             this.btnInject.Click += new System.EventHandler(this.btnInject_Click);
             this.btnInject.MouseEnter += (s, e) => btnInject.FlatAppearance.BorderSize = 2;
             this.btnInject.MouseLeave += (s, e) => btnInject.FlatAppearance.BorderSize = 1;
+
+            // btnUnload
+            this.btnUnload.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
+            this.btnUnload.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnUnload.FlatAppearance.BorderColor = System.Drawing.Color.Orange;
+            this.btnUnload.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnUnload.ForeColor = System.Drawing.Color.White;
+            this.btnUnload.Location = new System.Drawing.Point(288, 12);
+            this.btnUnload.Size = new System.Drawing.Size(130, 36);
+            this.btnUnload.Text = "⚠ UNLOAD";
+            this.btnUnload.Click += new System.EventHandler(this.btnUnload_Click);
+            this.btnUnload.MouseEnter += (s, e) => btnUnload.FlatAppearance.BorderSize = 2;
+            this.btnUnload.MouseLeave += (s, e) => btnUnload.FlatAppearance.BorderSize = 1;
 
             // btnClear
             this.btnClear.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
@@ -166,6 +181,7 @@ namespace EternalUI
         private FastColoredTextBoxNS.FastColoredTextBox scriptEditor;
         private System.Windows.Forms.Panel bottomPanel;
         private System.Windows.Forms.Button btnInject;
+        private System.Windows.Forms.Button btnUnload;
         private System.Windows.Forms.Button btnExecute;
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.StatusStrip statusStrip;

@@ -74,16 +74,34 @@ namespace EternalUI
             lblStatus.Text = "Status: Injecting...";
             btnInject.Text = "⚡ INJECTING";
 
-            // Prioritize the same folder as the .exe
+            // 1. Try local folder
             string dllPath = Path.Combine(Application.StartupPath, "EternalDLL.dll");
+            
+            // 2. Try VS Output folders if not found locally (for development)
+            if (!File.Exists(dllPath)) {
+                string[] searchPaths = {
+                    Path.Combine(Application.StartupPath, @"..\..\..\..\x64\Release\EternalDLL.dll"),
+                    Path.Combine(Application.StartupPath, @"..\..\..\..\..\x64\Release\EternalDLL.dll"),
+                    @"C:\Users\hoff\OneDrive\Documentos\bot\RobloxLua\EternalInjector\x64\Release\EternalDLL.dll"
+                };
+
+                foreach (var p in searchPaths) {
+                    if (File.Exists(p)) {
+                        dllPath = p;
+                        break;
+                    }
+                }
+            }
             
             if (!File.Exists(dllPath))
             {
                 lblStatus.Text = "Status: DLL Not Found!";
                 btnInject.Text = "⚡ INJECT";
-                MessageBox.Show("Arquivo 'EternalDLL.dll' não encontrado!\n\nCertifique-se de que a DLL está na MESMA PASTA que este executável.", "Erro de Injeção", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Arquivo 'EternalDLL.dll' não encontrado!\n\nProcurei em:\n{dllPath}\n\nCertifique-se de que a DLL foi compilada (Release x64) ou está na mesma pasta que o executável.", "Erro de Injeção", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+
+            lblStatus.Text = "Status: Injecting " + Path.GetFileName(dllPath);
 
             bool success = Injector.Inject(dllPath);
 
@@ -110,8 +128,8 @@ namespace EternalUI
             {
                 using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
                 {
-                    // Incrementei o timeout para 2 segundos para dar tempo ao Driver
-                    await pipeClient.ConnectAsync(2000);
+                    // Increased timeout to 10 seconds
+                    await pipeClient.ConnectAsync(10000);
                     using (StreamWriter sw = new StreamWriter(pipeClient))
                     {
                         sw.Write(script);
@@ -122,7 +140,28 @@ namespace EternalUI
             catch (Exception ex)
             {
                 lblStatus.Text = "Status: Communication Error";
-                MessageBox.Show($"Ocorreu um erro ao enviar o script para o Roblox:\n\n{ex.Message}\n\nNota: Certifique-se de que injetou a DLL e que o MessageBox apareceu no jogo.", "Erro de Execução", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string detail = ex.Message;
+                if (ex.InnerException != null) detail += "\n" + ex.InnerException.Message;
+                
+                MessageBox.Show($"Ocorreu um erro ao enviar o script para o Roblox:\n\n{detail}\n\nNota: Certifique-se de que a DLL foi realmente injetada e que você viu o MessageBox de DEBUG.", "Erro de Execução", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void btnUnload_Click(object sender, EventArgs e)
+        {
+            lblStatus.Text = "Status: Unloading Driver...";
+            string error;
+            bool success = NativeKernel.Unload(out error);
+            
+            if (success)
+            {
+                lblStatus.Text = "Status: Driver Unloaded";
+                MessageBox.Show(error, "ETERNAL INJECTOR", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                lblStatus.Text = "Status: Unload Error";
+                MessageBox.Show(error, "ETERNAL Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

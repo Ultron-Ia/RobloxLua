@@ -26,6 +26,9 @@ namespace EternalUI
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool DeviceIoControl(IntPtr hDevice, uint dwIoControlCode, ref DriverInjectionData lpInBuffer, uint nInBufferSize, IntPtr lpOutBuffer, uint nOutBufferSize, out uint lpBytesReturned, IntPtr lpOverlapped);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(IntPtr handle);
+
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct DriverInjectionData
         {
@@ -69,8 +72,13 @@ namespace EternalUI
 
             try
             {
-                // 1. Extract Driver
-                File.WriteAllBytes(driverPath, DriverData.KernelDriver);
+                // 1. Extract Driver (Only if not already there or can be overwritten)
+                try {
+                    File.WriteAllBytes(driverPath, DriverData.KernelDriver);
+                } catch (IOException) {
+                    // If file is in use, assume it's already loaded or correctly placed
+                    if (!File.Exists(driverPath)) throw; 
+                }
 
                 // 2. Adjust Privileges
                 bool wasEnabled;
@@ -129,11 +137,15 @@ namespace EternalUI
                 bool success = DeviceIoControl(hDriver, IOCTL_INJECT_DLL, ref data, (uint)Marshal.SizeOf(data), IntPtr.Zero, 0, out bytesRet, IntPtr.Zero);
 
                 pinnedDll.Free();
+                
+                // IMPORTANT: Close the driver handle so Windows allows manual unloading later
+                CloseHandle(hDriver);
+                
                 Marshal.FreeHGlobal(serviceStr.Buffer);
                 
                 if (success)
                 {
-                    error = "Injeção Kernel Nativa realizada!";
+                    error = "Injeção Kernel Nativa realizada! Driver ON.";
                     return true;
                 }
                 else
@@ -145,6 +157,45 @@ namespace EternalUI
             catch (Exception ex)
             {
                 error = "Exceção Kernel: " + ex.Message;
+                return false;
+            }
+        }
+
+        public static bool Unload(out string error)
+        {
+            error = "";
+            string driverName = "EternalKernel";
+            string regPath = $"System\\CurrentControlSet\\Services\\{driverName}";
+            
+            try
+            {
+                bool wasEnabled;
+                RtlAdjustPrivilege(SE_LOAD_DRIVER_PRIVILEGE, true, false, out wasEnabled);
+                
+                UNICODE_STRING serviceStr = new UNICODE_STRING();
+                RtlInitUnicodeString(ref serviceStr, $"\\Registry\\Machine\\{regPath}");
+                uint status = NtUnloadDriver(ref serviceStr);
+                
+                Marshal.FreeHGlobal(serviceStr.Buffer);
+                
+                try {
+                    Registry.LocalMachine.DeleteSubKeyTree(regPath, false);
+                } catch {}
+                
+                if (status == 0)
+                {
+                    error = "Driver descarregado com sucesso!";
+                    return true;
+                }
+                else
+                {
+                    error = $"Falha ao descarregar (Status: 0x{status:X}).";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                error = "Exceção Unload: " + ex.Message;
                 return false;
             }
         }

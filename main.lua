@@ -33,6 +33,7 @@ local success, err = pcall(function()
         AimPart = "Head",
         AimFOV = 100,
         AimSmooth = 3,
+        TeamCheck = false,
         
         BoxESP = false,
         BoxStyle = "Full", -- "Full" or "Corners"
@@ -1962,6 +1963,7 @@ local success, err = pcall(function()
     Tabs.Visuals:Toggle({Title = "Health Bar", Value = false, Callback = function(v) _G.EternalState.HealthBar = v end})
     Tabs.Visuals:Toggle({Title = "Skeleton Esp", Value = false, Callback = function(v) _G.EternalState.SkeletonESP = v end})
     Tabs.Visuals:Colorpicker({Title = "Skeleton Color", Default = Color3.new(1,1,1), Callback = function(v) _G.EternalState.SkeletonColor = v end})
+    Tabs.Visuals:Toggle({Title = "Team Check", Value = false, Callback = function(v) _G.EternalState.TeamCheck = v end})
     
     Tabs.Visuals:Section({ Title = "3D ESP & World" })
     Tabs.Visuals:Toggle({Title = "Enable Chams", Value = false, Callback = function(v) _G.EternalState.Chams = v end})
@@ -2188,6 +2190,9 @@ local success, err = pcall(function()
         
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer then
+                -- Team Check
+                if _G.EternalState.TeamCheck and p.Team ~= nil and p.Team == LocalPlayer.Team then continue end
+
                 -- Support for games like Rivals where characters might be in workspace root or heavily modified
                 local char = p.Character or workspace:FindFirstChild(p.Name)
                 if char and char:FindFirstChild(_G.EternalState.AimPart) and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
@@ -2317,6 +2322,15 @@ local success, err = pcall(function()
             local conn; conn = RunService.RenderStepped:Connect(function()
                 if not p then cleanup(); conn:Disconnect(); return end
                 
+                -- Team Check
+                if _G.EternalState.TeamCheck and p.Team ~= nil and p.Team == LocalPlayer.Team then
+                    Box.Visible = false; Name.Visible = false; Dist.Visible = false
+                    HealthBarBG.Visible = false; HealthBar.Visible = false
+                    for _, l in pairs(Bones) do l.Visible = false end
+                    for _, l in pairs(Corners) do l.Visible = false end
+                    return
+                end
+
                 local char = p.Character or workspace:FindFirstChild(p.Name)
                 if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
                     local root = char.HumanoidRootPart
@@ -2493,6 +2507,12 @@ local success, err = pcall(function()
             if _G.EternalState.Chams then
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character then
+                        -- Team Check
+                        if _G.EternalState.TeamCheck and p.Team ~= nil and p.Team == LocalPlayer.Team then
+                            removeChams(p)
+                            continue
+                        end
+
                         if not chamsApplied[p] then 
                             applyHighlight(p.Character, p) 
                         else

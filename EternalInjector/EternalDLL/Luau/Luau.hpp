@@ -21,7 +21,7 @@ namespace rbx {
 
     // Execution Core
     namespace Execution {
-        void execute(std::string script);
+        void execute(const char* script);
         void StartPipeServer(); // Added for DLLMain clarity
     }
 }

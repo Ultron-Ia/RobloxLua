@@ -9,7 +9,7 @@ namespace rbx {
         return reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
     }
 
-    void Execution::execute(std::string script) {
+    void Execution::execute(const char* script) {
         lua_State L = TaskScheduler::get_main_state();
         if (!L) {
             std::cout << "[-] Error: Could not find lua_State. Is the game running?" << std::endl;
