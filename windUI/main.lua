@@ -177,6 +177,54 @@ local success, err = pcall(function()
             elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
+                
+                -- ============================================
+                -- EASTER EVENT 2024
+                -- ============================================
+                BTab:Section({ Title = "🥚 Easter Egg Hunt Event" })
+                
+                BTab:Toggle({Title = "Egg ESP (Highlight)", Default = false, Callback = function(v)
+                    _G.EternalState.EggESP = v
+                    if not v then
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:FindFirstChild("Eternal_EggESP") then obj.Eternal_EggESP:Destroy() end
+                        end
+                    end
+                end})
+
+                BTab:Button({Title = "🚀 Teleport to All Eggs (Auto-Collect)", Callback = function()
+                    local eggs = {}
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj.Name:lower():find("egg") and (obj:IsA("BasePart") or obj:IsA("Model")) then
+                            table.insert(eggs, obj)
+                        end
+                    end
+                    
+                    if #eggs == 0 then
+                        WindUI:Notify({Title="Egg Hunt", Content="Nenhum ovo encontrado no momento!", Duration=3, Icon = "search"})
+                        return
+                    end
+                    
+                    WindUI:Notify({Title="Egg Hunt", Content="Iniciando coleta de "..#eggs.." ovos...", Duration=3, Icon = "map-pin"})
+                    
+                    task.spawn(function()
+                        for i, egg in ipairs(eggs) do
+                            if not _G.EternalState.NoClip then 
+                                WindUI:Notify({Title="Aviso", Content="Ativando NoClip temporário para segurança...", Duration=2})
+                                _G.EternalState.NoClip = true
+                            end
+                            
+                            local pos = egg:IsA("Model") and (egg.PrimaryPart and egg.PrimaryPart.CFrame or egg:GetModelCFrame()) or egg.CFrame
+                            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = pos
+                                task.wait(0.6) -- Delay seguro para o servidor registrar
+                            end
+                        end
+                        WindUI:Notify({Title="Egg Hunt", Content="Coleta finalizada!", Duration=3, Icon = "check"})
+                    end)
+                end})
+
+                BTab:Section({ Title = "Target Player Control" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
                 BTab:Button({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
             
@@ -2265,6 +2313,49 @@ local success, err = pcall(function()
             end
         end)
         
+        -- EGG ESP SCANNER
+        RunService.RenderStepped:Connect(function()
+            if _G.EternalState.EggESP then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj.Name:lower():find("egg") and (obj:IsA("BasePart") or obj:IsA("Model")) and not obj:IsDescendantOf(LocalPlayer.Character) then
+                        if not obj:FindFirstChild("Eternal_EggESP") then
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "Eternal_EggESP"
+                            hl.FillColor = Color3.fromRGB(255, 100, 255)
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            hl.FillTransparency = 0.4
+                            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                            hl.Parent = obj
+                            
+                            -- Texto de distância (opcional)
+                            local tag = Drawing.new("Text")
+                            tag.Color = Color3.fromRGB(255, 255, 255)
+                            tag.Size = 14
+                            tag.Outline = true
+                            tag.Center = true
+                            
+                            task.spawn(function()
+                                while obj and obj.Parent and _G.EternalState.EggESP do
+                                    local pos = obj:IsA("Model") and (obj.PrimaryPart and obj.PrimaryPart.Position or obj:GetModelCFrame().Position) or obj.Position
+                                    local screen, on = Camera:WorldToViewportPoint(pos)
+                                    if on then
+                                        local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - pos).Magnitude)
+                                        tag.Position = Vector2.new(screen.X, screen.Y - 20)
+                                        tag.Text = "🥚 Egg [" .. dist .. "m]"
+                                        tag.Visible = true
+                                    else
+                                        tag.Visible = false
+                                    end
+                                    task.wait()
+                                end
+                                tag:Remove()
+                            end)
+                        end
+                    end
+                end
+            end
+        end)
+
         -- PROJECTILE ESP (Looking for common physical projectiles)
         local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
         RunService.RenderStepped:Connect(function()
