@@ -1121,6 +1121,16 @@ local success, err = pcall(function()
                                 if text:find("collect") or text:find("pegar") or text:find("egg") or text:find("ovo") then
                                     isCollectible = true
                                 end
+                            elseif obj:FindFirstChildOfClass("TouchTransmitter") or obj:FindFirstChild("TouchInterest") or obj:FindFirstChildOfClass("ClickDetector") then
+                                isCollectible = true
+                            end
+                            
+                            -- Fallback for the 2026 Brookhaven Red Egg Event (Visual Check)
+                            if not isCollectible and obj:IsA("BasePart") then
+                                -- Check if it's prominently red
+                                if obj.Color.R > 0.7 and obj.Color.G < 0.3 and obj.Color.B < 0.3 then
+                                    isCollectible = true
+                                end
                             end
 
                             if isCollectible and isSmall then
@@ -1151,10 +1161,22 @@ local success, err = pcall(function()
                         local name = obj.Name:lower()
                         local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
                         
-                        if (name:find("egg") or name:find("ovo")) and prompt then
-                            local text = prompt.ActionText:lower()
+                        if (name:find("egg") or name:find("ovo")) and (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
                             local isSmall = obj.Size.Magnitude < 5
-                            if (text:find("collect") or text:find("pegar")) and isSmall then
+                            local isCollectible = false
+                            
+                            if prompt then
+                                local text = prompt.ActionText:lower()
+                                if text:find("collect") or text:find("pegar") then isCollectible = true end
+                            elseif obj:FindFirstChildOfClass("TouchTransmitter") or obj:FindFirstChild("TouchInterest") or obj:FindFirstChildOfClass("ClickDetector") then
+                                isCollectible = true
+                            end
+                            
+                            if not isCollectible and (obj.Color.R > 0.7 and obj.Color.G < 0.3 and obj.Color.B < 0.3) then
+                                isCollectible = true
+                            end
+
+                            if isCollectible and isSmall then
                                 foundEgg = obj
                                 break
                             end
