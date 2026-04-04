@@ -228,21 +228,36 @@ local success, err = pcall(function()
                 eggHighlights = {}
             end
 
+            local function IsTargetEgg(obj)
+                if not (obj:IsA("MeshPart") or obj:IsA("BasePart")) then return false end
+                if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then return false end
+                
+                local name = obj.Name:lower()
+                local color = obj.Color
+                local size = obj.Size
+                
+                -- Detecta o "Ovo Vermelho Grande" (Event Egg)
+                -- Geralmente é vermelho vivo (alto R, baixo G/B) e consideravelmente maior que decorações
+                local isRed = (color.R > 0.7 and color.G < 0.4 and color.B < 0.4)
+                local isLarge = (size.X > 2.5 or size.Y > 2.5 or size.Z > 2.5)
+                
+                -- Filtra por nome, mas ignora decorações fixas ("easter", "deco", "fixed")
+                local hasKeywords = name:find("egg") or name:find("ovo") or name:find("evento")
+                local isNotDecoration = not (name:find("easter") or name:find("deco") or name:find("fixo") or name:find("fixed"))
+                
+                return hasKeywords and isRed and isLarge and isNotDecoration
+            end
+
             local function ScanEggs()
                 ClearEggESP()
                 local found = 0
                 for _, obj in pairs(workspace:GetDescendants()) do
-                    -- Ignora ovos que estejam no seu personagem ou na GUI (falsos positivos)
-                    if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then continue end
-                    
-                    local name = obj.Name:lower()
-                    -- Em Brookhaven, ovos de evento sao geralmente MeshParts
-                    if (obj:IsA("MeshPart") or obj:IsA("BasePart")) and (name:find("egg") or name:find("ovo") or name:find("easter")) then
+                    if IsTargetEgg(obj) then
                         if not obj:FindFirstChild("EggESP_HL") then
                             local hl = Instance.new("Highlight")
                             hl.Name = "EggESP_HL"
-                            hl.FillColor = Color3.fromRGB(255, 220, 0)
-                            hl.OutlineColor = Color3.fromRGB(255, 100, 200)
+                            hl.FillColor = Color3.fromRGB(255, 0, 0) -- Vermelho para o ovo grande
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
                             hl.FillTransparency = 0.2
                             hl.Adornee = obj
                             hl.Parent = obj
@@ -255,11 +270,11 @@ local success, err = pcall(function()
             end
 
             -- Toggle ESP continuo (Loop Seguro)
-            BTab:Toggle({Title = "🥚 Egg ESP (Highlight)", Default = false, Callback = function(v)
+            BTab:Toggle({Title = "🥚 Egg ESP (Big Red Only)", Default = false, Callback = function(v)
                 eggESPActive = v
                 if v then
                     local count = ScanEggs()
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos encontrados!", Duration=4, Icon = "search"})
+                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos de evento encontrados!", Duration=4, Icon = "search"})
                     
                     task.spawn(function()
                         while eggESPActive do
@@ -274,27 +289,29 @@ local success, err = pcall(function()
             end})
 
             -- Scan manual
-            BTab:Button({Title = "🔍 Scan Ovos Agora", Callback = function()
+            BTab:Button({Title = "🔍 Localizar Ovo Grande Agora", Callback = function()
                 local count = ScanEggs()
-                WindUI:Notify({Title="🔍 Scan", Content="Encontrados: " .. count .. " ovos no mapa!", Duration=5, Icon = "map-pin"})
+                WindUI:Notify({Title="🔍 Localizar", Content="Encontrados: " .. count .. " ovos do evento!", Duration=5, Icon = "map-pin"})
             end})
 
             -- Auto Collect (TP para cada ovo)
-            BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos)", Callback = function()
+            BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos de Evento)", Callback = function()
                 local collected = 0
                 local eggs = {}
                 
                 -- Primeiro mapeia todos os ovos validos
                 for _, obj in pairs(workspace:GetDescendants()) do
-                    if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then continue end
-                    local name = obj.Name:lower()
-                    if (obj:IsA("MeshPart") or obj:IsA("BasePart")) and (name:find("egg") or name:find("ovo") or name:find("easter")) then
+                    if IsTargetEgg(obj) then
                         table.insert(eggs, obj)
                     end
                 end
                 
                 -- Teleporta em sequencia
                 task.spawn(function()
+                    if #eggs == 0 then
+                        WindUI:Notify({Title="⚡ Collect", Content="Nenhum ovo de evento encontrado no momento.", Duration=3, Icon = "alert-circle"})
+                        return
+                    end
                     for _, egg in pairs(eggs) do
                         if egg and egg.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                             LocalPlayer.Character.HumanoidRootPart.CFrame = egg.CFrame
@@ -302,7 +319,7 @@ local success, err = pcall(function()
                             collected = collected + 1
                         end
                     end
-                    WindUI:Notify({Title="⚡ Collect", Content="Finalizado! Visitou " .. collected .. " locais de ovos.", Duration=4, Icon = "check-circle"})
+                    WindUI:Notify({Title="⚡ Collect", Content="Finalizado! Visitou " .. collected .. " locais de ovos de evento.", Duration=4, Icon = "check-circle"})
                 end)
             end})
 
