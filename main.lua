@@ -26,6 +26,72 @@ local success, err = pcall(function()
     local LocalPlayer = Players.LocalPlayer
     local Camera = workspace.CurrentCamera
 
+    -- CLEANUP SYSTEM
+    local EternalCleanup = {
+        Connections = {},
+        Objects = {},
+        Drawings = {}
+    }
+
+    local function AddConnection(conn)
+        table.insert(EternalCleanup.Connections, conn)
+        return conn
+    end
+
+    local function AddObject(obj)
+        table.insert(EternalCleanup.Objects, obj)
+        return obj
+    end
+
+    local function AddDrawing(obj)
+        table.insert(EternalCleanup.Drawings, obj)
+        return obj
+    end
+
+    local function UnloadScript()
+        _G.EternalState.Unloading = true 
+        
+        -- Disconnect all connections
+        for _, conn in pairs(EternalCleanup.Connections) do
+            pcall(function() conn:Disconnect() end)
+        end
+        
+        -- Remove all drawings
+        for _, draw in pairs(EternalCleanup.Drawings) do
+            pcall(function() draw:Remove() end)
+        end
+        
+        -- Destroy all instances
+        for _, obj in pairs(EternalCleanup.Objects) do
+            pcall(function() obj:Destroy() end)
+        end
+        
+        -- Reset Character
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                hum.WalkSpeed = 16
+                hum.JumpPower = 50
+            end
+        end)
+        
+        -- Destroy Window
+        if Window and Window.Destroy then 
+            pcall(function() Window:Destroy() end) 
+        elseif Window and Window.Instance then
+            pcall(function() Window.Instance:Destroy() end)
+        end
+        
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Eternal Hub",
+            Text = "Script descarregado com sucesso!",
+            Duration = 5,
+            Icon = "rbxassetid://6031289232"
+        })
+        
+        _G.EternalState = nil
+    end
+
     -- Global State
     _G.EternalState = {
         AimEnabled = false,
@@ -66,7 +132,8 @@ local success, err = pcall(function()
         Theme = "Dark",
         AccentColor = Color3.fromRGB(0, 150, 255),
         Transparency = 0,
-        MenuKeybind = Enum.KeyCode.Insert
+        MenuKeybind = Enum.KeyCode.Insert,
+        Unloading = false
     }
 
     -- CONFIG SYSTEM ---------------------------------------
@@ -113,11 +180,11 @@ local success, err = pcall(function()
     -- SHARED RGB CLOCK (Performance Optimized & Robust)
     sharedRGB = Color3.new(1,1,1)
     task.spawn(function()
-        while true do
-            task.wait()
+        local conn; conn = AddConnection(RunService.Heartbeat:Connect(function()
+            if _G.EternalState and _G.EternalState.Unloading then conn:Disconnect() return end
             local speed = (_G.EternalState and _G.EternalState.RGBSpeed) or 3
             sharedRGB = Color3.fromHSV((tick() * (speed/20)) % 1, 0.8, 1)
-        end
+        end))
     end)
 
     -- Tabs
@@ -229,23 +296,32 @@ local success, err = pcall(function()
             end
 
             local function IsTargetEgg(obj)
-                if not (obj:IsA("MeshPart") or obj:IsA("BasePart")) then return false end
+                if not (obj:IsA("MeshPart") or obj:IsA("BasePart") or obj:IsA("UnionOperation")) then return false end
                 if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then return false end
                 
                 local name = obj.Name:lower()
                 local color = obj.Color
                 local size = obj.Size
                 
-                -- Detecta o "Ovo Vermelho Grande" (Event Egg)
-                -- Geralmente é vermelho vivo (alto R, baixo G/B) e consideravelmente maior que decorações
-                local isRed = (color.R > 0.7 and color.G < 0.4 and color.B < 0.4)
-                local isLarge = (size.X > 2.5 or size.Y > 2.5 or size.Z > 2.5)
+                -- Detecta os Ovos do Evento 2026 (conforme imagem: Vermelho)
+                -- Geralmente são vermelhos vivos ou rosados.
+                local isRed = (color.R > 0.6 and color.G < 0.6 and color.B < 0.6)
                 
-                -- Filtra por nome, mas ignora decorações fixas ("easter", "deco", "fixed")
-                local hasKeywords = name:find("egg") or name:find("ovo") or name:find("evento")
-                local isNotDecoration = not (name:find("easter") or name:find("deco") or name:find("fixo") or name:find("fixed"))
+                -- A maioria dos ovos de Brookhaven usa um TouchInterest (TouchTransmitter) para coleta ao encostar
+                local isCollectible = obj:FindFirstChildOfClass("TouchTransmitter") or obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildOfClass("ClickDetector")
                 
-                return hasKeywords and isRed and isLarge and isNotDecoration
+                -- Filtra por palavras-chave, mas prioriza os que têm interação real
+                local hasKeywords = name:find("egg") or name:find("ovo") or name:find("collect") or name:find("hunt")
+                
+                -- Ignora decorações estáticas que não têm gatilho de coleta
+                if not isCollectible and (name:find("easter") or name:find("deco") or name:find("fixo")) then
+                    return false
+                end
+                
+                -- Ovos de evento costumam ter tamanho próximo a 1x1x1 até 3x3x3
+                local isEggSize = (size.X > 0.5 and size.X < 5) and (size.Y > 0.5 and size.Y < 5)
+                
+                return isRed and (isCollectible or hasKeywords) and isEggSize
             end
 
             local function ScanEggs()
@@ -276,12 +352,12 @@ local success, err = pcall(function()
                     local count = ScanEggs()
                     WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos de evento encontrados!", Duration=4, Icon = "search"})
                     
-                    task.spawn(function()
-                        while eggESPActive do
+                    AddConnection(task.spawn(function()
+                        while eggESPActive and not _G.EternalState.Unloading do
                             task.wait(5)
                             if eggESPActive then ScanEggs() end
                         end
-                    end)
+                    end))
                 else
                     ClearEggESP()
                     WindUI:Notify({Title="🥚 Egg ESP", Content="ESP desativado.", Duration=2, Icon = "eye-off"})
@@ -2110,6 +2186,16 @@ local success, err = pcall(function()
         end
     })
 
+    Tabs.Settings:Section({ Title = "Script Control" })
+
+    Tabs.Settings:Button({
+        Title = "🛑 Unload Script",
+        Desc = "Fecha o menu, para todos os scripts e limpa o ambiente.",
+        Callback = function()
+            UnloadScript()
+        end
+    })
+
     Tabs.Settings:Section({ Title = "Appearance & Visuals" })
     
     Tabs.Settings:Dropdown({
@@ -2143,7 +2229,7 @@ local success, err = pcall(function()
     })
 
     -- Watermark Logic (Persistent)
-    local WatermarkGui = Instance.new("ScreenGui")
+    local WatermarkGui = AddObject(Instance.new("ScreenGui"))
     WatermarkGui.Name = "EternalWatermark"
     WatermarkGui.IgnoreGuiInset = true
     WatermarkGui.ResetOnSpawn = false
@@ -2177,7 +2263,8 @@ local success, err = pcall(function()
     -- FPS Logic
     local lastUpdate = 0
     local fpsCount = 0
-    RunService.RenderStepped:Connect(function(dt)
+    AddConnection(RunService.RenderStepped:Connect(function(dt)
+        if _G.EternalState and _G.EternalState.Unloading then return end
         if _G.EternalState.Watermark then
             fpsCount = math.floor(1/dt)
             if tick() - lastUpdate > 0.5 then
@@ -2185,7 +2272,7 @@ local success, err = pcall(function()
                 lastUpdate = tick()
             end
         end
-    end)
+    end))
 
     Tabs.Settings:Toggle({
         Title = "Enable Watermark (Waterproof)",
@@ -2261,7 +2348,8 @@ local success, err = pcall(function()
     -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
     task.spawn(function()
         local spinAngle = 0
-        RunService.RenderStepped:Connect(function()
+        AddConnection(RunService.RenderStepped:Connect(function()
+            if _G.EternalState and _G.EternalState.Unloading then return end
             -- Camera Aimbot
             if _G.EternalState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
                 local targetPos, targetPlayer = GetClosestTarget()
@@ -2285,7 +2373,7 @@ local success, err = pcall(function()
                     hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
                 end
             end
-        end)
+        end))
     end)
 
     -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
@@ -2293,19 +2381,19 @@ local success, err = pcall(function()
         local DrawPool = {}
         
         local function GetLine()
-            local l = Drawing.new("Line"); l.Visible = false; l.Thickness = 1.5; return l
+            local l = AddDrawing(Drawing.new("Line")); l.Visible = false; l.Thickness = 1.5; return l
         end
 
         local function BuildESP(p)
-            local Box = Drawing.new("Square"); Box.Visible = false; Box.Color = Color3.new(1,0,0); Box.Thickness = 1; Box.Filled = false
-            local Name = Drawing.new("Text"); Name.Visible = false; Name.Color = Color3.new(1,1,1); Name.Size = 14; Name.Center = true; Name.Outline = true
-            local Dist = Drawing.new("Text"); Dist.Visible = false; Dist.Color = Color3.new(0.8,0.8,0.8); Dist.Size = 13; Dist.Center = true; Dist.Outline = true
+            local Box = AddDrawing(Drawing.new("Square")); Box.Visible = false; Box.Color = Color3.new(1,0,0); Box.Thickness = 1; Box.Filled = false
+            local Name = AddDrawing(Drawing.new("Text")); Name.Visible = false; Name.Color = Color3.new(1,1,1); Name.Size = 14; Name.Center = true; Name.Outline = true
+            local Dist = AddDrawing(Drawing.new("Text")); Dist.Visible = false; Dist.Color = Color3.new(0.8,0.8,0.8); Dist.Size = 13; Dist.Center = true; Dist.Outline = true
             
             -- Skeleton lines (Dynamic Pool)
             local Bones = {}
             local function GetBone(id)
                 if not Bones[id] then 
-                    local l = Drawing.new("Line")
+                    local l = AddDrawing(Drawing.new("Line"))
                     l.Visible = false
                     l.Thickness = 1.5
                     Bones[id] = l
@@ -2314,12 +2402,12 @@ local success, err = pcall(function()
             end
 
             local function GetCorner()
-                local l = Drawing.new("Line"); l.Visible = false; l.Thickness = 1.5; return l
+                local l = AddDrawing(Drawing.new("Line")); l.Visible = false; l.Thickness = 1.5; return l
             end
 
             -- Health Bar
-            local HealthBarBG = Drawing.new("Square"); HealthBarBG.Visible = false; HealthBarBG.Filled = true; HealthBarBG.Color = Color3.fromRGB(0,0,0); HealthBarBG.Thickness = 0; HealthBarBG.Transparency = 0.5
-            local HealthBar = Drawing.new("Square"); HealthBar.Visible = false; HealthBar.Filled = true; HealthBar.Thickness = 0
+            local HealthBarBG = AddDrawing(Drawing.new("Square")); HealthBarBG.Visible = false; HealthBarBG.Filled = true; HealthBarBG.Color = Color3.fromRGB(0,0,0); HealthBarBG.Thickness = 0; HealthBarBG.Transparency = 0.5
+            local HealthBar = AddDrawing(Drawing.new("Square")); HealthBar.Visible = false; HealthBar.Filled = true; HealthBar.Thickness = 0
 
             -- Corner Box
             local Corners = {
@@ -2336,7 +2424,8 @@ local success, err = pcall(function()
                 for _, l in pairs(Corners) do l:Remove() end
             end
 
-            local conn; conn = RunService.RenderStepped:Connect(function()
+            local conn; conn = AddConnection(RunService.RenderStepped:Connect(function()
+                if _G.EternalState and _G.EternalState.Unloading then conn:Disconnect() cleanup() return end
                 if not p then cleanup(); conn:Disconnect(); return end
                 
                 -- Team Check
@@ -2485,7 +2574,7 @@ local success, err = pcall(function()
             end)
         end
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
-        Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end)
+        AddConnection(Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end))
         
         -- CHAMS SYSTEM via Highlight (Corrigido e Otimizado)
         local chamsApplied = {} 
@@ -2502,7 +2591,7 @@ local success, err = pcall(function()
             if old then old:Destroy() end
 
             local preset = CHAMS_PRESETS[_G.EternalState.ChamsMat] or CHAMS_PRESETS["Neon"]
-            local hl = Instance.new("Highlight")
+            local hl = AddObject(Instance.new("Highlight"))
             hl.Name              = "EternalChams"
             hl.Adornee           = char
             hl.FillColor         = _G.EternalState.RGBChams and sharedRGB or _G.EternalState.ChamsColor
@@ -2520,7 +2609,8 @@ local success, err = pcall(function()
             end
         end
 
-        RunService.Heartbeat:Connect(function()
+        AddConnection(RunService.Heartbeat:Connect(function()
+            if _G.EternalState and _G.EternalState.Unloading then return end
             if _G.EternalState.Chams then
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and p.Character then
@@ -2571,15 +2661,19 @@ local success, err = pcall(function()
             end
         end)
     end)
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
-            pcall(function()
-                if Window.Toggle then
-                    Window:Toggle()
-                end
-            end)
+    AddConnection(UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed then
+            if input.KeyCode == Enum.KeyCode.Insert then
+                pcall(function()
+                    if Window.Toggle then
+                        Window:Toggle()
+                    end
+                end)
+            elseif input.KeyCode == Enum.KeyCode.Home then
+                UnloadScript()
+            end
         end
-    end)
+    end))
 
     Window:SelectTab(1)
     WindUI:Notify({Title = "Eternal EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "zap"})
