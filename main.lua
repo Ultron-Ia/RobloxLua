@@ -2579,7 +2579,7 @@ local success, err = pcall(function()
                     Box.Visible = false; Name.Visible = false; Dist.Visible = false
                     for _, l in pairs(Bones) do l.Visible = false end
                 end
-            end)
+            end))
         end
         for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then BuildESP(p) end end
         AddConnection(Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then BuildESP(p) end end))
@@ -2641,7 +2641,7 @@ local success, err = pcall(function()
             else
                 for p, _ in pairs(chamsApplied) do removeChams(p) end
             end
-        end)
+        end))
         
         -- PROJECTILE ESP (Looking for common physical projectiles)
         local ProjContainer = workspace:FindFirstChild("Projectiles") or workspace:FindFirstChild("Debris") or workspace
