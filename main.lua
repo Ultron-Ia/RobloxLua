@@ -2663,13 +2663,7 @@ local success, err = pcall(function()
     end)
     AddConnection(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed then
-            if input.KeyCode == Enum.KeyCode.Insert then
-                pcall(function()
-                    if Window.Toggle then
-                        Window:Toggle()
-                    end
-                end)
-            elseif input.KeyCode == Enum.KeyCode.Home then
+            if input.KeyCode == Enum.KeyCode.Home then
                 UnloadScript()
             end
         end
