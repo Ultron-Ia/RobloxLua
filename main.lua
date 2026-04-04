@@ -12,9 +12,8 @@ local success, err = pcall(function()
         Folder = "EternalHub",
         Size = UDim2.fromOffset(580, 460),
         Transparent = true,
-        Theme = "Dark",
-        Keybind = Enum.KeyCode.Insert,
-        ToggleKey = Enum.KeyCode.Insert
+        Theme = "Dark"
+        -- Removed WindUI native keybinds to prevent double-toggle bugs. We handle this manually in InputBegan.
     })
 
     -- Initialization Notification
@@ -2674,6 +2673,12 @@ local success, err = pcall(function()
         if not gameProcessed then
             if input.KeyCode == Enum.KeyCode.Home then
                 UnloadScript()
+            elseif input.KeyCode == Enum.KeyCode.Insert then
+                pcall(function()
+                    if Window.Toggle then
+                        Window:Toggle()
+                    end
+                end)
             end
         end
     end))
