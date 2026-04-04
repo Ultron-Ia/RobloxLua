@@ -13,9 +13,17 @@ local success, err = pcall(function()
         Size = UDim2.fromOffset(580, 460),
         Transparent = true,
         Theme = "Dark",
-        Keybind = Enum.KeyCode.Insert,
-        ToggleKey = Enum.KeyCode.Insert
+        Keybind = Enum.KeyCode.Insert
     })
+
+    -- Initialization Notification
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Eternal Hub",
+            Text = "Inicializando sistemas...",
+            Duration = 3
+        })
+    end)
 
     -- Services
     local Players = game:GetService("Players")
@@ -1154,7 +1162,7 @@ local success, err = pcall(function()
                     end
                     
                     if foundEgg and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = foundEgg:GetModelCFrame() or foundEgg.CFrame * CFrame.new(0, 2, 0)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = foundEgg.CFrame * CFrame.new(0, 2, 0)
                         WindUI:Notify({Title = "🥚 Auto Collect", Content = "Teleportado para o ovo real!", Duration = 2, Icon = "zap"})
                     else
                         WindUI:Notify({Title = "🥚 Auto Collect", Content = "Nenhum ovo colecionável encontrado próximo.", Duration = 3, Icon = "alert-circle"})
@@ -1313,9 +1321,9 @@ local success, err = pcall(function()
                 end})
 
                 -- ── Admin Commands ────────────────────────────────
-                STab:Section({ Title = "⚠️ Admin Commands" })
+                BTab:Section({ Title = "⚠️ Admin Commands" })
 
-                STab:Button({Title = "📝 Verify (List Players)", Callback = function()
+                BTab:Button({Title = "📝 Verify (List Players)", Callback = function()
                     local msg = "Players:\n"
                     for _, p in pairs(Players:GetPlayers()) do
                         msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
@@ -1323,7 +1331,7 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="📝 Verify", Content=msg, Duration=10, Icon = "terminal"})
                 end})
 
-                STab:Button({Title = "💀 Kill Target", Callback = function()
+                BTab:Button({Title = "💀 Kill Target", Callback = function()
                     local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
@@ -1331,7 +1339,7 @@ local success, err = pcall(function()
                     end
                 end})
 
-                STab:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
+                BTab:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
                     local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                         local exp = Instance.new("Explosion")
@@ -2034,8 +2042,8 @@ local success, err = pcall(function()
                 end
             })
 
-        end
-    end})
+        end -- Added to correctly close the Game Selection branches if needed or removed extra ones
+    end}) -- Closes the GameSelector Dropdown definition
 
 
     -- POPULATE AIMBOT
@@ -2670,9 +2678,18 @@ local success, err = pcall(function()
     end))
 
     Window:SelectTab(1)
-    WindUI:Notify({Title = "Eternal EXTREME", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "zap"})
+    
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Eternal Hub",
+            Text = "Menu Carregado! Press Insert to toggle.",
+            Duration = 5
+        })
+    end)
+    WindUI:Notify({Title = "Eternal Hub", Content = "Advanced Engine Loaded. Silent Aim & Spinbot ready.", Duration = 7, Icon = "zap"})
 end)
 
 if not success then
     game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Fatal Error", Text = tostring(err), Duration = 20})
+    warn("Eternal Hub Fatal Error: " .. tostring(err))
 end
