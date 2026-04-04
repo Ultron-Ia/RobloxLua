@@ -1,0 +1,2 @@
+﻿  modern_injector.cpp
+C:\Users\hoff\OneDrive\Documentos\bot\RobloxLua\kernelmodeinjector-main\modern_injector.cpp(1,10): error C1083: Não é possível abrir arquivo incluir: 'ntifs.h': No such file or directory

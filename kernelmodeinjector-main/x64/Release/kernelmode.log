@@ -1,0 +1,7 @@
+﻿  Building 'kernelmode' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
+  modern_injector.cpp
+  kernelmode.vcxproj -> C:\Users\hoff\OneDrive\Documentos\bot\RobloxLua\kernelmodeinjector-main\x64\Release\kernelmode.sys
+  Inf2Cat task was skipped as there were no inf files to process
+  
+  DrvCat task was skipped as there was no catalog file to process
+  
