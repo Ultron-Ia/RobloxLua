@@ -13,7 +13,8 @@ local success, err = pcall(function()
         Size = UDim2.fromOffset(580, 460),
         Transparent = true,
         Theme = "Dark",
-        Keybind = Enum.KeyCode.Insert
+        Keybind = Enum.KeyCode.Insert,
+        ToggleKey = Enum.KeyCode.Insert
     })
 
     -- Initialization Notification
