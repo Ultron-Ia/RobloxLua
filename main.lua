@@ -1107,12 +1107,16 @@ local success, err = pcall(function()
                     local found = 0
                     for _, obj in pairs(workspace:GetDescendants()) do
                         local name = obj.Name:lower()
-                        local isEggCandidate = name:find("egg") or name:find("ovo")
+                        local isEggCandidate = (name:find("egg") or (name:find("ovo") and not name:find("novo")))
                         
                         if isEggCandidate and (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
                             -- ULTRA STRICT FILTER
                             local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
                             local isSmall = obj.Size.Magnitude < 5 -- Collectibles are tiny
+                            
+                            -- Geometry Check: Eggs are vertically elongated, balls are perfectly spherical.
+                            local isEggShaped = (obj.Size.Y > obj.Size.X + 0.05) and (obj.Size.Y > obj.Size.Z + 0.05)
+                            if obj:IsA("Part") and obj.Shape == Enum.PartType.Ball then isEggShaped = false end
                             
                             -- Check if it's actually collectible (ActionText check)
                             local isCollectible = false
@@ -1127,8 +1131,8 @@ local success, err = pcall(function()
                             
                             -- Fallback for the 2026 Brookhaven Red Egg Event (Visual Check)
                             if not isCollectible and obj:IsA("BasePart") then
-                                -- Check if it's prominently red
-                                if obj.Color.R > 0.7 and obj.Color.G < 0.3 and obj.Color.B < 0.3 then
+                                -- Check if it's prominently red AND shaped like an egg (to exclude red dodgeballs)
+                                if obj.Color.R > 0.7 and obj.Color.G < 0.3 and obj.Color.B < 0.3 and isEggShaped then
                                     isCollectible = true
                                 end
                             end
@@ -1161,8 +1165,13 @@ local success, err = pcall(function()
                         local name = obj.Name:lower()
                         local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or (obj.Parent and obj.Parent:FindFirstChildOfClass("ProximityPrompt"))
                         
-                        if (name:find("egg") or name:find("ovo")) and (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
+                        local isEggCandidate = (name:find("egg") or (name:find("ovo") and not name:find("novo")))
+                        
+                        if isEggCandidate and (obj:IsA("BasePart") or obj:IsA("MeshPart")) then
                             local isSmall = obj.Size.Magnitude < 5
+                            local isEggShaped = (obj.Size.Y > obj.Size.X + 0.05) and (obj.Size.Y > obj.Size.Z + 0.05)
+                            if obj:IsA("Part") and obj.Shape == Enum.PartType.Ball then isEggShaped = false end
+                            
                             local isCollectible = false
                             
                             if prompt then
@@ -1172,7 +1181,7 @@ local success, err = pcall(function()
                                 isCollectible = true
                             end
                             
-                            if not isCollectible and (obj.Color.R > 0.7 and obj.Color.G < 0.3 and obj.Color.B < 0.3) then
+                            if not isCollectible and (obj.Color.R > 0.7 and obj.Color.G < 0.3 and obj.Color.B < 0.3) and isEggShaped then
                                 isCollectible = true
                             end
 
