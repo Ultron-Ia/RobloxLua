@@ -11,7 +11,7 @@ local RunService       = game:GetService("RunService")
 
 local KeyFileName = "EternalHub_Key.txt"
 local ServiceID   = "eternalhub" 
-local DiscordLink = "https://discord.gg/eternalhub" 
+local DiscordLink = "https://discord.gg/s7DGf8VGUp" 
 local ScriptURL   = "https://raw.githubusercontent.com/Ultron-Ia/RobloxLua/main/main.lua"
 
 -- UTILIDADES DE UI ---------------------------------------------------------------------------
