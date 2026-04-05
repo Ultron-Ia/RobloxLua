@@ -2,7 +2,27 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 local playersExist, _ = pcall(function() return game:GetService("Players") end)
 if not playersExist then return end
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+-- PATCH: Torna makefolder/isfolder/writefile/readfile seguros antes do WindUI carregar
+do
+    local function safePatch(name, fallback)
+        local ok, fn = pcall(function() return getfenv()[name] end)
+        if ok and type(fn) == "function" then
+            getfenv()[name] = function(...)
+                local s, r = pcall(fn, ...)
+                if s then return r else return fallback end
+            end
+        elseif not ok or type(fn) ~= "function" then
+            getfenv()[name] = function(...) return fallback end
+        end
+    end
+    safePatch("makefolder", nil)
+    safePatch("isfolder",   false)
+    safePatch("isfile",     false)
+    safePatch("writefile",  nil)
+    safePatch("readfile",   "")
+end
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua?t=" .. tostring(os.time())))()
 
 local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
