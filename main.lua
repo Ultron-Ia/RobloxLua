@@ -281,146 +281,12 @@ local success, err = pcall(function()
                     end)
                 end})
 
-            elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
+               elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
                 BTab:Button({Title = "Refresh Player List", Callback = function() BPD:Refresh(GetPlayers(), true) end})
             
-
--- ============================================
-            -- EGG HUNT EVENT
-            -- ============================================
-            BTab:Section({ Title = "🥚 Egg Hunt Event" })
-
-            local eggESPActive = false
-            local eggHighlights = {}
-
-            local function ClearEggESP()
-                for _, hl in pairs(eggHighlights) do
-                    pcall(function() hl:Destroy() end)
-                end
-                eggHighlights = {}
-            end
-
-            local function IsTargetEgg(obj)
-                if not (obj:IsA("MeshPart") or obj:IsA("BasePart") or obj:IsA("UnionOperation")) then return false end
-                if obj:IsDescendantOf(LocalPlayer.Character) or obj:IsDescendantOf(LocalPlayer:FindFirstChild("PlayerGui")) then return false end
-                
-                local name = obj.Name:lower()
-                local color = obj.Color
-                local size = obj.Size
-                
-                -- Detecta os Ovos do Evento 2026 (conforme imagem: Vermelho)
-                -- Geralmente são vermelhos vivos ou rosados.
-                local isRed = (color.R > 0.6 and color.G < 0.6 and color.B < 0.6)
-                
-                -- A maioria dos ovos de Brookhaven usa um TouchInterest (TouchTransmitter) para coleta ao encostar
-                local isCollectible = obj:FindFirstChildOfClass("TouchTransmitter") or obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildOfClass("ClickDetector")
-                
-                -- Filtra por palavras-chave, mas prioriza os que têm interação real
-                local hasKeywords = name:find("egg") or name:find("ovo") or name:find("collect") or name:find("hunt")
-                
-                -- Ignora decorações estáticas que não têm gatilho de coleta
-                if not isCollectible and (name:find("easter") or name:find("deco") or name:find("fixo")) then
-                    return false
-                end
-                
-                -- Ovos de evento costumam ter tamanho próximo a 1x1x1 até 3x3x3
-                local isEggSize = (size.X > 0.5 and size.X < 5) and (size.Y > 0.5 and size.Y < 5)
-                
-                return isRed and (isCollectible or hasKeywords) and isEggSize
-            end
-
-            local function ScanEggs()
-                ClearEggESP()
-                local found = 0
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if IsTargetEgg(obj) then
-                        if not obj:FindFirstChild("EggESP_HL") then
-                            local hl = Instance.new("Highlight")
-                            hl.Name = "EggESP_HL"
-                            hl.FillColor = Color3.fromRGB(255, 0, 0) -- Vermelho para o ovo grande
-                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                            hl.FillTransparency = 0.2
-                            hl.Adornee = obj
-                            hl.Parent = obj
-                            table.insert(eggHighlights, hl)
-                            found = found + 1
-                        end
-                    end
-                end
-                return found
-            end
-
-            -- Toggle ESP continuo (Loop Seguro)
-            BTab:Toggle({Title = "🥚 Egg ESP (Big Red Only)", Default = false, Callback = function(v)
-                eggESPActive = v
-                if v then
-                    local count = ScanEggs()
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="Destacando " .. count .. " ovos de evento encontrados!", Duration=4, Icon = "search"})
-                    
-                    AddConnection(task.spawn(function()
-                        while eggESPActive and not _G.EternalState.Unloading do
-                            task.wait(5)
-                            if eggESPActive then ScanEggs() end
-                        end
-                    end))
-                else
-                    ClearEggESP()
-                    WindUI:Notify({Title="🥚 Egg ESP", Content="ESP desativado.", Duration=2, Icon = "eye-off"})
-                end
-            end})
-
-            -- Scan manual
-            BTab:Button({Title = "🔍 Localizar Ovo Grande Agora", Callback = function()
-                local count = ScanEggs()
-                WindUI:Notify({Title="🔍 Localizar", Content="Encontrados: " .. count .. " ovos do evento!", Duration=5, Icon = "map-pin"})
-            end})
-
-            -- Auto Collect (TP para cada ovo)
-            BTab:Button({Title = "⚡ Auto Collect (TP p/ Ovos de Evento)", Callback = function()
-                local collected = 0
-                local eggs = {}
-                
-                -- Primeiro mapeia todos os ovos validos
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if IsTargetEgg(obj) then
-                        table.insert(eggs, obj)
-                    end
-                end
-                
-                -- Teleporta em sequencia
-                task.spawn(function()
-                    if #eggs == 0 then
-                        WindUI:Notify({Title="⚡ Collect", Content="Nenhum ovo de evento encontrado no momento.", Duration=3, Icon = "alert-circle"})
-                        return
-                    end
-                    for _, egg in pairs(eggs) do
-                        if egg and egg.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = egg.CFrame
-                            task.wait(0.5) -- Tempo para o servidor registrar
-                            collected = collected + 1
-                        end
-                    end
-                    WindUI:Notify({Title="⚡ Collect", Content="Finalizado! Visitou " .. collected .. " locais de ovos de evento.", Duration=4, Icon = "check-circle"})
-                end)
-            end})
-
-            -- Mostrar contagem de progresso (lê o HUD)
-            BTab:Button({Title = "📊 Ver Progresso (HUD)", Callback = function()
-                pcall(function()
-                    for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
-                        if gui:IsA("TextLabel") and (gui.Text:find("/") or gui.Text:find("ovo") or gui.Text:find("egg")) then
-                            WindUI:Notify({Title="📊 Progresso", Content="HUD: " .. gui.Text, Duration=6, Icon = "bar-chart"})
-                            return
-                        end
-                    end
-                    WindUI:Notify({Title="📊 Progresso", Content="HUD não encontrado automaticamente.", Duration=3, Icon = "info"})
-                end)
-            end})
-
-
 
                 BTab:Section({ Title = "Target Actions" })
                 BTab:Button({Title = "Teleport To Target", Callback = function()
@@ -1007,87 +873,6 @@ local success, err = pcall(function()
                 end
             })
 
-            -- ============================================
-            -- HORROR COMMANDS
-            -- ============================================
-                BTab:Section({ Title = "🎃 Horror Commands" })
-
-            -- The Backrooms: teleport target to a desolate empty corner
-                BTab:Button({Title = "🪄 The Backrooms (Banish)", Callback = function()
-                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                    -- Teleport to a far, empty liminal space position
-                    pcall(function()
-                        t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999)
-                    end)
-                    -- Also dim world for local player (visual effect)
-                    pcall(function()
-                        local lighting = game:GetService("Lighting")
-                        local origBrightness = lighting.Brightness
-                        local origAmbient = lighting.Ambient
-                        lighting.Brightness = 0.05
-                        lighting.Ambient = Color3.fromRGB(20, 15, 10)
-                        lighting.FogColor = Color3.fromRGB(210, 200, 170)
-                        lighting.FogEnd = 60
-                        lighting.FogStart = 5
-                        task.delay(8, function()
-                            lighting.Brightness = origBrightness
-                            lighting.Ambient = origAmbient
-                            lighting.FogEnd = 100000
-                            lighting.FogStart = 0
-                        end)
-                    end)
-                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.EternalState.TargetPlayer .. " has been banished to The Backrooms...", Duration=5, Icon = "ghost"})
-                end
-            end})
-
-            -- Jumpscare: Eyes
-                BTab:Button({Title = "🧟 Jumpscare: Eyes", Callback = function()
-                pcall(function()
-                    local sg = Instance.new("ScreenGui")
-                    sg.Name = "EternalJumpscare"
-                    sg.IgnoreGuiInset = true
-                    sg.ResetOnSpawn = false
-                    sg.Parent = LocalPlayer.PlayerGui
-
-                    local bg = Instance.new("Frame", sg)
-                    bg.Size = UDim2.fromScale(1, 1)
-                    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                    bg.BackgroundTransparency = 0
-                    bg.ZIndex = 10
-
-                    local eyes = Instance.new("TextLabel", bg)
-                    eyes.Size = UDim2.fromScale(1, 1)
-                    eyes.Position = UDim2.fromScale(0, 0)
-                    eyes.BackgroundTransparency = 1
-                    eyes.Text = "👀"
-                    eyes.TextScaled = true
-                    eyes.TextColor3 = Color3.fromRGB(255, 0, 0)
-                    eyes.Font = Enum.Font.GothamBold
-                    eyes.ZIndex = 11
-
-                    -- Flash effect
-                    for i = 1, 6 do
-                        bg.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 0, 0)
-                        task.wait(0.08)
-                    end
-                    task.wait(0.5)
-                    sg:Destroy()
-                end)
-                WindUI:Notify({Title="🧟 Jumpscare", Content="EYES jumpscare triggered!", Duration=2, Icon = "eye"})
-            end})
-
-            -- Jumpscare: Zombie
-                BTab:Button({Title = "🧟 Jumpscare: Zombie", Callback = function() ElephantScare("🧟", 50, 180, 0, "BRAAIIINS...", 0.8) WindUI:Notify({Title="🧟 Jumpscare", Content="ZOMBIE jumpscare triggered!", Duration=2, Icon = "skull"}) end})
-
-            -- Jumpscare: Ghost
-                BTab:Button({Title = "🧟 Jumpscare: Ghost", Callback = function() ElephantScare("👻", 200, 200, 255, "BOO!", 0.6) WindUI:Notify({Title="🧟 Jumpscare", Content="GHOST jumpscare triggered!", Duration=2, Icon = "ghost"}) end})
-
-            -- Jumpscare: Backrooms
-                BTab:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() ElephantScare("🟨", 210, 190, 130, "Level 0 — The Backrooms", 1.5) WindUI:Notify({Title="🎃 Jumpscare", Content="BACKROOMS jumpscare triggered!", Duration=2, Icon = "ghost"}) end})
-
-
-
             elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
                 BuiltHubs["PecaDeSailor"] = true
                 local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
@@ -1335,7 +1120,7 @@ local success, err = pcall(function()
             STab:Button({Title = "Refresh List", Callback = function() SPD:Refresh(GetPlayers(), true) end})
             
             STab:Section({ Title = "Interactions" })
-            -- MOVED: Horror & Troll Commands
+
             STab:Button({Title = "🧲 Fling Target", Callback = function()
                 local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                 if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -1429,37 +1214,6 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="🔒 Jail", Content=_G.EternalState.TargetPlayer .. " jailed!", Duration=4, Icon = "lock"})
                 end
             end})
-
-            STab:Section({ Title = "🎃 Horror Commands" })
-
-            STab:Button({Title = "🪄 Backrooms (Banish)", Callback = function()
-                local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
-                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
-                    pcall(function() t.Character.HumanoidRootPart.CFrame = CFrame.new(99999, 100, 99999) end)
-                    pcall(function()
-                        local lighting = game:GetService("Lighting")
-                        local ob, oa = lighting.Brightness, lighting.Ambient
-                        lighting.Brightness = 0.05
-                        lighting.Ambient = Color3.fromRGB(20, 15, 10)
-                        lighting.FogColor = Color3.fromRGB(210, 200, 170)
-                        lighting.FogEnd = 60; lighting.FogStart = 5
-                        task.delay(8, function()
-                            lighting.Brightness = ob; lighting.Ambient = oa
-                            lighting.FogEnd = 100000; lighting.FogStart = 0
-                        end)
-                    end)
-                    WindUI:Notify({Title="🪄 Backrooms", Content=_G.EternalState.TargetPlayer .. " banished!", Duration=5, Icon = "ghost"})
-                end
-            end})
-
-            local function SailorJumpscare(icon, flashR, flashG, flashB, text, delay_)
-                ElephantScare(icon, flashR, flashG, flashB, text, delay_)
-            end
-
-            STab:Button({Title = "🧟 Jumpscare: Eyes",      Callback = function() SailorJumpscare("👀", 255, 0, 0,   "OLHANDO PARA VOCÊ...", 0.5) WindUI:Notify({Title="🧟 Scare", Content="Eyes!", Duration=2, Icon = "eye"}) end})
-            STab:Button({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2, Icon = "skull"}) end})
-            STab:Button({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2, Icon = "ghost"}) end})
-            STab:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2, Icon = "ghost"}) end})
 
             STab:Button({Title = "Teleport To Player", Callback = function()
                 local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
@@ -1772,45 +1526,8 @@ local success, err = pcall(function()
                 end
                 end
             })
-            -- ============================================
-            -- HORROR COMMANDS
-            -- ============================================
-            STab:Section({ Title = "🎃 Horror Commands" })
-            
-            STab:Button({Title = "🏹 Angel All Players (Kill Server)", Callback = function()
-                local count = 0
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local hrp = p.Character.HumanoidRootPart
-                        -- White glow
-                        pcall(function()
-                            local hl = p.Character:FindFirstChild("AngelHL") or Instance.new("Highlight", p.Character)
-                            hl.Name = "AngelHL"
-                            hl.FillColor = Color3.fromRGB(255, 255, 255)
-                            hl.OutlineColor = Color3.fromRGB(200, 200, 255)
-                            hl.FillTransparency = 0.3
-                        end)
-                        -- Lift up high and anchor
-                        pcall(function()
-                            hrp.CFrame = hrp.CFrame + Vector3.new(0, 200, 0)
-                            hrp.Anchored = true
-                            task.delay(8, function()
-                                pcall(function() hrp.Anchored = false end)
-                            end)
-                        end)
-                        
-                        if p.Character:FindFirstChildOfClass("Humanoid") then
-                            p.Character.Humanoid.Health = 0
-                        end
-                        count = count + 1
-                    end
-                end
-                WindUI:Notify({Title="🏹 Angel All", Content=count.." players have become angels!", Duration=4, Icon = "sun"})
-            end})
-
-
-            
-
+         
+        
             -- ============================================
             -- RO-VIBES & SALÃO DE FESTAS
             -- ============================================
