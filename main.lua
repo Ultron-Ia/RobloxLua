@@ -9,11 +9,10 @@ local success, err = pcall(function()
         Title = "ETERNAL",
         Icon = "shield",
         Author = "Eternal Team",
-        Folder = "EternalHub",
         Size = UDim2.fromOffset(580, 460),
         Transparent = true,
         Theme = "Dark"
-        -- Removed WindUI native keybinds to prevent double-toggle bugs. We handle this manually in InputBegan.
+        -- Folder removido para evitar erro 'Failed to create directory' em alguns executors
     })
 
     -- Initialization Notification
@@ -150,7 +149,7 @@ local success, err = pcall(function()
     local ConfigFile = "EternalHub/config.json"
 
     local function SaveConfig()
-        if not isfolder(EternalFolder) then makefolder(EternalFolder) end
+        pcall(function() if not isfolder(EternalFolder) then makefolder(EternalFolder) end end)
         local copy = {}
         for k, v in pairs(_G.EternalState) do
             if typeof(v) == "Color3" then
