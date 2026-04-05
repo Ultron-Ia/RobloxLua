@@ -490,10 +490,11 @@ local function BuildKeyGUI()
         BackgroundColor3       = Color3.fromRGB(0, 140, 255),
         BackgroundTransparency = 0.82,
         BorderSizePixel        = 0,
-        ZIndex                 = 3,
+        ZIndex                 = 4,
         Parent                 = main,
     })
     Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = badgeFrame })
+    Create("UIStroke",  { Color = Color3.fromRGB(0, 160, 255), Transparency = 0.5, Thickness = 1, Parent = badgeFrame })
     Create("TextLabel", {
         Text                   = "🔐  Eternal Authentication",
         Size                   = UDim2.new(1, 0, 1, 0),
@@ -501,7 +502,7 @@ local function BuildKeyGUI()
         TextColor3             = Color3.fromRGB(100, 200, 255),
         Font                   = Enum.Font.GothamMedium,
         TextSize               = 12,
-        ZIndex                 = 4,
+        ZIndex                 = 5,
         Parent                 = badgeFrame,
     })
 
@@ -510,7 +511,7 @@ local function BuildKeyGUI()
         Position         = UDim2.new(0.06, 0, 0, 128),
         BackgroundColor3 = Color3.fromRGB(6, 6, 10),
         BorderSizePixel  = 0,
-        ZIndex           = 3,
+        ZIndex           = 4,
         Parent           = main,
     })
     Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = inputContainer })
@@ -528,32 +529,39 @@ local function BuildKeyGUI()
         TextSize               = 13,
         TextXAlignment         = Enum.TextXAlignment.Left,
         ClearTextOnFocus       = false,
-        ZIndex                 = 4,
+        ZIndex                 = 5,
         Parent                 = inputContainer,
     })
 
+    local pasteBtn = Create("TextButton", {
+        Text             = "⎘ Paste",
+        Size             = UDim2.new(0, 70, 0, 32),
+        Position         = UDim2.new(1, -78, 0.5, -16),
+        BackgroundColor3 = Color3.fromRGB(20, 25, 42),
+        TextColor3       = Color3.fromRGB(140, 190, 255),
+        Font             = Enum.Font.GothamBold,
+        TextSize         = 12,
+        ZIndex           = 6,
+        Parent           = inputContainer,
+    })
+    Create("UICorner", { CornerRadius = UDim.new(0, 7), Parent = pasteBtn })
+    ButtonAnimation(pasteBtn, Color3.fromRGB(20, 25, 42), Color3.fromRGB(30, 38, 65))
+
     local getKeyBtn = Create("TextButton", {
         RichText         = true,
-        Text             = "<b>🔗  GET KEY (Panda System)</b>",
+        Text             = "<b>🔗  GET KEY (Panda System)</b>\n<font size='11' color='rgb(130,130,155)'>Acesso de 24 Horas</font>",
         Size             = UDim2.new(0.88, 0, 0, 52),
         Position         = UDim2.new(0.06, 0, 0, 190),
         BackgroundColor3 = Color3.fromRGB(14, 14, 22),
         TextColor3       = Color3.fromRGB(255, 255, 255),
         Font             = Enum.Font.GothamBold,
         TextSize         = 14,
+        ZIndex           = 4,
         Parent           = main,
     })
     Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = getKeyBtn })
+    Create("UIStroke",  { Color = Color3.fromRGB(50, 60, 90), Transparency = 0.2, Thickness = 1.2, Parent = getKeyBtn })
     ButtonAnimation(getKeyBtn, Color3.fromRGB(14, 14, 22), Color3.fromRGB(20, 22, 36))
-
-    getKeyBtn.MouseButton1Click:Connect(function()
-        local link = "https://new.pandadevelopment.net/getkey/" .. ServiceID .. "?hwid=" .. GetHWID()
-        if pcall(setclipboard, link) then
-            status.Text = "🔗 Link copiado para o clipboard!"
-            status.TextColor3 = Color3.fromRGB(0, 200, 255)
-            task.delay(3.5, function() if status and status.Parent then status.Text = "Awaiting key input..." status.TextColor3 = Color3.fromRGB(80, 80, 110) end end)
-        end
-    end)
 
     local checkBtn = Create("TextButton", {
         Text             = "⚡  Verify & Launch",
@@ -563,9 +571,18 @@ local function BuildKeyGUI()
         TextColor3       = Color3.fromRGB(255, 255, 255),
         Font             = Enum.Font.GothamBlack,
         TextSize         = 16,
+        ZIndex           = 4,
         Parent           = main,
     })
     Create("UICorner", { CornerRadius = UDim.new(0, 10), Parent = checkBtn })
+    Create("UIGradient", {
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0,  160, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 60, 255)),
+        },
+        Rotation = 90,
+        Parent   = checkBtn,
+    })
     ButtonAnimation(checkBtn, Color3.fromRGB(0, 130, 255), Color3.fromRGB(30, 160, 255))
 
     local status = Create("TextLabel", {
@@ -576,6 +593,7 @@ local function BuildKeyGUI()
         TextColor3             = Color3.fromRGB(80, 80, 110),
         Font                   = Enum.Font.GothamMedium,
         TextSize               = 11,
+        ZIndex                 = 4,
         Parent                 = main,
     })
 
@@ -585,6 +603,29 @@ local function BuildKeyGUI()
         BackgroundTransparency = 0,
         Position = UDim2.new(0.5, -210, 0.5, -185),
     }):Play()
+
+    pasteBtn.MouseButton1Click:Connect(function()
+        local ok, clip = pcall(getclipboard)
+        if ok and type(clip) == "string" and clip ~= "" then
+            keyBox.Text        = clip
+            status.Text        = "Chave colada com sucesso!"
+            status.TextColor3  = Color3.fromRGB(100, 200, 255)
+        end
+    end)
+
+    getKeyBtn.MouseButton1Click:Connect(function()
+        local link = "https://new.pandadevelopment.net/getkey/" .. ServiceID .. "?hwid=" .. GetHWID()
+        if pcall(setclipboard, link) then
+            status.Text       = "🔗 Link copiado! Abra no navegador."
+            status.TextColor3 = Color3.fromRGB(0, 200, 255)
+            task.delay(4, function()
+                if status and status.Parent then
+                    status.Text       = "Awaiting key input..."
+                    status.TextColor3 = Color3.fromRGB(80, 80, 110)
+                end
+            end)
+        end
+    end)
 
     checkBtn.MouseButton1Click:Connect(function()
         local key = TrimKey(keyBox.Text)
