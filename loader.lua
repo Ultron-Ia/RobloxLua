@@ -281,7 +281,7 @@ local function BuildKeyGUI()
             if ok then
                 pcall(writefile, KeyFileName, key)
                 status.Text = "Access Granted! Loading..."
-                TweenService:Create(main, TweenInfo.new(0.5, Enum.EasingStyle.BackIn), {Position = UDim2.new(0.5, -200, 1.5, 0), Size = UDim2.new(0, 300, 0, 200)}):Play()
+                TweenService:Create(main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0.5, -200, 1.5, 0), Size = UDim2.new(0, 300, 0, 200)}):Play()
                 task.wait(0.6)
                 gui:Destroy()
                 loadstring(game:HttpGet(ScriptURL))()
