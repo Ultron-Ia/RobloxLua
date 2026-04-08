@@ -1657,6 +1657,7 @@ local success, err = pcall(function()
                 end
                 WindUI:Notify({Title="🌌 Void", Content="Attempted to banish " .. count .. " players.", Duration=3, Icon = "zap"})
             end})
+        end -- closes if v == "Social/Talking Hub"
 
         if v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
