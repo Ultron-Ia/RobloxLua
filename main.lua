@@ -1736,7 +1736,7 @@ local success, err = pcall(function()
                     end
                 end})
             end
-        })
+        end})
 
 
     -- POPULATE AIMBOT
