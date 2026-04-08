@@ -1734,7 +1734,7 @@ local success, err = pcall(function()
                         -- Coords for "Pegue o peixe!" shop
                         LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 15, 50)
                     end
-                end
+                end})
             end
         })
 
@@ -2435,7 +2435,6 @@ local success, err = pcall(function()
                 end
             end
         end)
-    end)
     AddConnection(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed then
             if input.KeyCode == Enum.KeyCode.Home then
