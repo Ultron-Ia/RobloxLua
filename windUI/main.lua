@@ -2,7 +2,20 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 local playersExist, _ = pcall(function() return game:GetService("Players") end)
 if not playersExist then return end
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local WindUI
+do
+    local ok, res = pcall(function()
+        return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    end)
+    if ok and res then
+        WindUI = res
+    else
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title="Eternal Hub", Text="Erro ao carregar WindUI: "..tostring(res), Duration=15})
+        end)
+        return
+    end
+end
 
 local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
@@ -277,8 +290,7 @@ local success, err = pcall(function()
                 end
             end})
             end
-            
-                BTab:Section({ Title = "Troll & Utilities" })
+            if v == "Brookhaven" then
                 
                 local controlClone = nil
                 BTab:Toggle({Title = "Control Player (Weld Bug)", Default = false, Callback = function(v)
@@ -1228,7 +1240,7 @@ local success, err = pcall(function()
                 end
             end)
             end
-        elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
+        if v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
             local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1630,7 +1642,7 @@ local success, err = pcall(function()
                 WindUI:Notify({Title="🌌 Void", Content="Attempted to banish " .. count .. " players.", Duration=3, Icon = "zap"})
             end})
 
-        elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
+        if v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
             local JTab = Window:Tab({ Title = "Jujutsu Hub", Icon = "shield" })
             
@@ -1750,7 +1762,7 @@ local success, err = pcall(function()
                     end
                 end})
             end
-            elseif v == "Fish It" and not BuiltHubs["FishIt"] then
+            if v == "Fish It" and not BuiltHubs["FishIt"] then
                 BuiltHubs["FishIt"] = true
                 local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })
                 

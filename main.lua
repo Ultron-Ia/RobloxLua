@@ -22,7 +22,20 @@ do
     safePatch("readfile",   "")
 end
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua?t=" .. tostring(os.time())))()
+local WindUI
+do
+    local ok, res = pcall(function()
+        return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    end)
+    if ok and res then
+        WindUI = res
+    else
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {Title="Eternal Hub", Text="Erro ao carregar WindUI: "..tostring(res), Duration=15})
+        end)
+        return
+    end
+end
 
 local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
@@ -313,7 +326,7 @@ local success, err = pcall(function()
                     end)
                 end})
             end
-            elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
+            if v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1114,7 +1127,7 @@ local success, err = pcall(function()
                     end
                 end})
             end
-            elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
+            if v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:Tab({ Title = "Dandy Hub", Icon = "flower" })
             local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1182,7 +1195,7 @@ local success, err = pcall(function()
                 end
             end)
             end
-        elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
+        if v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
             local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1645,7 +1658,7 @@ local success, err = pcall(function()
                 WindUI:Notify({Title="🌌 Void", Content="Attempted to banish " .. count .. " players.", Duration=3, Icon = "zap"})
             end})
 
-        elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
+        if v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
             local JTab = Window:Tab({ Title = "Jujutsu Hub", Icon = "shield" })
             
@@ -1716,7 +1729,7 @@ local success, err = pcall(function()
                 end
             })
             end
-            elseif v == "Fish It" and not BuiltHubs["FishIt"] then
+            if v == "Fish It" and not BuiltHubs["FishIt"] then
                 BuiltHubs["FishIt"] = true
                 local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })
                 
