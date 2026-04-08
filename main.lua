@@ -2380,8 +2380,9 @@ local success, err = pcall(function()
                 end
             end
         end)
+    end)
 
-        -- GAME LOOPS (Sailor Piece & Fish It)
+    -- GAME LOOPS (Sailor Piece & Fish It)
         task.spawn(function()
             while task.wait(0.5) do
                 if _G.EternalState and _G.EternalState.Unloading then break end
