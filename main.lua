@@ -2020,22 +2020,30 @@ local success, err = pcall(function()
             local method = getnamecallmethod()
             local args = {...}
             
-            if _G.EternalState.SilentAim then
-                -- Safely handle checkcaller
+            if _G.EternalState and _G.EternalState.SilentAim then
                 local isScript = false
                 pcall(function() isScript = checkcaller() end)
                 
                 if not isScript then
-                    if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
+                    if (method == "Raycast" or method == "FindPartOnRay" or method == "FireServer") then
                         local targetPos, targetPlayer = GetClosestTarget()
                         if targetPos then
-                            if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
-                                -- Highly game specific, but common pattern injection
-                            elseif method == "Raycast" then
+                            -- Generic Bullet Intercept
+                            if method == "Raycast" then
                                 local origin = args[1]
-                                args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
-                                local unp = unpack or table.unpack
-                                return oldNamecall(self, unp(args))
+                                args[2] = (targetPos - origin).Unit * 1000 
+                                return oldNamecall(self, unpack(args))
+                            elseif method == "FireServer" then
+                                local n = self.Name:lower()
+                                if n:find("shoot") or n:find("fire") or n:find("hit") or n:find("bullet") or n:find("attack") then
+                                    -- Generic replacement of position/target in arguments
+                                    for i, v in pairs(args) do
+                                        if typeof(v) == "Vector3" then args[i] = targetPos 
+                                        elseif typeof(v) == "CFrame" then args[i] = CFrame.new(targetPos)
+                                        end
+                                    end
+                                    return oldNamecall(self, unpack(args))
+                                end
                             end
                         end
                     end
@@ -2049,32 +2057,43 @@ local success, err = pcall(function()
     -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
     task.spawn(function()
         local spinAngle = 0
-        AddConnection(RunService.RenderStepped:Connect(function()
+        AddConnection(RunService.Heartbeat:Connect(function()
             if _G.EternalState and _G.EternalState.Unloading then return end
+            
             -- Camera Aimbot
             if _G.EternalState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
                 local targetPos, targetPlayer = GetClosestTarget()
-                if targetPos then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) end
+                if targetPos then 
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) 
+                end
             end
             
-            -- Local Features
+            -- Movement & Body Features (Physics optimization)
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                 local hum = LocalPlayer.Character.Humanoid
                 hum.WalkSpeed = _G.EternalState.WalkSpeed
                 hum.JumpPower = _G.EternalState.JumpPower
-                if _G.EternalState.NoClip then 
-                    for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end 
-                end
                 
-                -- Spinbot
+                -- Spinbot (Stable implementation)
                 if _G.EternalState.Spinbot and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed)
                     local hrp = LocalPlayer.Character.HumanoidRootPart
-                    -- Spin keeping position
+                    spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed or 50)
                     hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
                 end
             end
         end))
+
+        -- Performance-Heavy Local Features (Ran at lower frequency to save FPS)
+        while task.wait(0.1) do
+            if _G.EternalState and _G.EternalState.Unloading then break end
+            if _G.EternalState.NoClip and LocalPlayer.Character then
+                for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then 
+                        v.CanCollide = false 
+                    end
+                end
+            end
+        end
     end)
 
     -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
@@ -2405,13 +2424,20 @@ local success, err = pcall(function()
                     end)
                 end
 
-                -- Sailor Piece Chests
+                -- Sailor Piece Chests (Optimized Scan)
                 if _G.EternalState.SailorAutoChests then
                     pcall(function()
-                        for _, v in pairs(workspace:GetDescendants()) do
-                            if v.Name:lower():find("chest") and v:IsA("BasePart") then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                                task.wait(0.1)
+                        -- Scan folders instead of full workspace for better FPS
+                        local chestContainers = {workspace, workspace:FindFirstChild("Chests"), workspace:FindFirstChild("Map")}
+                        for _, container in pairs(chestContainers) do
+                            if container then
+                                for _, v in pairs(container:GetChildren()) do
+                                    if (v.Name:lower():find("chest") or v.Name:lower():find("bau")) and v:IsA("BasePart") then
+                                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                                        task.wait(0.2)
+                                        return -- One at a time for safety
+                                    end
+                                end
                             end
                         end
                     end)

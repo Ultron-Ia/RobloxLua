@@ -1924,22 +1924,29 @@ local success, err = pcall(function()
             local method = getnamecallmethod()
             local args = {...}
             
-            if _G.EternalState.SilentAim then
-                -- Safely handle checkcaller
+            if _G.EternalState and _G.EternalState.SilentAim then
                 local isScript = false
                 pcall(function() isScript = checkcaller() end)
                 
                 if not isScript then
-                    if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
+                    if (method == "Raycast" or method == "FindPartOnRay" or method == "FireServer") then
                         local targetPos, targetPlayer = GetClosestTarget()
                         if targetPos then
-                            if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
-                                -- Highly game specific, but common pattern injection
-                            elseif method == "Raycast" then
+                            -- Generic Bullet Intercept
+                            if method == "Raycast" then
                                 local origin = args[1]
-                                args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
-                                local unp = unpack or table.unpack
-                                return oldNamecall(self, unp(args))
+                                args[2] = (targetPos - origin).Unit * 1000 
+                                return oldNamecall(self, unpack(args))
+                            elseif method == "FireServer" then
+                                local n = self.Name:lower()
+                                if n:find("shoot") or n:find("fire") or n:find("hit") or n:find("bullet") or n:find("attack") then
+                                    for i, v in pairs(args) do
+                                        if typeof(v) == "Vector3" then args[i] = targetPos 
+                                        elseif typeof(v) == "CFrame" then args[i] = CFrame.new(targetPos)
+                                        end
+                                    end
+                                    return oldNamecall(self, unpack(args))
+                                end
                             end
                         end
                     end
@@ -1953,31 +1960,41 @@ local success, err = pcall(function()
     -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
     task.spawn(function()
         local spinAngle = 0
-        RunService.RenderStepped:Connect(function()
+        RunService.Heartbeat:Connect(function()
+            if _G.EternalState and _G.EternalState.Unloading then return end
+            
             -- Camera Aimbot
             if _G.EternalState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
                 local targetPos, targetPlayer = GetClosestTarget()
-                if targetPos then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) end
+                if targetPos then 
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) 
+                end
             end
             
             -- Local Features
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                 local hum = LocalPlayer.Character.Humanoid
-                hum.WalkSpeed = _G.EternalState.WalkSpeed
-                hum.JumpPower = _G.EternalState.JumpPower
-                if _G.EternalState.NoClip then 
-                    for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end 
-                end
+                hum.WalkSpeed = _G.EternalState.WalkSpeed or 16
+                hum.JumpPower = _G.EternalState.JumpPower or 50
                 
                 -- Spinbot
                 if _G.EternalState.Spinbot and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed)
                     local hrp = LocalPlayer.Character.HumanoidRootPart
-                    -- Spin keeping position
+                    spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed or 50)
                     hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
                 end
             end
         end)
+
+        -- Optimized NoClip Loop (FPS protection)
+        while task.wait(0.1) do
+            if _G.EternalState and _G.EternalState.Unloading then break end
+            if _G.EternalState.NoClip and LocalPlayer.Character then
+                for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end
+                end
+            end
+        end
     end)
 
     -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
@@ -2136,18 +2153,24 @@ local success, err = pcall(function()
                 end)
             end
             
-            -- Auto Chest
+            -- Auto Chest (Optimized Scan)
             if _G.EternalState.SailorAutoChests and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 pcall(function()
-                    for _, v in pairs(workspace:GetDescendants()) do
-                        if v:IsA("Model") and v.Name:lower():find("chest") then
-                            local part = v:FindFirstChildOfClass("BasePart")
-                            if part then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = part.CFrame
-                                if v:FindFirstChildOfClass("ProximityPrompt") then
-                                    fireproximityprompt(v:FindFirstChildOfClass("ProximityPrompt"))
+                    local chestFolders = {workspace, workspace:FindFirstChild("Chests"), workspace:FindFirstChild("Map")}
+                    for _, folder in pairs(chestFolders) do
+                        if folder then
+                            for _, v in pairs(folder:GetChildren()) do
+                                if v:IsA("Model") and (v.Name:lower():find("chest") or v.Name:lower():find("bau")) then
+                                    local part = v:FindFirstChildOfClass("BasePart")
+                                    if part then
+                                        LocalPlayer.Character.HumanoidRootPart.CFrame = part.CFrame
+                                        task.wait(0.1)
+                                        if v:FindFirstChildOfClass("ProximityPrompt") then
+                                            fireproximityprompt(v:FindFirstChildOfClass("ProximityPrompt"))
+                                        end
+                                        return -- Safety break
+                                    end
                                 end
-                                break
                             end
                         end
                     end
