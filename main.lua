@@ -22,20 +22,7 @@ do
     safePatch("readfile",   "")
 end
 
-local WindUI
-do
-    local ok, res = pcall(function()
-        return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-    end)
-    if ok and res then
-        WindUI = res
-    else
-        pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification", {Title="Eternal Hub", Text="Erro ao carregar WindUI: "..tostring(res), Duration=15})
-        end)
-        return
-    end
-end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua?t=" .. tostring(os.time())))()
 
 local success, err = pcall(function()
     local Window = WindUI:CreateWindow({
@@ -173,20 +160,7 @@ local success, err = pcall(function()
         AccentColor = Color3.fromRGB(0, 150, 255),
         Transparency = 0,
         MenuKeybind = Enum.KeyCode.Insert,
-        Unloading = false,
-        
-        -- Sailor Piece Farm State
-        SailorFarmMobs = false,
-        SailorFarmStats = false,
-        SailorSelectedStat = "Strength",
-        SailorAutoChests = false,
-        SailorFarmDist = 8,
-        
-        -- Fish It State
-        FishAutoCast = false,
-        FishAutoReel = false,
-        FishAutoSell = false,
-        FishAutoBuy = false
+        Unloading = false
     }
 
     -- CONFIG SYSTEM ---------------------------------------
@@ -307,7 +281,7 @@ local success, err = pcall(function()
     
     local GameSelector = Tabs.Main:Dropdown({ 
         Title = "Select Game Module", 
-        Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor", "Fish It"}, 
+        Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, 
         Default = "...",
         Callback = function(v)
             if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -325,8 +299,8 @@ local success, err = pcall(function()
                         end
                     end)
                 end})
-            end
-            if v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
+
+               elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -917,7 +891,7 @@ local success, err = pcall(function()
                 end
                 end
             })
-            end
+
             elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
                 BuiltHubs["PecaDeSailor"] = true
                 local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
@@ -1058,48 +1032,10 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="💰 Money", Content="Visual money modificado!", Duration=2, Icon = "dollar-sign"})
                 end})
 
-                -- ── Auto Farm & Stats ─────────────────────────────
-                STab:Section({ Title = "🚜 Auto Farm & Stats" })
-
-                STab:Toggle({Title = "🔥 Auto Farm Mobs (Nearest)", Value = false, Callback = function(v)
-                    _G.EternalState.SailorFarmMobs = v
-                end})
-
-                STab:Slider({Title = "📏 Farm Distance", Value = {Default = 8, Min = 1, Max = 15}, Step = 1, Callback = function(v)
-                    _G.EternalState.SailorFarmDist = v
-                end})
-
-                STab:Toggle({Title = "📊 Auto Stats", Value = false, Callback = function(v)
-                    _G.EternalState.SailorFarmStats = v
-                end})
-
-                STab:Dropdown({Title = "Stat Priority", Values = {"Strength", "Defense", "Sword", "Fruit"}, Value = 1, Callback = function(v)
-                    _G.EternalState.SailorSelectedStat = v
-                end})
-
-                STab:Toggle({Title = "💰 Auto Collect Chests", Value = false, Callback = function(v)
-                    _G.EternalState.SailorAutoChests = v
-                end})
-
-                STab:Section({ Title = "🏝️ Island Teleports" })
-                STab:Dropdown({Title = "Select Island", Values = {"Starter Island", "Buggy Island", "Snow Island", "Marine Base", "Sky Island"}, Value = 1, Callback = function(v)
-                    local locations = {
-                        ["Starter Island"] = Vector3.new(100, 50, 100),
-                        ["Buggy Island"] = Vector3.new(-500, 50, 200),
-                        ["Snow Island"] = Vector3.new(1200, 100, -800),
-                        ["Marine Base"] = Vector3.new(-1500, 60, -1200),
-                        ["Sky Island"] = Vector3.new(0, 1500, 0)
-                    }
-                    if locations[v] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(locations[v])
-                        WindUI:Notify({Title="🏝️ TP", Content="Teleportado para " .. v, Duration=3, Icon = "map-pin"})
-                    end
-                end})
-
                 -- ── Admin Commands ────────────────────────────────
-                STab:Section({ Title = "⚠️ Admin Commands" })
+                BTab:Section({ Title = "⚠️ Admin Commands" })
 
-                STab:Button({Title = "📝 Verify (List Players)", Callback = function()
+                BTab:Button({Title = "📝 Verify (List Players)", Callback = function()
                     local msg = "Players:\n"
                     for _, p in pairs(Players:GetPlayers()) do
                         msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
@@ -1107,7 +1043,7 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="📝 Verify", Content=msg, Duration=10, Icon = "terminal"})
                 end})
 
-                STab:Button({Title = "💀 Kill Target", Callback = function()
+                BTab:Button({Title = "💀 Kill Target", Callback = function()
                     local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
@@ -1115,7 +1051,7 @@ local success, err = pcall(function()
                     end
                 end})
 
-                STab:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
+                BTab:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
                     local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                         local exp = Instance.new("Explosion")
@@ -1126,8 +1062,9 @@ local success, err = pcall(function()
                         WindUI:Notify({Title="💀 KillPlus", Content=_G.EternalState.TargetPlayer .. " eliminated!", Duration=3, Icon = "bomb"})
                     end
                 end})
-            end
-            if v == "Dandy's World" and not BuiltHubs["Dandys"] then
+
+
+        elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:Tab({ Title = "Dandy Hub", Icon = "flower" })
             local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1194,8 +1131,8 @@ local success, err = pcall(function()
                     end
                 end
             end)
-            end
-        if v == "Social/Talking Hub" and not BuiltHubs["Social"] then
+
+        elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
             local SPD = STab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1657,9 +1594,8 @@ local success, err = pcall(function()
                 end
                 WindUI:Notify({Title="🌌 Void", Content="Attempted to banish " .. count .. " players.", Duration=3, Icon = "zap"})
             end})
-        end -- closes if v == "Social/Talking Hub"
 
-        if v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
+        elseif v == "[LUCKY COWARD] Shenanigans de Jujutsu" and not BuiltHubs["Shenanigans"] then
             BuiltHubs["Shenanigans"] = true
             local JTab = Window:Tab({ Title = "Jujutsu Hub", Icon = "shield" })
             
@@ -1729,28 +1665,29 @@ local success, err = pcall(function()
                 end
                 end
             })
-            end
-            if v == "Fish It" and not BuiltHubs["FishIt"] then
-                BuiltHubs["FishIt"] = true
-                local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })
-                
-                FTab:Section({ Title = "🎣 Fishing Automation" })
-                FTab:Toggle({Title = "Auto Cast (Throw Rod)", Value = false, Callback = function(v) _G.EternalState.FishAutoCast = v end})
-                FTab:Toggle({Title = "Auto Reel (Catch Fish)", Value = false, Callback = function(v) _G.EternalState.FishAutoReel = v end})
-                
-                FTab:Section({ Title = "🛒 Economy" })
-                FTab:Toggle({Title = "Auto Sell Fish", Value = false, Callback = function(v) _G.EternalState.FishAutoSell = v end})
-                FTab:Toggle({Title = "Auto Buy Better Rods", Value = false, Callback = function(v) _G.EternalState.FishAutoBuy = v end})
-                
-                FTab:Section({ Title = "🏝️ Locations" })
-                FTab:Button({Title = "Teleport to Shop", Callback = function()
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        -- Coords for "Pegue o peixe!" shop
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 15, 50)
-                    end
-                end})
-            end
-        end})
+            
+            local antiStunLoop = nil
+            JTab:Toggle({Title = "Anti-Stun / Auto-Sprint", Value = false, Callback = function(v)
+                if v then
+                    antiStunLoop = RunService.RenderStepped:Connect(function()
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                            -- Constant walkspeed enforcement to bypass stuns
+                            if LocalPlayer.Character.Humanoid.WalkSpeed < 16 then
+                                LocalPlayer.Character.Humanoid.WalkSpeed = 16
+                            end
+                            -- Destroying freeze/anchor effects if they exist
+                            local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                            if hrp and hrp.Anchored then hrp.Anchored = false end
+                        end
+                    end)
+                else
+                    if antiStunLoop then antiStunLoop:Disconnect(); antiStunLoop = nil end
+                end
+                end
+            })
+
+        end -- Added to correctly close the Game Selection branches if needed or removed extra ones
+    end}) -- Closes the GameSelector Dropdown definition
 
 
     -- POPULATE AIMBOT
@@ -2034,30 +1971,22 @@ local success, err = pcall(function()
             local method = getnamecallmethod()
             local args = {...}
             
-            if _G.EternalState and _G.EternalState.SilentAim then
+            if _G.EternalState.SilentAim then
+                -- Safely handle checkcaller
                 local isScript = false
                 pcall(function() isScript = checkcaller() end)
                 
                 if not isScript then
-                    if (method == "Raycast" or method == "FindPartOnRay" or method == "FireServer") then
+                    if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" or method == "FireServer" then
                         local targetPos, targetPlayer = GetClosestTarget()
                         if targetPos then
-                            -- Generic Bullet Intercept
-                            if method == "Raycast" then
+                            if method == "FireServer" and self.Name:lower():find("shoot") or self.Name:lower():find("fire") or self.Name:lower():find("hit") then
+                                -- Highly game specific, but common pattern injection
+                            elseif method == "Raycast" then
                                 local origin = args[1]
-                                args[2] = (targetPos - origin).Unit * 1000 
-                                return oldNamecall(self, unpack(args))
-                            elseif method == "FireServer" then
-                                local n = self.Name:lower()
-                                if n:find("shoot") or n:find("fire") or n:find("hit") or n:find("bullet") or n:find("attack") then
-                                    -- Generic replacement of position/target in arguments
-                                    for i, v in pairs(args) do
-                                        if typeof(v) == "Vector3" then args[i] = targetPos 
-                                        elseif typeof(v) == "CFrame" then args[i] = CFrame.new(targetPos)
-                                        end
-                                    end
-                                    return oldNamecall(self, unpack(args))
-                                end
+                                args[2] = (targetPos - origin).Unit * 1000 -- Redefine direction
+                                local unp = unpack or table.unpack
+                                return oldNamecall(self, unp(args))
                             end
                         end
                     end
@@ -2071,43 +2000,32 @@ local success, err = pcall(function()
     -- MAIN LOOP (Camera Aimbot, Spinbot, Local)
     task.spawn(function()
         local spinAngle = 0
-        AddConnection(RunService.Heartbeat:Connect(function()
+        AddConnection(RunService.RenderStepped:Connect(function()
             if _G.EternalState and _G.EternalState.Unloading then return end
-            
             -- Camera Aimbot
             if _G.EternalState.AimEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
                 local targetPos, targetPlayer = GetClosestTarget()
-                if targetPos then 
-                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) 
-                end
+                if targetPos then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), 1/_G.EternalState.AimSmooth) end
             end
             
-            -- Movement & Body Features (Physics optimization)
+            -- Local Features
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
                 local hum = LocalPlayer.Character.Humanoid
                 hum.WalkSpeed = _G.EternalState.WalkSpeed
                 hum.JumpPower = _G.EternalState.JumpPower
+                if _G.EternalState.NoClip then 
+                    for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end 
+                end
                 
-                -- Spinbot (Stable implementation)
+                -- Spinbot
                 if _G.EternalState.Spinbot and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed)
                     local hrp = LocalPlayer.Character.HumanoidRootPart
-                    spinAngle = spinAngle + math.rad(_G.EternalState.SpinSpeed or 50)
+                    -- Spin keeping position
                     hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, spinAngle, 0)
                 end
             end
         end))
-
-        -- Performance-Heavy Local Features (Ran at lower frequency to save FPS)
-        while task.wait(0.1) do
-            if _G.EternalState and _G.EternalState.Unloading then break end
-            if _G.EternalState.NoClip and LocalPlayer.Character then
-                for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if v:IsA("BasePart") and v.CanCollide then 
-                        v.CanCollide = false 
-                    end
-                end
-            end
-        end
     end)
 
     -- FULL ESP SYSTEM (2D Drawing + Advanced Chams + Skeleton)
@@ -2395,87 +2313,6 @@ local success, err = pcall(function()
             end
         end)
     end)
-
-    -- GAME LOOPS (Sailor Piece & Fish It)
-        task.spawn(function()
-            while task.wait(0.5) do
-                if _G.EternalState and _G.EternalState.Unloading then break end
-
-                -- Sailor Piece Farm
-                if _G.EternalState.SailorFarmMobs then
-                    pcall(function()
-                        local char = LocalPlayer.Character
-                        if char and char:FindFirstChild("HumanoidRootPart") then
-                            local target = nil
-                            local dist = 500
-                            -- Scan folders for mobs
-                            for _, folderName in pairs({"NPCs", "Mobs", "Entities"}) do
-                                local f = workspace:FindFirstChild(folderName)
-                                if f then
-                                    for _, e in pairs(f:GetChildren()) do
-                                        if e:IsA("Model") and e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 and e:FindFirstChild("HumanoidRootPart") then
-                                            local d = (e.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
-                                            if d < dist then dist = d; target = e end
-                                        end
-                                    end
-                                end
-                            end
-                            if target then
-                                char.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, _G.EternalState.SailorFarmDist, 0)
-                                local remote = ReplicatedStorage:FindFirstChild("AttackRemote") or ReplicatedStorage:FindFirstChild("Punch")
-                                if remote then remote:FireServer() end
-                                game:GetService("VirtualUser"):CaptureController()
-                                game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                            end
-                        end
-                    end)
-                end
-
-                -- Sailor Piece Stats
-                if _G.EternalState.SailorFarmStats and _G.EternalState.SailorSelectedStat then
-                    pcall(function()
-                        local remote = ReplicatedStorage:FindFirstChild("AddStat") or ReplicatedStorage:FindFirstChild("StatRemote")
-                        if remote then remote:FireServer(_G.EternalState.SailorSelectedStat, 1) end
-                    end)
-                end
-
-                -- Sailor Piece Chests (Optimized Scan)
-                if _G.EternalState.SailorAutoChests then
-                    pcall(function()
-                        -- Scan folders instead of full workspace for better FPS
-                        local chestContainers = {workspace, workspace:FindFirstChild("Chests"), workspace:FindFirstChild("Map")}
-                        for _, container in pairs(chestContainers) do
-                            if container then
-                                for _, v in pairs(container:GetChildren()) do
-                                    if (v.Name:lower():find("chest") or v.Name:lower():find("bau")) and v:IsA("BasePart") then
-                                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                                        task.wait(0.2)
-                                        return -- One at a time for safety
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                end
-
-                -- Fish It! Logic
-                if _G.EternalState.FishAutoCast then
-                    pcall(function() 
-                        local rod = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                        if rod and rod.Name:lower():find("rod") then
-                            rod:Activate()
-                        end
-                    end)
-                end
-                
-                if _G.EternalState.FishAutoSell then
-                    pcall(function()
-                        local remote = ReplicatedStorage:FindFirstChild("SellFish") or ReplicatedStorage:FindFirstChild("SellRemote")
-                        if remote then remote:FireServer() end
-                    end)
-                end
-            end
-        end)
     AddConnection(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed then
             if input.KeyCode == Enum.KeyCode.Home then
