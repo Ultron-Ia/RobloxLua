@@ -1720,6 +1720,35 @@ local success, err = pcall(function()
                 end
             })
 
+            elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
+                BuiltHubs["PecaDeSailor"] = true
+                local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
+                
+                STab:Section({ Title = "🚜 Auto Farm Mobs" })
+                STab:Toggle({Title = "Enable Auto Farm", Value = false, Callback = function(v) _G.EternalState.SailorFarmMobs = v end})
+                STab:Slider({Title = "Farm Distance (Above)", Value = {Default = 8, Min = 1, Max = 15}, Step = 1, Callback = function(v) _G.EternalState.SailorFarmDist = v end})
+                
+                STab:Section({ Title = "📊 Auto Stats" })
+                STab:Toggle({Title = "Auto Add Stats", Value = false, Callback = function(v) _G.EternalState.SailorFarmStats = v end})
+                STab:Dropdown({Title = "Select Stat", Values = {"Strength", "Defense", "Sword", "Fruit"}, Value = 1, Callback = function(v) _G.EternalState.SailorSelectedStat = v end})
+                
+                STab:Section({ Title = "💰 Utilities" })
+                STab:Toggle({Title = "Auto Collect Chests", Value = false, Callback = function(v) _G.EternalState.SailorAutoChests = v end})
+                
+                STab:Section({ Title = "🏝️ Island Teleports" })
+                STab:Dropdown({Title = "Select Island", Values = {"Starter Island", "Buggy Island", "Snow Island", "Marine Base", "Sky Island"}, Value = 1, Callback = function(v)
+                    local locations = {
+                        ["Starter Island"] = Vector3.new(100, 50, 100),
+                        ["Buggy Island"] = Vector3.new(-500, 50, 200),
+                        ["Snow Island"] = Vector3.new(1200, 100, -800),
+                        ["Marine Base"] = Vector3.new(-1500, 60, -1200),
+                        ["Sky Island"] = Vector3.new(0, 1500, 0)
+                    }
+                    if locations[v] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(locations[v])
+                    end
+                end})
+
             elseif v == "Fish It" and not BuiltHubs["FishIt"] then
                 BuiltHubs["FishIt"] = true
                 local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })
@@ -2062,7 +2091,6 @@ local success, err = pcall(function()
                     end
                 end
             end
-        end)
         end)
     end)
 

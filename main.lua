@@ -1084,9 +1084,9 @@ local success, err = pcall(function()
                 end})
 
                 -- ── Admin Commands ────────────────────────────────
-                BTab:Section({ Title = "⚠️ Admin Commands" })
+                STab:Section({ Title = "⚠️ Admin Commands" })
 
-                BTab:Button({Title = "📝 Verify (List Players)", Callback = function()
+                STab:Button({Title = "📝 Verify (List Players)", Callback = function()
                     local msg = "Players:\n"
                     for _, p in pairs(Players:GetPlayers()) do
                         msg = msg .. "• " .. p.Name .. " (ID: " .. p.UserId .. ")\n"
@@ -1094,7 +1094,7 @@ local success, err = pcall(function()
                     WindUI:Notify({Title="📝 Verify", Content=msg, Duration=10, Icon = "terminal"})
                 end})
 
-                BTab:Button({Title = "💀 Kill Target", Callback = function()
+                STab:Button({Title = "💀 Kill Target", Callback = function()
                     local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChildOfClass("Humanoid") then
                         t.Character.Humanoid.Health = 0
@@ -1102,7 +1102,7 @@ local success, err = pcall(function()
                     end
                 end})
 
-                BTab:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
+                STab:Button({Title = "💀 KillPlus (Explosion)", Callback = function()
                     local t = Players:FindFirstChild(_G.EternalState.TargetPlayer)
                     if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                         local exp = Instance.new("Explosion")
@@ -1734,9 +1734,9 @@ local success, err = pcall(function()
                         -- Coords for "Pegue o peixe!" shop
                         LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 15, 50)
                     end
-                end})
-
+                end
             end
+        })
 
 
     -- POPULATE AIMBOT
