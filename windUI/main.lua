@@ -276,7 +276,8 @@ local success, err = pcall(function()
                     end
                 end
             end})
-
+            end
+            
                 BTab:Section({ Title = "Troll & Utilities" })
                 
                 local controlClone = nil
@@ -1158,7 +1159,7 @@ local success, err = pcall(function()
                 STab:Button({Title = "🧟 Jumpscare: Zombie",    Callback = function() SailorJumpscare("🧟", 50, 180, 0,  "BRAAIIINS...",         0.8) WindUI:Notify({Title="🧟 Scare", Content="Zombie!", Duration=2, Icon = "skull"}) end})
                 STab:Button({Title = "🧟 Jumpscare: Ghost",     Callback = function() SailorJumpscare("👻", 200, 200, 255,"BOO!",                 0.6) WindUI:Notify({Title="🧟 Scare", Content="Ghost!", Duration=2, Icon = "ghost"}) end})
                 STab:Button({Title = "🧟 Jumpscare: Backrooms", Callback = function() SailorJumpscare("🟨", 210, 190, 130,"Level 0 — Backrooms",  1.5) WindUI:Notify({Title="🧟 Scare", Content="Backrooms!", Duration=2, Icon = "ghost"}) end})
-
+            end
         elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:Tab({ Title = "Dandy Hub", Icon = "flower" })
@@ -1226,7 +1227,7 @@ local success, err = pcall(function()
                     end
                 end
             end)
-
+            end
         elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
@@ -1748,7 +1749,7 @@ local success, err = pcall(function()
                         LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(locations[v])
                     end
                 end})
-
+            end
             elseif v == "Fish It" and not BuiltHubs["FishIt"] then
                 BuiltHubs["FishIt"] = true
                 local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })

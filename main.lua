@@ -312,8 +312,8 @@ local success, err = pcall(function()
                         end
                     end)
                 end})
-
-               elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
+            end
+            elseif v == "Brookhaven" and not BuiltHubs["Brookhaven"] then
                 BuiltHubs["Brookhaven"] = true
                 local BTab = Window:Tab({ Title = "Brookhaven Hub", Icon = "home" })
                 local BPD = BTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Default = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -904,7 +904,7 @@ local success, err = pcall(function()
                 end
                 end
             })
-
+            end
             elseif v == "Peça de Sailor" and not BuiltHubs["PecaDeSailor"] then
                 BuiltHubs["PecaDeSailor"] = true
                 local STab = Window:Tab({ Title = "Sailor Hub", Icon = "star" })
@@ -1113,9 +1113,8 @@ local success, err = pcall(function()
                         WindUI:Notify({Title="💀 KillPlus", Content=_G.EternalState.TargetPlayer .. " eliminated!", Duration=3, Icon = "bomb"})
                     end
                 end})
-
-
-        elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
+            end
+            elseif v == "Dandy's World" and not BuiltHubs["Dandys"] then
             BuiltHubs["Dandys"] = true
             local DTab = Window:Tab({ Title = "Dandy Hub", Icon = "flower" })
             local DPD = DTab:Dropdown({Title = "Target Player", Values = GetPlayers(), Value = 1, Callback = function(val) _G.EternalState.TargetPlayer = val end})
@@ -1182,7 +1181,7 @@ local success, err = pcall(function()
                     end
                 end
             end)
-
+            end
         elseif v == "Social/Talking Hub" and not BuiltHubs["Social"] then
             BuiltHubs["Social"] = true
             local STab = Window:Tab({ Title = "Social Hub", Icon = "users" })
@@ -1716,6 +1715,7 @@ local success, err = pcall(function()
                 end
                 end
             })
+            end
             elseif v == "Fish It" and not BuiltHubs["FishIt"] then
                 BuiltHubs["FishIt"] = true
                 local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })
