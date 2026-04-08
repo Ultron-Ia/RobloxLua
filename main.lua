@@ -1838,7 +1838,88 @@ local success, err = pcall(function()
         end
     })
 
+    -- ─── WEB PANEL SYNC ───────────────────────────────────────────────────────
+    Tabs.Settings:Section({ Title = "🌐 Web Panel Sync" })
+    Tabs.Settings:Paragraph({
+        Title  = "Como usar",
+        Content = "Abra o painel em http://SEU_IP:3000, faça login, copie o Token e cole abaixo. Ative o sync e todas as configs do painel serão aplicadas automaticamente."
+    })
+
+    local WebPanelToken  = ""
+    local WebPanelURL    = "http://127.0.0.1:3000"
+    local WebPanelActive = false
+    local webSyncConn    = nil
+
+    Tabs.Settings:Input({
+        Title       = "Server URL",
+        Placeholder = "http://IP:3000",
+        Default     = "http://127.0.0.1:3000",
+        Callback    = function(v) WebPanelURL = v end
+    })
+
+    Tabs.Settings:Input({
+        Title       = "Web Panel Token",
+        Placeholder = "Cole seu token do painel aqui...",
+        Default     = "",
+        Callback    = function(v) WebPanelToken = v end
+    })
+
+    Tabs.Settings:Toggle({
+        Title = "Ativar Sync com Web Panel",
+        Value = false,
+        Callback = function(v)
+            WebPanelActive = v
+            if v then
+                WindUI:Notify({Title="🌐 Web Panel", Content="Sync ativado! Buscando estado...", Duration=3, Icon="wifi"})
+                -- Start polling loop
+                local HttpService = game:GetService("HttpService")
+                task.spawn(function()
+                    while WebPanelActive do
+                        task.wait(2)
+                        if not WebPanelActive then break end
+                        if WebPanelToken == "" then continue end
+                        local ok, result = pcall(function()
+                            return game:HttpGet(WebPanelURL .. "/api/state/" .. WebPanelToken, true)
+                        end)
+                        if ok and result then
+                            local parsed, state = pcall(function()
+                                return HttpService:JSONDecode(result)
+                            end)
+                            if parsed and state and type(state) == "table" then
+                                -- Apply all matching keys to _G.EternalState
+                                for k, val in pairs(state) do
+                                    if _G.EternalState[k] ~= nil and _G.EternalState[k] ~= val then
+                                        _G.EternalState[k] = val
+                                    end
+                                end
+                                -- Apply Color3 objects specially
+                                if state.ChamsColor and type(state.ChamsColor) == "table" then
+                                    _G.EternalState.ChamsColor = Color3.fromRGB(
+                                        state.ChamsColor.r or 180,
+                                        state.ChamsColor.g or 100,
+                                        state.ChamsColor.b or 255
+                                    )
+                                end
+                                if state.SkeletonColor and type(state.SkeletonColor) == "table" then
+                                    _G.EternalState.SkeletonColor = Color3.fromRGB(
+                                        state.SkeletonColor.r or 255,
+                                        state.SkeletonColor.g or 255,
+                                        state.SkeletonColor.b or 255
+                                    )
+                                end
+                            end
+                        end
+                    end
+                end)
+            else
+                WindUI:Notify({Title="🌐 Web Panel", Content="Sync desativado.", Duration=2, Icon="wifi-off"})
+            end
+        end
+    })
+    -- ─────────────────────────────────────────────────────────────────────────
+
     Tabs.Settings:Section({ Title = "Script Control" })
+
 
     Tabs.Settings:Button({
         Title = "🛑 Unload Script",

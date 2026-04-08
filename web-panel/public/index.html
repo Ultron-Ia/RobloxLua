@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Eternal Hub — Web Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;
+  --bg2:#111118;
+  --bg3:#1a1a28;
+  --card:#16162a;
+  --border:#2a2a45;
+  --accent:#7c3aed;
+  --accent2:#a855f7;
+  --accent3:#c084fc;
+  --on:#22c55e;
+  --off:#ef4444;
+  --text:#e2e8f0;
+  --muted:#64748b;
+  --glow: 0 0 20px #7c3aed44;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── Animated BG ── */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -20%,#7c3aed22,transparent),radial-gradient(ellipse 50% 40% at 80% 80%,#a855f711,transparent);pointer-events:none;z-index:0}
+
+/* ── Auth Screen ── */
+#auth-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:var(--bg)}
+.auth-box{background:linear-gradient(145deg,#1a1a2e,#16162a);border:1px solid var(--border);border-radius:20px;padding:40px;width:380px;box-shadow:0 30px 80px #00000088,var(--glow)}
+.auth-logo{text-align:center;margin-bottom:30px}
+.auth-logo h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#a855f7,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-logo p{color:var(--muted);font-size:13px;margin-top:4px}
+.tab-btns{display:flex;gap:8px;margin-bottom:24px;background:var(--bg);border-radius:10px;padding:4px}
+.tab-btn{flex:1;padding:9px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;background:transparent;color:var(--muted)}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px #7c3aed55}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.field input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none;transition:.2s;font-family:inherit}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #7c3aed22}
+.btn-primary{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;letter-spacing:.02em}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px #7c3aed44}
+.btn-primary:active{transform:translateY(0)}
+.auth-error{color:#f87171;font-size:13px;text-align:center;margin-top:12px;display:none}
+
+/* ── Main App ── */
+#app{display:none;min-height:100vh;position:relative;z-index:1}
+
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:linear-gradient(90deg,#111122,#1a1a2e);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(10px)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px #7c3aed44}
+.logo h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,#c084fc,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-right{display:flex;align-items:center;gap:14px}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);padding:7px 14px;border-radius:50px;font-size:13px}
+.user-dot{width:8px;height:8px;background:var(--on);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #22c55e66}50%{box-shadow:0 0 0 6px #22c55e00}}
+.sync-status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--on)}
+.sync-dot.syncing{background:#f59e0b;animation:pulse 1s infinite}
+.btn-sm{padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;transition:.2s}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Token banner ── */
+.token-banner{background:linear-gradient(90deg,#1a1025,#1a1a2e);border:1px solid #7c3aed44;border-radius:12px;margin:20px 28px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.token-banner p{font-size:13px;color:var(--muted)}
+.token-banner p strong{color:var(--accent3)}
+.token-val{font-family:'Courier New',monospace;font-size:12px;background:var(--bg);padding:7px 12px;border-radius:8px;border:1px solid var(--border);color:var(--accent2);display:flex;align-items:center;gap:10px}
+.copy-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;transition:.2s;padding:2px}
+.copy-btn:hover{color:var(--accent)}
+
+/* ── Grid ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:20px 28px 40px}
+
+/* ── Card ── */
+.card{background:linear-gradient(145deg,#16162a,#111122);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:.3s}
+.card:hover{border-color:#7c3aed44;box-shadow:0 8px 32px #7c3aed11}
+.card-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.card-icon.purple{background:#7c3aed22}
+.card-icon.blue{background:#3b82f622}
+.card-icon.green{background:#22c55e22}
+.card-icon.red{background:#ef444422}
+.card-icon.yellow{background:#f59e0b22}
+.card-header h2{font-size:14px;font-weight:600;color:var(--text)}
+.card-body{padding:14px 20px}
+
+/* ── Row ── */
+.row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #ffffff08}
+.row:last-child{border-bottom:none}
+.row-label{font-size:13px;color:#cbd5e1}
+.row-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Toggle ── */
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#2a2a45;border-radius:24px;cursor:pointer;transition:.3s}
+.slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#64748b;border-radius:50%;transition:.3s}
+.toggle input:checked+.slider{background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 12px #7c3aed55}
+.toggle input:checked+.slider::before{transform:translateX(20px);background:#fff}
+
+/* ── Slider input ── */
+.slider-row{flex-direction:column;align-items:stretch;gap:8px}
+.slider-row .slider-header{display:flex;justify-content:space-between;align-items:center}
+.slider-row .slider-header span{font-size:13px;color:#cbd5e1}
+.slider-val{font-size:13px;color:var(--accent2);font-weight:600;min-width:32px;text-align:right}
+input[type=range]{width:100%;height:4px;border-radius:4px;background:var(--bg3);outline:none;-webkit-appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 6px #7c3aed66;cursor:pointer}
+
+/* ── Select ── */
+.panel-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:8px;font-size:12px;outline:none;font-family:inherit;cursor:pointer}
+.panel-select:focus{border-color:var(--accent)}
+
+/* ── Color input ── */
+.color-row{display:flex;align-items:center;gap:8px}
+input[type=color]{width:32px;height:32px;border:none;background:none;border-radius:6px;cursor:pointer;overflow:hidden}
+
+/* ── Toasts ── */
+#toast{position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;transform:translateY(60px);opacity:0;transition:.3s;z-index:999;box-shadow:0 4px 20px #22c55e44}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.error{background:var(--off);box-shadow:0 4px 20px #ef444444}
+
+/* ── Reset btn ── */
+.btn-reset{width:100%;margin-top:8px;padding:10px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:.2s}
+.btn-reset:hover{border-color:var(--off);color:var(--off)}
+
+/* ── Responsive ── */
+@media(max-width:640px){.grid{grid-template-columns:1fr;padding:16px}.token-banner{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<!-- ── Auth Screen ── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>🛡️ Eternal Hub</h1>
+      <p>Web Control Panel</p>
+    </div>
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" onclick="switchTab('register')">Registrar</button>
+    </div>
+    <div class="field"><label>Usuário</label><input id="auth-user" type="text" placeholder="Digite seu usuário"/></div>
+    <div class="field"><label>Senha</label><input id="auth-pass" type="password" placeholder="Digite sua senha"/></div>
+    <button class="btn-primary" onclick="submitAuth()">Entrar</button>
+    <p class="auth-error" id="auth-error"></p>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
+      <h1>Eternal Hub Panel</h1>
+    </div>
+    <div class="header-right">
+      <div class="sync-status">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-label">Sincronizado</span>
+      </div>
+      <div class="user-chip"><div class="user-dot"></div><span id="header-user">—</span></div>
+      <button class="btn-sm" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <!-- Token Banner -->
+  <div class="token-banner">
+    <div>
+      <p>Cole este <strong>token</strong> no seu cheat (aba Settings → Web Panel Token) para sincronizar:</p>
+    </div>
+    <div class="token-val">
+      <span id="token-display">—</span>
+      <button class="copy-btn" onclick="copyToken()" title="Copiar">📋</button>
+    </div>
+  </div>
+
+  <!-- Panel Grid -->
+  <div class="grid">
+
+    <!-- Aimbot -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon purple">🎯</div>
+        <h2>Aimbot</h2>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div><div class="row-label">Enable Aimbot</div></div>
+          <label class="toggle"><input type="checkbox" id="AimEnabled" onchange="sync('AimEnabled',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Silent Aim</div><div class="row-sub">Magic bullet</div></div>
+          <label class="toggle"><input type="checkbox" id="SilentAim" onchange="sync('SilentAim',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Target Part</div>
+          <select class="panel-select" id="AimPart" onchange="sync('AimPart',this.value)">
+            <option value="Head">Head</option>
+            <option value="HumanoidRootPart">HumanoidRootPart</option>
+          </select>
+        </div>
+        <div class="row">
+          <div><div class="row-label">Team Check</div></div>
+          <label class="toggle"><input type="checkbox" id="TeamCheck" onchange="sync('TeamCheck',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row slider-row">
+          <div class="slider-header"><span>FOV</span><span class="slider-val" id="AimFOV-val">100</span></div>
+          <input type="range" id="AimFOV" min="10" max="800" value="100" oninput="sliderSync('AimFOV',this.value)"/>
+        </div>
+        <div class="row slider-row">
+          <div class="slider-header"><span>Smoothness</span><span class="slider-val" id="AimSmooth-val">3</span></div>
+          <input type="range" id="AimSmooth" min="1" max="20" step="0.1" value="3" oninput="sliderSync('AimSmooth',this.value)"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visuals -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon blue">👁️</div>
+        <h2>Visuals / ESP</h2>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="row-label">Box ESP</div>
+          <label class="toggle"><input type="checkbox" id="BoxESP" onchange="sync('BoxESP',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Box Style</div>
+          <select class="panel-select" id="BoxStyle" onchange="sync('BoxStyle',this.value)">
+            <option value="Full">Full</option>
+            <option value="Corners">Corners</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="row-label">Name ESP</div>
+          <label class="toggle"><input type="checkbox" id="NameESP" onchange="sync('NameESP',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Distance ESP</div>
+          <label class="toggle"><input type="checkbox" id="DistESP" onchange="sync('DistESP',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Health Bar</div>
+          <label class="toggle"><input type="checkbox" id="HealthBar" onchange="sync('HealthBar',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Skeleton ESP</div>
+          <label class="toggle"><input type="checkbox" id="SkeletonESP" onchange="sync('SkeletonESP',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">RGB ESP</div>
+          <label class="toggle"><input type="checkbox" id="RGBEsp" onchange="sync('RGBEsp',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row slider-row">
+          <div class="slider-header"><span>RGB Speed</span><span class="slider-val" id="RGBSpeed-val">3</span></div>
+          <input type="range" id="RGBSpeed" min="1" max="20" value="3" oninput="sliderSync('RGBSpeed',this.value)"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chams -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon red">✨</div>
+        <h2>Chams</h2>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="row-label">Enable Chams</div>
+          <label class="toggle"><input type="checkbox" id="Chams" onchange="sync('Chams',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">RGB Chams</div>
+          <label class="toggle"><input type="checkbox" id="RGBChams" onchange="sync('RGBChams',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Material</div>
+          <select class="panel-select" id="ChamsMat" onchange="sync('ChamsMat',this.value)">
+            <option value="Neon">Neon</option>
+            <option value="SmoothPlastic">Plastic</option>
+            <option value="Glass">Glass</option>
+            <option value="Metal">Metal</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="row-label">Chams Color</div>
+          <div class="color-row">
+            <input type="color" id="ChamsColor" value="#b464ff" onchange="colorSync('ChamsColor',this.value)"/>
+            <span style="font-size:12px;color:var(--muted)" id="ChamsColor-hex">#b464ff</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Local -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon green">🏃</div>
+        <h2>Local Player</h2>
+      </div>
+      <div class="card-body">
+        <div class="row slider-row">
+          <div class="slider-header"><span>Walk Speed</span><span class="slider-val" id="WalkSpeed-val">16</span></div>
+          <input type="range" id="WalkSpeed" min="1" max="200" value="16" oninput="sliderSync('WalkSpeed',this.value)"/>
+        </div>
+        <div class="row slider-row">
+          <div class="slider-header"><span>Jump Power</span><span class="slider-val" id="JumpPower-val">50</span></div>
+          <input type="range" id="JumpPower" min="1" max="300" value="50" oninput="sliderSync('JumpPower',this.value)"/>
+        </div>
+        <div class="row">
+          <div class="row-label">NoClip</div>
+          <label class="toggle"><input type="checkbox" id="NoClip" onchange="sync('NoClip',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row">
+          <div class="row-label">Spinbot</div>
+          <label class="toggle"><input type="checkbox" id="Spinbot" onchange="sync('Spinbot',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="row slider-row">
+          <div class="slider-header"><span>Spin Speed</span><span class="slider-val" id="SpinSpeed-val">50</span></div>
+          <input type="range" id="SpinSpeed" min="5" max="360" value="50" oninput="sliderSync('SpinSpeed',this.value)"/>
+        </div>
+        <div class="row">
+          <div class="row-label">Watermark</div>
+          <label class="toggle"><input type="checkbox" id="Watermark" onchange="sync('Watermark',this.checked)"><span class="slider"></span></label>
+        </div>
+        <button class="btn-reset" onclick="resetState()">🔄 Resetar tudo para padrão</button>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+const API = '';  // same-origin — empty = use current host
+let token = null;
+let authMode = 'login';
+let pendingSync = {};
+let syncTimer = null;
+
+// ── Auth ──────────────────────────────────────────────────────
+function switchTab(mode){
+  authMode = mode;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active', (mode==='login')===!i);
+  });
+}
+
+async function submitAuth(){
+  const user = document.getElementById('auth-user').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display='none';
+  if(!user||!pass){errEl.textContent='Preencha todos os campos.';errEl.style.display='block';return;}
+  const endpoint = authMode==='login' ? '/api/login' : '/api/register';
+  try{
+    const r = await fetch(API+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+    const d = await r.json();
+    if(!r.ok){errEl.textContent=d.error||'Erro.';errEl.style.display='block';return;}
+    token = d.token;
+    localStorage.setItem('eh_token',token);
+    document.getElementById('header-user').textContent = d.username;
+    document.getElementById('token-display').textContent = token;
+    await loadState();
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    showToast('Bem-vindo, '+d.username+'! 🛡️');
+  }catch(e){errEl.textContent='Servidor offline.';errEl.style.display='block';}
+}
+
+async function autoLogin(){
+  const saved = localStorage.getItem('eh_token');
+  if(!saved) return;
+  try{
+    const r = await fetch(API+'/api/me/'+saved);
+    if(!r.ok){localStorage.removeItem('eh_token');return;}
+    const d = await r.json();
+    token = saved;
+    document.getElementById('header-user').textContent = d.username;
+    document.getElementById('token-display').textContent = token;
+    applyState(d.state);
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+  }catch{}
+}
+
+function logout(){
+  localStorage.removeItem('eh_token');
+  token=null;
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-user').value='';
+  document.getElementById('auth-pass').value='';
+}
+
+// ── State ─────────────────────────────────────────────────────
+async function loadState(){
+  if(!token) return;
+  const r = await fetch(API+'/api/state/'+token);
+  if(!r.ok) return;
+  const s = await r.json();
+  applyState(s);
+}
+
+function applyState(s){
+  const bools = ['AimEnabled','SilentAim','TeamCheck','BoxESP','NameESP','DistESP','HealthBar','SkeletonESP','Chams','RGBChams','RGBEsp','NoClip','Spinbot','Watermark'];
+  bools.forEach(k=>{const el=document.getElementById(k);if(el)el.checked=!!s[k];});
+  const sliders = ['AimFOV','AimSmooth','WalkSpeed','JumpPower','SpinSpeed','RGBSpeed'];
+  sliders.forEach(k=>{const el=document.getElementById(k);if(el&&s[k]!==undefined){el.value=s[k];document.getElementById(k+'-val').textContent=s[k];}});
+  const selects = ['AimPart','BoxStyle','ChamsMat'];
+  selects.forEach(k=>{const el=document.getElementById(k);if(el&&s[k])el.value=s[k];});
+  // Color
+  if(s.ChamsColor){
+    const hex=rgbToHex(s.ChamsColor.r,s.ChamsColor.g,s.ChamsColor.b);
+    document.getElementById('ChamsColor').value=hex;
+    document.getElementById('ChamsColor-hex').textContent=hex;
+  }
+}
+
+// Debounced sync — batches rapid changes into one request
+function sync(key,value){
+  pendingSync[key]=value;
+  clearTimeout(syncTimer);
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot syncing';lbl.textContent='Sincronizando...';
+  syncTimer=setTimeout(pushSync,400);
+}
+
+function sliderSync(key,value){
+  const numVal = parseFloat(value);
+  document.getElementById(key+'-val').textContent=numVal;
+  sync(key,numVal);
+}
+
+function colorSync(key,hex){
+  document.getElementById(key+'-hex').textContent=hex;
+  const rgb=hexToRgb(hex);
+  sync(key,rgb);
+}
+
+async function pushSync(){
+  if(!token||Object.keys(pendingSync).length===0) return;
+  const payload={...pendingSync};
+  pendingSync={};
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  try{
+    const r=await fetch(API+'/api/state/'+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(r.ok){dot.className='sync-dot';lbl.textContent='Sincronizado';}
+    else{dot.className='sync-dot';dot.style.background='var(--off)';lbl.textContent='Erro ao sincronizar';}
+  }catch{dot.className='sync-dot';dot.style.background='var(--off)';lbl.textContent='Servidor offline';}
+}
+
+async function resetState(){
+  if(!token) return;
+  if(!confirm('Resetar todas as configurações para o padrão?')) return;
+  await fetch(API+'/api/reset/'+token,{method:'POST'});
+  await loadState();
+  showToast('Estado resetado para padrão!');
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function copyToken(){
+  navigator.clipboard.writeText(token||'');
+  showToast('Token copiado! ✅');
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+function rgbToHex(r,g,b){
+  return '#'+[r,g,b].map(x=>{const h=Math.round(x*255).toString(16);return h.length===1?'0'+h:h;}).join('');
+}
+
+function showToast(msg,isErr=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='show'+(isErr?' error':'');
+  setTimeout(()=>t.className='',2500);
+}
+
+// ── Submit on Enter ───────────────────────────────────────────
+document.getElementById('auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')submitAuth();});
+document.getElementById('auth-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('auth-pass').focus();});
+
+// ── Boot ─────────────────────────────────────────────────────
+autoLogin();
+</script>
+</body>
+</html>
