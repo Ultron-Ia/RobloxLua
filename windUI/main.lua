@@ -52,7 +52,20 @@ local success, err = pcall(function()
         SpinSpeed = 50,
         
         TargetPlayer = "None",
-        SkinID = "0"
+        SkinID = "0",
+        
+        -- Sailor Piece Farm State
+        SailorFarmMobs = false,
+        SailorFarmStats = false,
+        SailorSelectedStat = "Strength",
+        SailorAutoChests = false,
+        SailorFarmDist = 8,
+        
+        -- Fish It State
+        FishAutoCast = false,
+        FishAutoReel = false,
+        FishAutoSell = false,
+        FishAutoBuy = false
     }
 
     -- Tabs
@@ -122,7 +135,7 @@ local success, err = pcall(function()
     
     local GameSelector = Tabs.Main:Dropdown({ 
         Title = "Select Game Module", 
-        Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor"}, 
+        Values = {"...", "Rivals", "Brookhaven", "Dandy's World", "Social/Talking Hub", "[LUCKY COWARD] Shenanigans de Jujutsu", "Peça de Sailor", "Fish It"}, 
         Default = "...",
         Callback = function(v)
             if v == "Rivals" and not BuiltHubs["Rivals"] then
@@ -1075,6 +1088,45 @@ local success, err = pcall(function()
                     end
                 end})
 
+                -- ── Auto Farm & Stats ─────────────────────────────
+                STab:Section({ Title = "🚜 Auto Farm & Stats" })
+
+                STab:Toggle({Title = "🔥 Auto Farm Mobs (Nearest)", Value = false, Callback = function(v)
+                    _G.EternalState.SailorFarmMobs = v
+                end})
+
+                STab:Slider({Title = "📏 Farm Distance", Value = {Default = 8, Min = 1, Max = 15}, Step = 1, Callback = function(v)
+                    _G.EternalState.SailorFarmDist = v
+                end})
+
+                STab:Toggle({Title = "📊 Auto Stats", Value = false, Callback = function(v)
+                    _G.EternalState.SailorFarmStats = v
+                end})
+
+                STab:Dropdown({Title = "Stat Priority", Values = {"Strength", "Defense", "Sword", "Fruit"}, Value = 1, Callback = function(v)
+                    _G.EternalState.SailorSelectedStat = v
+                end})
+
+                STab:Toggle({Title = "💰 Auto Collect Chests", Value = false, Callback = function(v)
+                    _G.EternalState.SailorAutoChests = v
+                end})
+
+                STab:Section({ Title = "🏝️ Island Teleports" })
+                STab:Dropdown({Title = "Select Island", Values = {"Starter Island", "Buggy Island", "Snow Island", "Marine Base", "Sky Island"}, Value = 1, Callback = function(v)
+                    -- Specific Sailor Piece Coordinates (Approximations)
+                    local locations = {
+                        ["Starter Island"] = Vector3.new(100, 50, 100),
+                        ["Buggy Island"] = Vector3.new(-500, 50, 200),
+                        ["Snow Island"] = Vector3.new(1200, 100, -800),
+                        ["Marine Base"] = Vector3.new(-1500, 60, -1200),
+                        ["Sky Island"] = Vector3.new(0, 1500, 0)
+                    }
+                    if locations[v] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(locations[v])
+                        WindUI:Notify({Title="🏝️ TP", Content="Teleportado para " .. v, Duration=3, Icon = "map-pin"})
+                    end
+                end})
+
                 -- ── Horror Commands ───────────────────────────────
                 STab:Section({ Title = "🎃 Horror Commands" })
 
@@ -1668,8 +1720,29 @@ local success, err = pcall(function()
                 end
             })
 
+            elseif v == "Fish It" and not BuiltHubs["FishIt"] then
+                BuiltHubs["FishIt"] = true
+                local FTab = Window:Tab({ Title = "Fish It Hub", Icon = "fish" })
+                
+                FTab:Section({ Title = "🎣 Fishing Automation" })
+                FTab:Toggle({Title = "Auto Cast (Throw Rod)", Value = false, Callback = function(v) _G.EternalState.FishAutoCast = v end})
+                FTab:Toggle({Title = "Auto Reel (Catch Fish)", Value = false, Callback = function(v) _G.EternalState.FishAutoReel = v end})
+                
+                FTab:Section({ Title = "🛒 Economy" })
+                FTab:Toggle({Title = "Auto Sell Fish", Value = false, Callback = function(v) _G.EternalState.FishAutoSell = v end})
+                FTab:Toggle({Title = "Auto Buy Better Rods", Value = false, Callback = function(v) _G.EternalState.FishAutoBuy = v end})
+                
+                FTab:Section({ Title = "🏝️ Locations" })
+                FTab:Button({Title = "Teleport to Shop", Callback = function()
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        -- Coords for "Pegue o peixe!" shop
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 15, 50)
+                    end
+                end})
+
+            end
         end
-    end})
+    })
 
 
     -- POPULATE AIMBOT
@@ -1990,7 +2063,95 @@ local success, err = pcall(function()
                 end
             end
         end)
+        end)
     end)
+
+    -- ── SAILOR PIECE FARM LOOPS ───────────────────────────
+    task.spawn(function()
+        while task.wait(0.3) do
+            -- Mob Farm
+            if _G.EternalState.SailorFarmMobs and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    local target = nil
+                    local dist = 1000
+                    local enemyFolders = {workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs"), workspace}
+                    for _, folder in pairs(enemyFolders) do
+                        if folder then
+                            for _, v in pairs(folder:GetChildren()) do
+                                if v:IsA("Model") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                                    local d = (LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
+                                    if d < dist then dist = d; target = v end
+                                end
+                            end
+                        end
+                        if target then break end
+                    end
+                    if target then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, _G.EternalState.SailorFarmDist, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                        local combat = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("Combat")
+                        if combat then combat:FireServer() end
+                        local attack = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Attack")
+                        if attack then attack:FireServer() end
+                        game:GetService("VirtualUser"):CaptureController()
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    end
+                end)
+            end
+            
+            -- Auto Stats
+            if _G.EternalState.SailorFarmStats then
+                pcall(function()
+                    local statsRemote = ReplicatedStorage:FindFirstChild("Remotes") and (ReplicatedStorage.Remotes:FindFirstChild("AddStat") or ReplicatedStorage.Remotes:FindFirstChild("UpdateStat"))
+                    if statsRemote then
+                        statsRemote:FireServer(_G.EternalState.SailorSelectedStat, 1)
+                    end
+                end)
+            end
+            
+            -- Auto Chest
+            if _G.EternalState.SailorAutoChests and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("Model") and v.Name:lower():find("chest") then
+                            local part = v:FindFirstChildOfClass("BasePart")
+                            if part then
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = part.CFrame
+                                if v:FindFirstChildOfClass("ProximityPrompt") then
+                                    fireproximityprompt(v:FindFirstChildOfClass("ProximityPrompt"))
+                                end
+                                break
+                            end
+                        end
+                    end
+                end)
+            end
+
+            -- Fish It! Logic
+            if _G.EternalState.FishAutoCast then
+                pcall(function() 
+                    local rod = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    if rod and rod.Name:lower():find("rod") then
+                        rod:Activate()
+                    end
+                end)
+            end
+            
+            if _G.EternalState.FishAutoReel then
+                pcall(function()
+                    local reel = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("Reel")
+                    if reel then reel:FireServer() end
+                end)
+            end
+
+            if _G.EternalState.FishAutoSell then
+                pcall(function()
+                    local sell = ReplicatedStorage:FindFirstChild("Events") and ReplicatedStorage.Events:FindFirstChild("SellFish")
+                    if sell then sell:FireServer() end
+                end)
+            end
+        end
+    end)
+
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
             pcall(function()
